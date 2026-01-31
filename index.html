@@ -3,84 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physique Log (FitNotes Clone)</title>
+    <title>Physique Log - CSV Import</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #121212; color: #e0e0e0; }
-        .accent-color { color: #00e5ff; } /* FitNotes風のシアンブルー */
-        .card { background-color: #1e1e1e; border-bottom: 1px solid #333; }
+        .accent-color { color: #00e5ff; }
+        .card { background-color: #1e1e1e; border-bottom: 1px solid #333; margin-bottom: 8px; padding: 12px; }
     </style>
 </head>
 <body>
 
-    <header class="bg-[#1e1e1e] p-4 flex justify-between items-center shadow-md">
-        <button class="text-2xl">←</button>
-        <div class="text-center">
-            <div class="text-xs uppercase text-gray-400">2026年 1月</div>
-            <div class="text-xl font-bold accent-color text-blue-400">31 土曜日</div>
-        </div>
-        <button class="text-2xl">→</button>
+    <header class="bg-[#1e1e1e] p-4 text-center shadow-md">
+        <h1 class="text-xl font-bold accent-color">FitNotes Importer</h1>
     </header>
 
-    <div class="p-4 bg-[#252525] flex justify-between items-center border-b border-gray-700">
-        <h2 class="text-lg font-bold">ベンチプレス</h2>
-        <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">胸 / バーベル</span>
-    </div>
+    <main class="p-4">
+        <section class="mb-8 p-6 border-2 border-dashed border-gray-600 rounded-xl text-center bg-[#1a1a1a]">
+            <p class="mb-4 text-sm text-gray-400">FitNotesからエクスポートしたCSVを選択してください</p>
+            <input type="file" id="csvFile" accept=".csv" class="hidden">
+            <label for="csvFile" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full cursor-pointer font-bold">
+                CSVファイルを選択
+            </label>
+            <div id="status" class="mt-4 text-xs text-green-400"></div>
+        </section>
 
-    <div class="p-4 bg-[#1e1e1e]">
-        <div class="flex space-x-4 mb-4">
-            <div class="flex-1 text-center">
-                <label class="block text-xs text-gray-500 mb-1 uppercase">重量 (kg)</label>
-                <input type="number" value="80.0" class="w-full bg-[#333] text-2xl font-bold p-2 text-center rounded border-b-2 border-blue-500 outline-none">
+        <div id="logDisplay">
+            <h2 class="text-lg font-bold mb-4">最新のトレーニング履歴</h2>
+            <div id="logs">
+                <p class="text-gray-600 text-sm">CSVを読み込むとここに履歴が表示されます</p>
             </div>
-            <div class="flex-1 text-center">
-                <label class="block text-xs text-gray-500 mb-1 uppercase">レップ数</label>
-                <input type="number" value="10" class="w-full bg-[#333] text-2xl font-bold p-2 text-center rounded border-b-2 border-blue-500 outline-none">
-            </div>
         </div>
-        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded shadow-lg transition">
-            セットを保存
-        </button>
-    </div>
+    </main>
 
-    <div class="mt-2">
-        <table class="w-full text-left">
-            <thead>
-                <tr class="text-xs text-gray-500 border-b border-gray-800">
-                    <th class="p-3 w-16">セット</th>
-                    <th class="p-3">前回</th>
-                    <th class="p-3">重量</th>
-                    <th class="p-3">レップ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="card">
-                    <td class="p-3 font-bold text-gray-400">1</td>
-                    <td class="p-3 text-xs text-gray-600">80.0 x 8</td>
-                    <td class="p-3 font-bold text-lg text-blue-300">80.0</td>
-                    <td class="p-3 font-bold text-lg text-blue-300">10</td>
-                </tr>
-                <tr class="card border-l-4 border-blue-500">
-                    <td class="p-3 font-bold text-gray-400">2</td>
-                    <td class="p-3 text-xs text-gray-600">80.0 x 8</td>
-                    <td class="p-3 font-bold text-lg text-blue-300">82.5</td>
-                    <td class="p-3 font-bold text-lg text-blue-300">8</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <script>
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const text = event.target.result;
+                processData(text);
+            };
+            
+            reader.readAsText(file);
+        });
 
-    <footer class="fixed bottom-0 w-full bg-[#1e1e1e] flex justify-around p-3 border-t border-gray-800">
-        <div class="flex flex-col items-center accent-color">
-            <span class="text-[10px] mt-1">トレーニング</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-500">
-            <span class="text-[10px] mt-1">カレンダー</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-500">
-            <span class="text-[10px] mt-1">グラフ</span>
-        </div>
-    </footer>
+        function processData(csvText) {
+            const lines = csvText.split('\n');
+            const logsContainer = document.getElementById('logs');
+            logsContainer.innerHTML = ''; // クリア
+            
+            // 簡易的な解析（1行目はヘッダーと想定）
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (cols.length < 5) continue;
 
+                const [date, exercise, category, weight, reps] = cols;
+                
+                const card = document.createElement('div');
+                card.className = 'card rounded-lg';
+                card.innerHTML = `
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>\${date}</span>
+                        <span class="bg-gray-800 px-2 rounded">\${category}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">\${exercise}</span>
+                        <span class="accent-color font-bold">\${weight}kg × \${reps}回</span>
+                    </div>
+                `;
+                logsContainer.appendChild(card);
+                
+                // ここで本来はブラウザの保存領域（LocalStorage）にデータを格納します
+            }
+            
+            document.getElementById('status').innerText = (lines.length - 1) + ' 件のデータを読み込みました！';
+        }
+    </script>
 </body>
 </html>
