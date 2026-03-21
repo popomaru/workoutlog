@@ -132,6 +132,17 @@ textarea{min-height:56px;resize:vertical}
 /* 草稿バナー */
 #draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
 
+/* 日別記録一覧 */
+.daylog-ex{margin-bottom:16px}
+.daylog-ex:last-child{margin-bottom:0}
+.daylog-ex-name{font-size:15px;font-weight:600;padding:8px 0 8px;border-bottom:2px solid var(--border);margin-bottom:2px;display:flex;align-items:center;justify-content:space-between}
+.daylog-set-row{display:flex;align-items:center;padding:9px 4px;border-bottom:1px solid #f0ede8}
+.daylog-set-row:last-child{border-bottom:none}
+.daylog-num{width:22px;height:22px;border-radius:50%;background:#f5f5f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text2);flex-shrink:0;margin-right:10px}
+.daylog-w{font-size:17px;font-weight:700;min-width:90px}
+.daylog-r{color:var(--text2);font-size:14px;flex:1}
+.daylog-pr{font-size:16px;margin-left:4px}
+
 /* 進捗タブ モバイル */
 .p-mode-btns,.p-period-btns{display:flex;gap:6px;margin-bottom:8px}
 .p-mode-btn,.p-period-btn{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:#fff;font-family:inherit;color:var(--text2);text-align:center;transition:background .12s,color .12s}
@@ -165,7 +176,7 @@ textarea{min-height:56px;resize:vertical}
   <div class="card">
     <div id="al-save" class="alert alert-ok">保存しました！</div>
     <div class="g2">
-      <div><label>日付</label><input type="date" id="r-date" onchange="showPrevSession()"></div>
+      <div><label>日付</label><input type="date" id="r-date" onchange="showPrevSession();renderDayLog()"></div>
       <div>
         <label>種目</label>
         <button class="ex-picker-btn" id="ex-picker-btn-display" onclick="openExPicker()">
@@ -223,6 +234,14 @@ textarea{min-height:56px;resize:vertical}
   <div class="card">
     <div class="sec">メモ</div>
     <textarea id="r-memo" placeholder="調子・感想など..."></textarea>
+  </div>
+
+  <div class="card" id="daylog-card" style="display:none">
+    <div class="flex-between" style="margin-bottom:2px">
+      <div class="sec" style="margin:0">この日の記録</div>
+      <span id="daylog-total" style="font-size:12px;color:var(--text2)"></span>
+    </div>
+    <div id="daylog-body" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -549,6 +568,7 @@ function load(){
   loadDraft();
   refreshImportStats();
   updateTimerDisplay();
+  renderDayLog();
 }
 function save(){localStorage.setItem('wt2',JSON.stringify(DB));}
 function pad(n){return String(n).padStart(2,'0');}
@@ -806,6 +826,7 @@ function saveW(){
   document.getElementById('r-memo').value='';
   resetTimer();
   showPrevSession();
+  renderDayLog();
   showSummary(ex,date,sets,isPR,newBestRM,prevBestRM);
 }
 
@@ -1020,6 +1041,61 @@ function renderHistory(){
       c.appendChild(row);
     });
   }
+}
+
+// ===================== 日別記録一覧 =====================
+function renderDayLog(){
+  var date=document.getElementById('r-date').value;
+  var card=document.getElementById('daylog-card');
+  var body=document.getElementById('daylog-body');
+  var dayItems=DB.workouts.filter(function(w){return w.date===date;});
+  if(!dayItems.length){card.style.display='none';return;}
+  card.style.display='';
+  var totalVol=0,totalSets=0;
+  dayItems.forEach(function(w){
+    w.sets.forEach(function(s){
+      totalVol+=(parseFloat(s.w)||0)*(parseInt(s.r)||0);
+      totalSets++;
+    });
+  });
+  document.getElementById('daylog-total').textContent=totalSets+'セット｜vol '+Math.round(totalVol)+'kg';
+  body.innerHTML='';
+  dayItems.forEach(function(w){
+    var bestRM=0;
+    DB.workouts.filter(function(x){return x.exercise===w.exercise;}).forEach(function(x){
+      x.sets.forEach(function(s){
+        var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+        var rm=r>0?ww*(1+r/30):ww;
+        if(rm>bestRM)bestRM=rm;
+      });
+    });
+    var exVol=Math.round(w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0));
+    var exDiv=document.createElement('div');
+    exDiv.className='daylog-ex';
+    var nameDiv=document.createElement('div');
+    nameDiv.className='daylog-ex-name';
+    nameDiv.innerHTML='<span>'+w.exercise+'</span><span style="font-size:12px;font-weight:400;color:var(--text2)">vol '+exVol+'kg</span>';
+    exDiv.appendChild(nameDiv);
+    w.sets.forEach(function(s,i){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      var rm=r>0?ww*(1+r/30):ww;
+      var isPR=ww>0&&r>0&&Math.round(rm)>=Math.round(bestRM);
+      var row=document.createElement('div');
+      row.className='daylog-set-row';
+      row.innerHTML='<div class="daylog-num">'+(i+1)+'</div>'+
+        '<div class="daylog-w">'+ww+'<small style="font-size:11px;font-weight:400;color:var(--text2)"> kgs</small></div>'+
+        '<div class="daylog-r">'+r+' <small>reps</small></div>'+
+        (isPR?'<div class="daylog-pr">🏆</div>':'');
+      exDiv.appendChild(row);
+    });
+    if(w.memo){
+      var memoDiv=document.createElement('div');
+      memoDiv.style.cssText='font-size:12px;color:var(--text2);padding:6px 4px 0;font-style:italic';
+      memoDiv.textContent='📝 '+w.memo;
+      exDiv.appendChild(memoDiv);
+    }
+    body.appendChild(exDiv);
+  });
 }
 
 // ===================== 進捗タブ =====================
