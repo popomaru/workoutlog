@@ -2387,50 +2387,8 @@ function parseCSVLine(line){
 }
 
 // FitNotes JSON データをインポート
-function importFitNotesJSON(){
-  fetch('fitnotes_import.json')
-    .then(function(res){return res.json();})
-    .then(function(data){
-      if(!data.workouts){
-        alert('Invalid FitNotes data');
-        return;
-      }
-
-      // dailyNotes 形式を修正
-      var notesList={};
-      if(typeof data.dailyNotes==='object'){
-        Object.keys(data.dailyNotes).forEach(function(date){
-          notesList[date]={memo: data.dailyNotes[date]};
-        });
-      }
-
-      // DB をリセット
-      DB={
-        workouts: data.workouts || [],
-        bodyLogs: [],
-        user: {nick:'あなた',weight:'',goal:'筋肥大'},
-        rivals: [],
-        exCategories: data.exCategories || {},
-        recentExercises: [],
-        customExercises: [],
-        dailyNotes: notesList,
-        favorites: data.favorites || {}
-      };
-
-      save();
-      alert('FitNotes data imported!\\n'+
-        'Workouts: '+DB.workouts.length+'\\n'+
-        'Exercises: '+Object.keys(DB.exCategories).length+'\\n'+
-        'Favorites: '+Object.keys(DB.favorites).length+'\\n'+
-        'Daily notes: '+Object.keys(DB.dailyNotes).length);
-
-      location.reload();
-    })
-    .catch(function(err){
-      alert('Failed to import: '+err);
-      console.error(err);
-    });
-}
+// （実装は fitnotes_embed.js から読み込まれます）
+// importFitNotesJSON() は fitnotes_embed.js で定義されます
 
 function importFitNotes(csvText){
   var lines=csvText.split(/\r?\n/);
@@ -2584,5 +2542,9 @@ load();
 addSet();addSet();addSet();
 renderBody();
 </script>
+
+<!-- FitNotes データ埋め込み -->
+<script src="fitnotes_embed.js"></script>
+
 </body>
 </html>
