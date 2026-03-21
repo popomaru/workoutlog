@@ -93,6 +93,24 @@ textarea{min-height:56px;resize:vertical}
 .today-prog-bar{display:none;background:#f0faf5;border:1px solid #b3e4cc;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px;align-items:center;gap:6px}
 .cal-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text2)}
 
+/* 部位色分け */
+.cat-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:6px;color:#fff}
+.cat-badge.chest{background:#E8957C}
+.cat-badge.back{background:#7FA3D1}
+.cat-badge.legs{background:#90D695}
+.cat-badge.shoulders{background:#E8B856}
+.cat-badge.arms{background:#C985E0}
+.cat-badge.core{background:#95C7D4}
+.cat-badge.cardio{background:#E88B7D}
+
+/* お気に入りマーク */
+.fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 4px;margin:0 4px 0 0;line-height:1;opacity:0.4;transition:opacity .2s}
+.fav-btn.active{opacity:1}
+.ex-item-container{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f0ede8;cursor:pointer}
+.ex-item-container:active{background:#f5f5f0}
+.ex-item-left{display:flex;align-items:center;flex:1;min-width:0}
+.ex-item-labels{display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex:1}
+
 /* インポート */
 .import-drop{display:block;border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:4px}
 .import-drop:hover,.import-drop.drag{border-color:var(--accent2);background:#F0F7FF}
@@ -177,7 +195,6 @@ textarea{min-height:56px;resize:vertical}
 
 <div class="tabs">
   <button class="tab active" onclick="ST('record')">記録</button>
-  <button class="tab" onclick="ST('body')">体重</button>
   <button class="tab" onclick="ST('history')">履歴</button>
   <button class="tab" onclick="ST('progress')">進捗</button>
   <button class="tab" onclick="ST('ranking')">ランキング</button>
@@ -200,11 +217,11 @@ textarea{min-height:56px;resize:vertical}
 
   <!-- トレーニング一覧（プライマリビュー） -->
   <div class="card" id="today-log-card" style="padding:1rem 1rem 0.75rem">
-    <!-- 本日の感想 -->
-    <div id="daily-note-section" style="display:none;margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px">
-      <label style="font-size:12px;color:var(--text2);margin-bottom:4px">📝 本日の感想・メモ</label>
-      <textarea id="daily-note-input" placeholder="調子や感想など..." style="font-size:13px;min-height:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical"></textarea>
-      <div id="daily-note-save-hint" style="font-size:11px;color:var(--text2);margin-top:3px;text-align:right">自動保存</div>
+    <!-- 本日の感想（常時表示） -->
+    <div id="daily-note-section" style="margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px;border-left:3px solid var(--accent3)">
+      <label style="font-size:12px;color:var(--text2);margin-bottom:4px;display:block;font-weight:600">📝 本日の感想・メモ</label>
+      <textarea id="daily-note-input" placeholder="💡 例：睡眠不足 / 肩の入りが悪かった / ベンチ好調 / 調子いい" style="font-size:13px;min-height:70px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical;background:#fff"></textarea>
+      <div id="daily-note-save-hint" style="font-size:10px;color:var(--text2);margin-top:4px;text-align:right">✓ 自動保存</div>
     </div>
     <div id="today-log-body"><div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div></div>
     <div id="al-save" class="alert alert-ok" style="margin-top:8px">保存しました！</div>
@@ -348,11 +365,11 @@ textarea{min-height:56px;resize:vertical}
         <button class="btn btn-sm" onclick="histShiftDay(1)">▶</button>
       </div>
     </div>
-    <!-- 履歴タブの本日の感想 -->
-    <div id="hist-daily-note-section" style="display:none;margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px">
-      <label style="font-size:12px;color:var(--text2);margin-bottom:4px">📝 本日の感想・メモ</label>
-      <textarea id="hist-daily-note-input" placeholder="調子や感想など..." style="font-size:13px;min-height:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical"></textarea>
-      <div id="hist-daily-note-save-hint" style="font-size:11px;color:var(--text2);margin-top:3px;text-align:right">自動保存</div>
+    <!-- 履歴タブの本日の感想（常時表示） -->
+    <div id="hist-daily-note-section" style="margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px;border-left:3px solid var(--accent3)">
+      <label style="font-size:12px;color:var(--text2);margin-bottom:4px;display:block;font-weight:600">📝 この日の感想・メモ</label>
+      <textarea id="hist-daily-note-input" placeholder="💡 例：睡眠不足 / 肩の入りが悪かった / ベンチ好調 / 調子いい" style="font-size:13px;min-height:70px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical;background:#fff"></textarea>
+      <div id="hist-daily-note-save-hint" style="font-size:10px;color:var(--text2);margin-top:4px;text-align:right">✓ 自動保存</div>
     </div>
     <div id="hist-day-body"><div class="empty">日付を選んでください</div></div>
   </div>
@@ -360,6 +377,20 @@ textarea{min-height:56px;resize:vertical}
 
 <!-- ========== 進捗 ========== -->
 <div id="tab-progress" class="panel">
+  <!-- 部位セレクタ -->
+  <div class="card">
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px;letter-spacing:.05em">部位を選ぶ</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px" id="p-cat-buttons">
+      <!-- ボタンがここに自動生成される -->
+    </div>
+  </div>
+
+  <!-- 部位統計 -->
+  <div class="card" id="p-cat-stats" style="display:none">
+    <div id="p-cat-stats-content"></div>
+  </div>
+
+  <!-- グラフ設定 -->
   <div class="card">
     <div class="g2" style="margin-bottom:8px">
       <div><label>種目</label><select id="p-ex" onchange="renderProgress()"></select></div>
@@ -523,6 +554,12 @@ textarea{min-height:56px;resize:vertical}
       <input type="text" id="ep-search" placeholder="🔍  種目を検索..." oninput="epFilter(this.value)" autocomplete="off">
     </div>
     <div class="cat-tabs" id="cat-tabs"></div>
+    <!-- お気に入り種目 -->
+    <div class="recent-section" id="favorite-section" style="display:none;background:#f8f7f3;padding:8px 14px 10px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em">♥ お気に入り</div>
+      <div class="recent-chips" id="favorite-chips"></div>
+    </div>
+    <!-- 最近使った -->
     <div class="recent-section" id="recent-section" style="display:none">
       <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em">⏱ 最近使った</div>
       <div class="recent-chips" id="recent-chips"></div>
@@ -541,10 +578,11 @@ textarea{min-height:56px;resize:vertical}
 
 <script>
 // ===================== データ =====================
-var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{}};
+var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{}};
 var currentSets=[];
 var progChart=null,bodyChart=null,catChart=null;
 var pNRM=5;
+var progressCategory='全部';  // 進捗タブで選択中の部位
 var histSelectedDate='';
 var graphPeriodMonths=0;  // グラフ期間フィルタ: 0=オール、N=N ヶ月前から今日まで
 var dailyNoteSaveTimer=null;  // メモ自動保存タイマー
@@ -636,7 +674,7 @@ function updateExerciseLists(){
 
 // ===================== 初期化 =====================
 function load(){
-  try{var s=localStorage.getItem('wt2');if(s){var p=JSON.parse(s);DB.workouts=p.workouts||[];DB.bodyLogs=p.bodyLogs||[];DB.user=p.user||DB.user;DB.rivals=p.rivals||[];DB.exCategories=p.exCategories||{};DB.recentExercises=p.recentExercises||[];DB.customExercises=p.customExercises||[];DB.dailyNotes=p.dailyNotes||{};}}catch(e){}
+  try{var s=localStorage.getItem('wt2');if(s){var p=JSON.parse(s);DB.workouts=p.workouts||[];DB.bodyLogs=p.bodyLogs||[];DB.user=p.user||DB.user;DB.rivals=p.rivals||[];DB.exCategories=p.exCategories||{};DB.recentExercises=p.recentExercises||[];DB.customExercises=p.customExercises||[];DB.dailyNotes=p.dailyNotes||{};DB.favorites=p.favorites||{};}}catch(e){}
   document.getElementById('u-nick').value=DB.user.nick;
   document.getElementById('u-weight').value=DB.user.weight||'';
   document.getElementById('u-goal').value=DB.user.goal||'筋肥大';
@@ -707,6 +745,24 @@ function renderExPicker(query,cat){
     tabsEl.appendChild(b);
   });
 
+  // お気に入り（検索・カテゴリ絞り込みなし時のみ）
+  var favSec=document.getElementById('favorite-section');
+  var favEl=document.getElementById('favorite-chips');
+  var favorites=Object.keys(DB.favorites||{}).filter(function(ex){return DB.favorites[ex];});
+  if(!q&&!cat&&favorites.length){
+    favSec.style.display='block';
+    favEl.innerHTML='';
+    favorites.slice(0,8).forEach(function(ex){
+      var b=document.createElement('button');
+      b.className='recent-chip';
+      b.textContent='♥ '+ex;
+      b.onclick=function(){selectExercise(ex);};
+      favEl.appendChild(b);
+    });
+  } else {
+    favSec.style.display='none';
+  }
+
   // 最近使った（検索・カテゴリ絞り込みなし時のみ）
   var recentSec=document.getElementById('recent-section');
   var recentEl=document.getElementById('recent-chips');
@@ -744,11 +800,50 @@ function renderExPicker(query,cat){
       listEl.appendChild(h);
     }
     g.exercises.forEach(function(ex){
-      var d=document.createElement('div');
-      d.className='ep-item'+(ex===cur?' selected':'');
-      d.textContent=ex;
-      d.onclick=function(){selectExercise(ex);};
-      listEl.appendChild(d);
+      var container=document.createElement('div');
+      container.className='ex-item-container'+(ex===cur?' selected':'');
+
+      // 左側：お気に入りボタン + 部位ラベル + 種目名
+      var left=document.createElement('div');
+      left.className='ex-item-left';
+
+      // お気に入りボタン
+      var favBtn=document.createElement('button');
+      favBtn.className='fav-btn'+(DB.favorites[ex]?' active':'');
+      favBtn.textContent='♥';
+      favBtn.onclick=function(e){
+        e.stopPropagation();
+        DB.favorites[ex]=!DB.favorites[ex];
+        save();
+        renderExPicker(query,cat);
+      };
+      left.appendChild(favBtn);
+
+      // 部位ラベル + 種目名
+      var labels=document.createElement('div');
+      labels.className='ex-item-labels';
+
+      var rawCat=DB.exCategories[ex]||'';
+      var cat_ja=catJa(rawCat);
+      var catClass=rawCat.toLowerCase().replace(/\\s+/g,'');
+
+      if(cat_ja&&cat_ja!=='その他'){
+        var badge=document.createElement('span');
+        badge.className='cat-badge '+catClass;
+        badge.textContent=cat_ja;
+        labels.appendChild(badge);
+      }
+
+      var exName=document.createElement('span');
+      exName.textContent=ex;
+      exName.style.cssText='flex:1';
+      labels.appendChild(exName);
+
+      left.appendChild(labels);
+      container.appendChild(left);
+
+      container.onclick=function(){selectExercise(ex);};
+      listEl.appendChild(container);
     });
   });
 
@@ -1101,11 +1196,37 @@ function renderWorkoutsInto(workouts,bodyEl){
     var block=document.createElement('div');
     block.style.cssText='margin-bottom:18px';
 
-    // 種目名（FitNotesスタイル：太字＋アクセントライン）
-    var exName=document.createElement('div');
-    exName.style.cssText='font-size:16px;font-weight:600;padding:8px 4px 7px;border-bottom:2px solid var(--accent);margin-bottom:0';
-    exName.textContent=w.exercise;
-    block.appendChild(exName);
+    // 種目名（部位ラベル+♥付き）
+    var exNameRow=document.createElement('div');
+    exNameRow.style.cssText='font-size:16px;font-weight:600;padding:8px 4px 7px;border-bottom:2px solid var(--accent);margin-bottom:0;display:flex;align-items:center;gap:6px;justify-content:space-between';
+
+    var exNameLeft=document.createElement('div');
+    exNameLeft.style.cssText='display:flex;align-items:center;gap:6px;flex:1';
+
+    // ♥ マーク
+    var favMark=document.createElement('span');
+    favMark.textContent=DB.favorites[w.exercise]?'♥':'';
+    favMark.style.cssText='color:#E24B4A;opacity:'+(DB.favorites[w.exercise]?'1':'0');
+    exNameLeft.appendChild(favMark);
+
+    // 部位ラベル
+    var rawCat=DB.exCategories[w.exercise]||'';
+    var cat_ja=catJa(rawCat);
+    if(cat_ja&&cat_ja!=='その他'){
+      var badge=document.createElement('span');
+      badge.className='cat-badge '+(rawCat.toLowerCase().replace(/\\s+/g,''));
+      badge.textContent=cat_ja;
+      badge.style.cssText='padding:2px 8px;font-size:10px;margin:0';
+      exNameLeft.appendChild(badge);
+    }
+
+    // 種目名
+    var exNameText=document.createElement('span');
+    exNameText.textContent=w.exercise;
+    exNameLeft.appendChild(exNameText);
+
+    exNameRow.appendChild(exNameLeft);
+    block.appendChild(exNameRow);
 
     // 各セット（FitNotesスタイル：重量右寄り・回数右端）
     var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
@@ -1162,10 +1283,127 @@ function renderTodayLog(){
   var date=document.getElementById('r-date').value;
   var body=document.getElementById('today-log-body');
   var workouts=DB.workouts.filter(function(w){return w.date===date;});
-  renderWorkoutsInto(workouts,body);
+
+  // ドラッグ対応版で描画
+  renderTodayLogWithDrag(workouts,body,date);
 
   // 本日のメモをロード・表示
   loadDailyNote(date);
+}
+
+// 記録タブ用：ドラッグ対応版
+function renderTodayLogWithDrag(workouts,bodyEl,date){
+  bodyEl.innerHTML='';
+  if(!workouts.length){
+    bodyEl.innerHTML='<div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div>';
+    return;
+  }
+
+  var draggedIdx=null;
+
+  workouts.forEach(function(w,idx){
+    var block=document.createElement('div');
+    block.style.cssText='margin-bottom:18px;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;display:flex;gap:8px;align-items:flex-start';
+    block.draggable=true;
+    block.dataset.idx=idx;
+
+    // ドラッグハンドル
+    var handle=document.createElement('div');
+    handle.style.cssText='flex-shrink:0;cursor:grab;font-size:20px;color:var(--text2);user-select:none;padding-top:4px';
+    handle.textContent='☰';
+    block.appendChild(handle);
+
+    // コンテンツ
+    var content=document.createElement('div');
+    content.style.cssText='flex:1;min-width:0';
+
+    // 種目名
+    var exName=document.createElement('div');
+    exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
+    exName.textContent=w.exercise;
+    content.appendChild(exName);
+
+    // セット情報
+    var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+    w.sets.forEach(function(s){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:flex-end;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:14px';
+
+      if(isCardio){
+        row.innerHTML='<span style="font-weight:600">'+(s.dist||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">'+(s.distUnit||'km')+'</span> '+
+          '<span style="font-weight:600">'+(s.time||'－')+'</span>';
+      } else {
+        var ww=parseFloat(s.w)||0;
+        var r=parseInt(s.r)||0;
+        row.innerHTML='<span style="font-weight:600">'+(ww?ww.toFixed(1):'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">kg</span> '+
+          '<span style="font-weight:600">'+(r||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin-left:4px">reps</span>';
+      }
+      content.appendChild(row);
+
+      if(s.comment&&s.comment.trim()){
+        var cmt=document.createElement('div');
+        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 0;font-style:italic';
+        cmt.textContent='💬 '+s.comment;
+        content.appendChild(cmt);
+      }
+    });
+
+    if(w.memo&&w.memo.trim()){
+      var memo=document.createElement('div');
+      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 0 0;font-style:italic;margin-top:4px';
+      memo.textContent='📝 '+w.memo;
+      content.appendChild(memo);
+    }
+
+    block.appendChild(content);
+
+    // ドラッグイベント
+    block.addEventListener('dragstart',function(e){
+      draggedIdx=idx;
+      e.dataTransfer.effectAllowed='move';
+      block.style.opacity='0.5';
+    });
+
+    block.addEventListener('dragend',function(e){
+      block.style.opacity='1';
+    });
+
+    block.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      if(draggedIdx!==null&&draggedIdx!==idx){
+        var temp=workouts[draggedIdx];
+        workouts[draggedIdx]=workouts[idx];
+        workouts[idx]=temp;
+        draggedIdx=idx;
+        renderTodayLogWithDrag(workouts,bodyEl,date);
+      }
+    });
+
+    bodyEl.appendChild(block);
+  });
+
+  // フッター合計
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  if(workouts.length>1||totalSets>0){
+    var foot=document.createElement('div');
+    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+    bodyEl.appendChild(foot);
+  }
+
+  // 並び順を DB に反映
+  var date_val=document.getElementById('r-date').value;
+  DB.workouts.forEach(function(w){
+    if(w.date===date_val){
+      w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);
+    }
+  });
+  save();
 }
 
 // ===================== 前回の記録表示 =====================
@@ -1247,27 +1485,23 @@ function saveDailyNote(date,memo){
   save();
 }
 
-// 履歴タブ用のメモロード
+// 履歴タブ用のメモロード（常時表示）
 function loadHistDailyNote(date){
   var section=document.getElementById('hist-daily-note-section');
   var input=document.getElementById('hist-daily-note-input');
   var memo=DB.dailyNotes[date]?DB.dailyNotes[date].memo:'';
 
-  if(!memo){
-    section.style.display='none';
-  } else {
-    section.style.display='block';
-    input.value=memo;
-  }
+  // 常に表示
+  section.style.display='block';
+  input.value=memo;
 
   // 入力イベント：オン
   input.oninput=function(){
     if(!this.value.trim()){
-      section.style.display='none';
       delete DB.dailyNotes[date];
+      input.value='';
       save();
     } else {
-      section.style.display='block';
       debouncedSaveDailyNote(date);
     }
   };
@@ -1511,7 +1745,7 @@ function flash(id){var e=document.getElementById(id);e.style.display='block';set
 
 // ===================== タブ切替 =====================
 function ST(t){
-  var tabs=['record','body','history','progress','ranking','import'];
+  var tabs=['record','history','progress','ranking','import'];
   tabs.forEach(function(x,i){
     document.querySelectorAll('.tab')[i].classList.toggle('active',x===t);
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
@@ -1522,9 +1756,11 @@ function ST(t){
     initMonthCal();
     renderDayJournal(histSelectedDate);
   }
-  if(t==='progress'){renderProgress();}
+  if(t==='progress'){
+    renderProgressCategoryButtons();
+    renderProgress();
+  }
   if(t==='ranking')renderRanking();
-  if(t==='body')renderBody();
 }
 
 // ===================== カレンダーヒートマップ =====================
@@ -1618,6 +1854,90 @@ function movingAvg(arr,n){
   });
 }
 
+// ===================== 進捗タブ：部位起点 =====================
+function getCategories(){
+  var cats=new Set(['全部']);
+  Object.values(CAT_JA||{}).forEach(function(c){if(c)cats.add(c);});
+  return Array.from(cats).sort();
+}
+
+function renderProgressCategoryButtons(){
+  var buttonEl=document.getElementById('p-cat-buttons');
+  buttonEl.innerHTML='';
+  var cats=getCategories();
+  cats.forEach(function(cat){
+    var btn=document.createElement('button');
+    btn.className='btn btn-sm'+(progressCategory===cat?'btn-primary':'');
+    btn.textContent=cat;
+    btn.onclick=function(){setProgressCategory(cat);};
+    buttonEl.appendChild(btn);
+  });
+}
+
+function setProgressCategory(cat){
+  progressCategory=cat;
+  renderProgressCategoryButtons();
+  var exSel=document.getElementById('p-ex');
+  var groups=getExerciseGroups();
+  var filtered=groups;
+
+  if(cat!=='全部'){
+    filtered=groups.map(function(g){
+      return{
+        cat:g.cat,
+        exercises:g.exercises.filter(function(e){
+          return catJa(DB.exCategories[e]||'')===(cat||'その他');
+        })
+      };
+    }).filter(function(g){return g.exercises.length;});
+  }
+
+  exSel.innerHTML='';
+  var opt=document.createElement('option');
+  opt.value='';
+  opt.textContent='選ぶ（オプション）';
+  exSel.appendChild(opt);
+
+  filtered.forEach(function(g){
+    g.exercises.forEach(function(e){
+      var o=document.createElement('option');
+      o.value=e;
+      o.textContent=e;
+      exSel.appendChild(o);
+    });
+  });
+
+  renderProgressCategoryStats(cat);
+  renderProgress();
+}
+
+function renderProgressCategoryStats(cat){
+  var el=document.getElementById('p-cat-stats');
+  var content=document.getElementById('p-cat-stats-content');
+
+  if(cat==='全部'){
+    el.style.display='none';
+    return;
+  }
+
+  el.style.display='block';
+  var workouts=DB.workouts.filter(function(w){
+    return catJa(DB.exCategories[w.exercise]||'')===(cat||'その他');
+  });
+
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var lastDate=workouts.length>0?workouts[workouts.length-1].date:'記録なし';
+  var uniqueEx=new Set(workouts.map(function(w){return w.exercise;})).size;
+
+  content.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+
+    '<div class="metric"><div class="metric-val">'+totalSets+'</div><div class="metric-lbl">セット</div></div>'+
+    '<div class="metric"><div class="metric-val">'+Math.round(totalVol)+'</div><div class="metric-lbl">kg</div></div>'+
+    '<div class="metric"><div class="metric-val">'+uniqueEx+'</div><div class="metric-lbl">種目</div></div>'+
+    '<div class="metric"><div class="metric-val">'+lastDate+'</div><div class="metric-lbl">最終実施</div></div>'+
+    '</div>';
+}
+
 function onProgressModeChange(){
   var mode=document.getElementById('p-mode').value;
   document.getElementById('p-nrm-wrap').style.display=mode==='nrm'?'block':'none';
@@ -1636,10 +1956,22 @@ function setNRM(n){
 function renderProgress(){
   var ex=document.getElementById('p-ex').value;
   var mode=document.getElementById('p-mode').value;
-  var items=getWorkoutsInPeriod(ex,graphPeriodMonths).sort(function(a,b){return a.date>b.date?1:-1;});
+
+  // 部位フィルタを適用（progressCategory が選択されている場合）
+  var allItems=getWorkoutsInPeriod(ex,graphPeriodMonths);
+  var items=allItems;
+  if(progressCategory&&progressCategory!=='全部'){
+    items=allItems.filter(function(w){
+      return catJa(DB.exCategories[w.exercise]||'')===(progressCategory||'その他');
+    });
+  }
+
+  items=items.sort(function(a,b){return a.date>b.date?1:-1;});
+
   var pm=document.getElementById('p-metrics');
   if(!items.length){
-    pm.innerHTML='<div class="empty" style="grid-column:1/-1">この種目の記録がありません</div>';
+    var msg=ex?'この種目の記録がありません':'この部位の記録がありません';
+    pm.innerHTML='<div class="empty" style="grid-column:1/-1">'+msg+'</div>';
     if(progChart){progChart.destroy();progChart=null;}
     document.getElementById('p-period-compare').innerHTML='';
     return;
