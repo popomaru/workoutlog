@@ -120,6 +120,7 @@ textarea{min-height:56px;resize:vertical}
 .ep-cat-header{padding:8px 16px 4px;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;background:#f8f7f3;text-transform:uppercase}
 .ep-add-row{padding:14px 16px;color:var(--accent2);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border)}
 .ep-add-row:active{background:#f0f7ff}
+.p-nrm-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* 完了サマリーモーダル */
 #summary-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:flex-end;justify-content:center}
@@ -297,24 +298,54 @@ textarea{min-height:56px;resize:vertical}
 <!-- ========== 進捗 ========== -->
 <div id="tab-progress" class="panel">
   <div class="card">
-    <div class="g2">
+    <div class="g2" style="margin-bottom:8px">
       <div><label>種目</label><select id="p-ex" onchange="renderProgress()"></select></div>
-      <div><label>グラフ</label>
-        <select id="p-mode" onchange="renderProgress()">
+      <div><label>グラフ種別</label>
+        <select id="p-mode" onchange="onProgressModeChange()">
           <option value="maxw">最高重量</option>
-          <option value="vol">総ボリューム</option>
           <option value="rm">推定1RM</option>
+          <option value="vol">総ボリューム</option>
+          <option value="reps">総レップ数</option>
+          <option value="nrm">Nレップ最大重量</option>
         </select>
+      </div>
+    </div>
+    <div id="p-nrm-wrap" style="display:none;margin-top:4px">
+      <label style="margin-bottom:6px">対象レップ数</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm p-nrm-btn" data-n="1" onclick="setNRM(1)">1RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="3" onclick="setNRM(3)">3RM</button>
+        <button class="btn btn-sm p-nrm-btn active" data-n="5" onclick="setNRM(5)">5RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="8" onclick="setNRM(8)">8RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="10" onclick="setNRM(10)">10RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="12" onclick="setNRM(12)">12RM</button>
       </div>
     </div>
   </div>
   <div class="card">
-    <div class="g3" id="p-metrics">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px" id="p-metrics">
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">最高重量</div></div>
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">推定1RM</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">総レップ数</div></div>
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">記録回数</div></div>
     </div>
-    <div class="chart-wrap"><canvas id="prog-chart"></canvas></div>
+    <div class="chart-wrap" style="height:200px"><canvas id="prog-chart"></canvas></div>
+    <div id="p-period-compare" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 部位別ボリューム -->
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:10px">
+      <div class="sec" style="margin:0">部位別ボリューム</div>
+      <select id="cat-period" onchange="renderCatChart()" style="width:auto;font-size:12px;padding:4px 8px">
+        <option value="30">直近30日</option>
+        <option value="90">直近90日</option>
+        <option value="180">直近180日</option>
+        <option value="9999">すべて</option>
+      </select>
+    </div>
+    <div class="chart-wrap" style="height:200px"><canvas id="cat-chart"></canvas></div>
+    <div id="cat-compare" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -434,7 +465,8 @@ textarea{min-height:56px;resize:vertical}
 // ===================== データ =====================
 var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[]};
 var currentSets=[];
-var progChart=null,bodyChart=null;
+var progChart=null,bodyChart=null,catChart=null;
+var pNRM=5; // Nレップ最大重量のN
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
@@ -1003,7 +1035,7 @@ function ST(t){
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
   if(t==='history'){renderCalendar();renderHistory();}
-  if(t==='progress')renderProgress();
+  if(t==='progress'){renderProgress();}
   if(t==='ranking')renderRanking();
   if(t==='body')renderBody();
 }
@@ -1107,6 +1139,28 @@ function myBestRM(ex){
   });
   return Math.round(best);
 }
+function movingAvg(arr,n){
+  return arr.map(function(_,i){
+    var slice=arr.slice(Math.max(0,i-n+1),i+1).filter(function(v){return v!==null;});
+    return slice.length?Math.round(slice.reduce(function(a,b){return a+b;},0)/slice.length*10)/10:null;
+  });
+}
+
+function onProgressModeChange(){
+  var mode=document.getElementById('p-mode').value;
+  document.getElementById('p-nrm-wrap').style.display=mode==='nrm'?'block':'none';
+  renderProgress();
+}
+
+function setNRM(n){
+  pNRM=n;
+  document.querySelectorAll('.p-nrm-btn').forEach(function(b){
+    b.classList.toggle('active',parseInt(b.dataset.n)===n);
+    b.classList.toggle('btn-primary',parseInt(b.dataset.n)===n);
+  });
+  renderProgress();
+}
+
 function renderProgress(){
   var ex=document.getElementById('p-ex').value;
   var mode=document.getElementById('p-mode').value;
@@ -1114,33 +1168,175 @@ function renderProgress(){
   var pm=document.getElementById('p-metrics');
   if(!items.length){
     pm.innerHTML='<div class="empty" style="grid-column:1/-1">この種目の記録がありません</div>';
-    if(progChart){progChart.destroy();progChart=null;}return;
+    if(progChart){progChart.destroy();progChart=null;}
+    document.getElementById('p-period-compare').innerHTML='';
+    return;
   }
-  var maxW=0,bestRM=0;
+
+  // オールタイムメトリクス計算
+  var maxW=0,bestRM=0,totalReps=0;
   items.forEach(function(w){
     w.sets.forEach(function(s){
       var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
       if(ww>maxW)maxW=ww;
       var rm=r>0?ww*(1+r/30):ww;
       if(rm>bestRM)bestRM=rm;
+      totalReps+=r;
     });
   });
-  pm.innerHTML='<div class="metric"><div class="metric-val">'+maxW+'kg</div><div class="metric-lbl">最高重量</div></div>'+
+  pm.innerHTML=
+    '<div class="metric"><div class="metric-val">'+maxW+'kg</div><div class="metric-lbl">最高重量</div></div>'+
     '<div class="metric"><div class="metric-val">'+Math.round(bestRM)+'kg</div><div class="metric-lbl">推定1RM</div></div>'+
+    '<div class="metric"><div class="metric-val">'+totalReps+'</div><div class="metric-lbl">累計レップ</div></div>'+
     '<div class="metric"><div class="metric-val">'+items.length+'</div><div class="metric-lbl">記録回数</div></div>';
+
+  // グラフデータ計算
   var labels=items.map(function(w){return w.date.slice(5);});
   var vals=items.map(function(w){
-    if(mode==='maxw')return Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
-    if(mode==='vol')return Math.round(w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0));
+    if(mode==='maxw') return Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
+    if(mode==='vol')  return Math.round(w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0));
+    if(mode==='reps') return w.sets.reduce(function(a,s){return a+(parseInt(s.r)||0);},0);
+    if(mode==='nrm'){
+      // pNRM回以上こなしたセットの最大重量
+      var valid=w.sets.filter(function(s){return(parseInt(s.r)||0)>=pNRM;});
+      if(!valid.length)return null;
+      return Math.max.apply(null,valid.map(function(s){return parseFloat(s.w)||0;}));
+    }
+    // rm
     return Math.round(Math.max.apply(null,w.sets.map(function(s){var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;return r>0?ww*(1+r/30):ww;})));
   });
+
+  // 移動平均（3点）
+  var maVals=movingAvg(vals,3);
+
   var ctx=document.getElementById('prog-chart').getContext('2d');
   if(progChart)progChart.destroy();
-  var colors={maxw:'#E24B4A',vol:'#378ADD',rm:'#1D9E75'};
+  var colors={maxw:'#E24B4A',vol:'#378ADD',rm:'#1D9E75',reps:'#9B59B6',nrm:'#E67E22'};
   var col=colors[mode]||'#E24B4A';
-  var lbl=mode==='maxw'?'最高重量(kg)':mode==='vol'?'総ボリューム(kg)':'推定1RM(kg)';
-  progChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:lbl,data:vals,borderColor:col,backgroundColor:col+'22',tension:.3,pointRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{ticks:{font:{size:10}}}}}});
+  var lblMap={maxw:'最高重量(kg)',vol:'総ボリューム(kg)',rm:'推定1RM(kg)',reps:'総レップ数',nrm:pNRM+'RM最大重量(kg)'};
+  var lbl=lblMap[mode]||'';
+  progChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:lbl,data:vals,borderColor:col,backgroundColor:col+'22',tension:.3,pointRadius:4,pointHoverRadius:6,order:1},
+      {label:'移動平均',data:maVals,borderColor:col+'99',borderDash:[5,3],borderWidth:1.5,pointRadius:0,tension:.4,fill:false,order:0}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.raw!==null?ctx.raw:'データなし');}}}
+      },
+      scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}
+    }
+  });
+
+  // 前月比
+  renderPeriodCompare(items,mode);
+  renderCatChart();
+}
+
+function renderPeriodCompare(items,mode){
+  var el=document.getElementById('p-period-compare');
+  var now=new Date();
+  var thisMonth=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  var prevDate=new Date(now.getFullYear(),now.getMonth()-1,1);
+  var prevMonth=prevDate.getFullYear()+'-'+pad(prevDate.getMonth()+1);
+
+  function sumForMonth(m){
+    var ws=items.filter(function(w){return w.date.slice(0,7)===m;});
+    if(!ws.length)return null;
+    if(mode==='vol'||mode==='reps'){
+      return ws.reduce(function(a,w){
+        return a+w.sets.reduce(function(b,s){
+          return b+(mode==='vol'?(parseFloat(s.w)||0)*(parseInt(s.r)||0):(parseInt(s.r)||0));
+        },0);
+      },0);
+    }
+    // for maxw/rm: show sessions count
+    return ws.length;
+  }
+  var cur=sumForMonth(thisMonth);
+  var prev=sumForMonth(prevMonth);
+  if(cur===null&&prev===null){el.innerHTML='';return;}
+
+  var diff=cur!==null&&prev!==null?Math.round((cur-prev)/prev*100):null;
+  var diffStr=diff!==null?'<span style="color:'+(diff>=0?'#1D9E75':'#E24B4A')+';font-weight:600">'+(diff>=0?'▲':'▼')+Math.abs(diff)+'%</span>':'';
+  var unit=mode==='reps'?'回':mode==='vol'?'kg':mode==='maxw'||mode==='rm'||mode==='nrm'?'回':'';
+  el.innerHTML='<div style="display:flex;gap:8px;font-size:12px">'+
+    '<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+(cur!==null?Math.round(cur)+unit:'-')+'</div><div class="metric-lbl">今月</div></div>'+
+    '<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+(prev!==null?Math.round(prev)+unit:'-')+'</div><div class="metric-lbl">先月</div></div>'+
+    (diffStr?'<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+diffStr+'</div><div class="metric-lbl">前月比</div></div>':'')+
+    '</div>';
+}
+
+function renderCatChart(){
+  var days=parseInt(document.getElementById('cat-period').value)||30;
+  var cutoff=new Date();
+  cutoff.setDate(cutoff.getDate()-days);
+  var cutStr=cutoff.getFullYear()+'-'+pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+
+  // 部位別ボリューム集計
+  var catVol={};
+  DB.workouts.forEach(function(w){
+    if(w.date<cutStr)return;
+    var rawCat=DB.exCategories[w.exercise]||'';
+    var cat=catJa(rawCat);
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+    catVol[cat]=(catVol[cat]||0)+vol;
+  });
+
+  var cats=Object.keys(catVol).sort(function(a,b){return catVol[b]-catVol[a];});
+  var ctx2=document.getElementById('cat-chart').getContext('2d');
+  if(catChart)catChart.destroy();
+
+  if(!cats.length){
+    document.getElementById('cat-compare').innerHTML='<div class="empty">この期間の記録がありません</div>';
+    return;
+  }
+
+  var palette=['#E24B4A','#378ADD','#1D9E75','#9B59B6','#E67E22','#F1C40F','#1ABC9C','#E91E8C'];
+  var total=cats.reduce(function(a,c){return a+catVol[c];},0);
+
+  catChart=new Chart(ctx2,{
+    type:'bar',
+    data:{
+      labels:cats,
+      datasets:[{
+        label:'ボリューム(kg)',
+        data:cats.map(function(c){return Math.round(catVol[c]);}),
+        backgroundColor:cats.map(function(_,i){return palette[i%palette.length]+'CC';}),
+        borderColor:cats.map(function(_,i){return palette[i%palette.length];}),
+        borderWidth:1,borderRadius:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=Math.round(ctx.raw/total*100);
+          return ctx.raw+'kg ('+pct+'%)';
+        }}}
+      },
+      scales:{
+        x:{ticks:{font:{size:11}}},
+        y:{ticks:{font:{size:10}},beginAtZero:true}
+      }
+    }
+  });
+
+  // 部位比率サマリー
+  var html='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+  cats.forEach(function(c,i){
+    var pct=Math.round(catVol[c]/total*100);
+    html+='<div style="display:flex;align-items:center;gap:4px;font-size:12px">'+
+      '<div style="width:10px;height:10px;border-radius:2px;background:'+palette[i%palette.length]+';flex-shrink:0"></div>'+
+      '<span>'+c+' <b>'+pct+'%</b></span></div>';
+  });
+  html+='</div>';
+  document.getElementById('cat-compare').innerHTML=html;
 }
 
 // ===================== 体重タブ描画 =====================
