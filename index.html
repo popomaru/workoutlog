@@ -131,6 +131,17 @@ textarea{min-height:56px;resize:vertical}
 
 /* 草稿バナー */
 #draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+
+/* 進捗タブ モバイル */
+.p-mode-btns,.p-period-btns{display:flex;gap:6px;margin-bottom:8px}
+.p-mode-btn,.p-period-btn{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:#fff;font-family:inherit;color:var(--text2);text-align:center;transition:background .12s,color .12s}
+.p-mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.p-period-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.p-hist-row{padding:10px 0;border-bottom:1px solid #f0ede8}
+.p-hist-date{font-size:12px;color:var(--text2);margin-bottom:5px}
+.p-hist-sets{display:flex;flex-wrap:wrap;gap:4px}
+.p-hist-chip{background:#f8f7f3;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px}
+.p-hist-row:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -289,15 +300,17 @@ textarea{min-height:56px;resize:vertical}
 <!-- ========== 進捗 ========== -->
 <div id="tab-progress" class="panel">
   <div class="card">
-    <div class="g2">
-      <div><label>種目</label><select id="p-ex" onchange="renderProgress()"></select></div>
-      <div><label>グラフ</label>
-        <select id="p-mode" onchange="renderProgress()">
-          <option value="maxw">最高重量</option>
-          <option value="vol">総ボリューム</option>
-          <option value="rm">推定1RM</option>
-        </select>
-      </div>
+    <div style="margin-bottom:10px"><label>種目</label><select id="p-ex" onchange="renderProgress()"></select></div>
+    <div class="p-mode-btns">
+      <button class="p-mode-btn active" onclick="setPMode('maxw',this)">最高重量</button>
+      <button class="p-mode-btn" onclick="setPMode('vol',this)">ボリューム</button>
+      <button class="p-mode-btn" onclick="setPMode('rm',this)">推定1RM</button>
+    </div>
+    <div class="p-period-btns">
+      <button class="p-period-btn active" onclick="setPPeriod('1m',this)">1ヶ月</button>
+      <button class="p-period-btn" onclick="setPPeriod('3m',this)">3ヶ月</button>
+      <button class="p-period-btn" onclick="setPPeriod('6m',this)">6ヶ月</button>
+      <button class="p-period-btn" onclick="setPPeriod('all',this)">全期間</button>
     </div>
   </div>
   <div class="card">
@@ -306,7 +319,11 @@ textarea{min-height:56px;resize:vertical}
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">推定1RM</div></div>
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">記録回数</div></div>
     </div>
-    <div class="chart-wrap"><canvas id="prog-chart"></canvas></div>
+    <div class="chart-wrap" style="height:220px"><canvas id="prog-chart"></canvas></div>
+  </div>
+  <div class="card" id="p-history-card" style="display:none">
+    <div class="sec">直近の記録</div>
+    <div id="p-history"></div>
   </div>
 </div>
 
@@ -427,6 +444,7 @@ textarea{min-height:56px;resize:vertical}
 var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[]};
 var currentSets=[];
 var progChart=null,bodyChart=null;
+var pMode='maxw',pPeriod='1m';
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
@@ -1016,17 +1034,32 @@ function myBestRM(ex){
   });
   return Math.round(best);
 }
+function setPMode(m,btn){
+  pMode=m;
+  document.querySelectorAll('.p-mode-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderProgress();
+}
+function setPPeriod(p,btn){
+  pPeriod=p;
+  document.querySelectorAll('.p-period-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderProgress();
+}
 function renderProgress(){
   var ex=document.getElementById('p-ex').value;
-  var mode=document.getElementById('p-mode').value;
-  var items=DB.workouts.filter(function(w){return w.exercise===ex;}).sort(function(a,b){return a.date>b.date?1:-1;});
+  var mode=pMode;
+  var allItems=DB.workouts.filter(function(w){return w.exercise===ex;}).sort(function(a,b){return a.date>b.date?1:-1;});
   var pm=document.getElementById('p-metrics');
-  if(!items.length){
+  var ph=document.getElementById('p-history');
+  var phc=document.getElementById('p-history-card');
+  if(!allItems.length){
     pm.innerHTML='<div class="empty" style="grid-column:1/-1">この種目の記録がありません</div>';
+    phc.style.display='none';
     if(progChart){progChart.destroy();progChart=null;}return;
   }
   var maxW=0,bestRM=0;
-  items.forEach(function(w){
+  allItems.forEach(function(w){
     w.sets.forEach(function(s){
       var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
       if(ww>maxW)maxW=ww;
@@ -1036,7 +1069,13 @@ function renderProgress(){
   });
   pm.innerHTML='<div class="metric"><div class="metric-val">'+maxW+'kg</div><div class="metric-lbl">最高重量</div></div>'+
     '<div class="metric"><div class="metric-val">'+Math.round(bestRM)+'kg</div><div class="metric-lbl">推定1RM</div></div>'+
-    '<div class="metric"><div class="metric-val">'+items.length+'</div><div class="metric-lbl">記録回数</div></div>';
+    '<div class="metric"><div class="metric-val">'+allItems.length+'</div><div class="metric-lbl">記録回数</div></div>';
+  var cutoff='';
+  var now=new Date();
+  if(pPeriod==='1m'){var d1=new Date(now);d1.setMonth(d1.getMonth()-1);cutoff=d1.toISOString().slice(0,10);}
+  else if(pPeriod==='3m'){var d3=new Date(now);d3.setMonth(d3.getMonth()-3);cutoff=d3.toISOString().slice(0,10);}
+  else if(pPeriod==='6m'){var d6=new Date(now);d6.setMonth(d6.getMonth()-6);cutoff=d6.toISOString().slice(0,10);}
+  var items=cutoff?allItems.filter(function(w){return w.date>=cutoff;}):allItems;
   var labels=items.map(function(w){return w.date.slice(5);});
   var vals=items.map(function(w){
     if(mode==='maxw')return Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
@@ -1048,8 +1087,20 @@ function renderProgress(){
   var colors={maxw:'#E24B4A',vol:'#378ADD',rm:'#1D9E75'};
   var col=colors[mode]||'#E24B4A';
   var lbl=mode==='maxw'?'最高重量(kg)':mode==='vol'?'総ボリューム(kg)':'推定1RM(kg)';
-  progChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:lbl,data:vals,borderColor:col,backgroundColor:col+'22',tension:.3,pointRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{ticks:{font:{size:10}}}}}});
+  progChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:lbl,data:vals,borderColor:col,backgroundColor:col+'22',tension:.3,pointRadius:3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}}});
+  phc.style.display='';
+  ph.innerHTML='';
+  allItems.slice().reverse().slice(0,6).forEach(function(w){
+    var maxWt=Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
+    var vol=Math.round(w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0));
+    var row=document.createElement('div');
+    row.className='p-hist-row';
+    var chips=w.sets.map(function(s){return '<span class="p-hist-chip">'+s.w+'kg×'+s.r+'</span>';}).join('');
+    row.innerHTML='<div class="p-hist-date">'+w.date+' &nbsp;<span style="color:#1a1a1a;font-weight:500">最高 '+maxWt+'kg｜vol '+vol+'kg</span></div>'+
+      '<div class="p-hist-sets">'+chips+'</div>';
+    ph.appendChild(row);
+  });
 }
 
 // ===================== 体重タブ描画 =====================
