@@ -500,6 +500,14 @@ textarea{min-height:56px;resize:vertical}
 
 <!-- ========== 取込 ========== -->
 <div id="tab-import" class="panel">
+  <!-- FitNotes JSONインポート -->
+  <div class="card">
+    <div class="sec">🚀 FitNotes 全データインポート</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotes バックアップファイル（.fitnotes）から全データを一括インポート。日別コメント（workoutcomment）も含まれます。</p>
+    <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;font-weight:600" onclick="importFitNotesJSON()">FitNotes データを読み込む</button>
+    <div id="al-fitnotes" class="alert" style="margin-top:10px;display:none"></div>
+  </div>
+
   <div class="card">
     <div class="sec">FitNotes CSVインポート</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotesの「エクスポート」で出力したCSVを読み込みます。重複データは自動スキップされます。</p>
@@ -2376,6 +2384,52 @@ function parseCSVLine(line){
   }
   result.push(cur);
   return result;
+}
+
+// FitNotes JSON データをインポート
+function importFitNotesJSON(){
+  fetch('fitnotes_import.json')
+    .then(function(res){return res.json();})
+    .then(function(data){
+      if(!data.workouts){
+        alert('Invalid FitNotes data');
+        return;
+      }
+
+      // dailyNotes 形式を修正
+      var notesList={};
+      if(typeof data.dailyNotes==='object'){
+        Object.keys(data.dailyNotes).forEach(function(date){
+          notesList[date]={memo: data.dailyNotes[date]};
+        });
+      }
+
+      // DB をリセット
+      DB={
+        workouts: data.workouts || [],
+        bodyLogs: [],
+        user: {nick:'あなた',weight:'',goal:'筋肥大'},
+        rivals: [],
+        exCategories: data.exCategories || {},
+        recentExercises: [],
+        customExercises: [],
+        dailyNotes: notesList,
+        favorites: data.favorites || {}
+      };
+
+      save();
+      alert('FitNotes data imported!\\n'+
+        'Workouts: '+DB.workouts.length+'\\n'+
+        'Exercises: '+Object.keys(DB.exCategories).length+'\\n'+
+        'Favorites: '+Object.keys(DB.favorites).length+'\\n'+
+        'Daily notes: '+Object.keys(DB.dailyNotes).length);
+
+      location.reload();
+    })
+    .catch(function(err){
+      alert('Failed to import: '+err);
+      console.error(err);
+    });
 }
 
 function importFitNotes(csvText){
