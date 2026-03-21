@@ -154,7 +154,7 @@ textarea{min-height:56px;resize:vertical}
   <div class="card">
     <div id="al-save" class="alert alert-ok">保存しました！</div>
     <div class="g2">
-      <div><label>日付</label><input type="date" id="r-date" onchange="showPrevSession()"></div>
+      <div><label>日付</label><input type="date" id="r-date" onchange="showPrevSession();renderTodayLog()"></div>
       <div>
         <label>種目</label>
         <button class="ex-picker-btn" id="ex-picker-btn-display" onclick="openExPicker()">
@@ -183,6 +183,14 @@ textarea{min-height:56px;resize:vertical}
     </div>
   </div>
 
+  <!-- 今日のトレーニング一覧（入力カード直後） -->
+  <div class="card" id="today-log-card" style="display:none;padding:1rem 1rem 0.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent)">今日のトレーニング</div>
+      <span id="today-log-date" style="font-size:12px;color:var(--text2)"></span>
+    </div>
+    <div id="today-log-body"></div>
+  </div>
 
   <!-- レストタイマー（カード内） -->
   <div class="card">
@@ -531,6 +539,7 @@ function load(){
   loadDraft();
   refreshImportStats();
   updateTimerDisplay();
+  renderTodayLog();
 }
 function save(){localStorage.setItem('wt2',JSON.stringify(DB));}
 function pad(n){return String(n).padStart(2,'0');}
@@ -705,6 +714,87 @@ function discardDraft(){
 // ===================== カスタム種目追加（ピッカー内から呼ばれる） =====================
 function addCustomExercise(){} // showAddExercise()に統合済み
 
+// ===================== 今日のトレーニング一覧 =====================
+function renderTodayLog(){
+  var date=document.getElementById('r-date').value;
+  var card=document.getElementById('today-log-card');
+  var body=document.getElementById('today-log-body');
+  var dateEl=document.getElementById('today-log-date');
+
+  var todayWorkouts=DB.workouts.filter(function(w){return w.date===date;});
+
+  if(!todayWorkouts.length){card.style.display='none';return;}
+
+  card.style.display='block';
+  var todayStr=(function(){var t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());})();
+  dateEl.textContent=date===todayStr?'今日':date;
+
+  body.innerHTML='';
+
+  todayWorkouts.forEach(function(w){
+    // 種目ヘッダー
+    var exBlock=document.createElement('div');
+    exBlock.style.cssText='margin-bottom:12px';
+
+    var catRaw=DB.exCategories[w.exercise]||'';
+    var cat=catJa(catRaw);
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:2px solid var(--accent);margin-bottom:4px';
+    hdr.innerHTML=
+      '<div style="font-size:15px;font-weight:700">'+w.exercise+'</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+cat+' &nbsp;·&nbsp; 総量'+Math.round(vol)+'kg</div>';
+    exBlock.appendChild(hdr);
+
+    // 各セット行
+    w.sets.forEach(function(s,si){
+      var rm=(s.w&&s.r&&parseInt(s.r)>0)?Math.round(parseFloat(s.w)*(1+parseInt(s.r)/30)):0;
+      var isTopSet=rm&&rm===Math.max.apply(null,w.sets.map(function(ss){return ss.w&&ss.r&&parseInt(ss.r)>0?Math.round(parseFloat(ss.w)*(1+parseInt(ss.r)/30)):0;}));
+
+      var row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:28px 1fr 1fr 60px;align-items:center;padding:7px 4px;border-bottom:1px solid #f0ede8;font-size:14px';
+
+      var numEl=document.createElement('div');
+      numEl.style.cssText='width:22px;height:22px;border-radius:50%;background:'+(isTopSet?'var(--accent)':'#f0ede8')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+(isTopSet?'#fff':'var(--text2)');
+      numEl.textContent=si+1;
+
+      var wEl=document.createElement('div');
+      wEl.style.cssText='font-weight:600;text-align:center';
+      wEl.innerHTML=(s.w||'－')+'<span style="font-size:11px;color:var(--text2);font-weight:400"> kgs</span>';
+
+      var rEl=document.createElement('div');
+      rEl.style.cssText='font-weight:600;text-align:center';
+      rEl.innerHTML=(s.r||'－')+'<span style="font-size:11px;color:var(--text2);font-weight:400"> reps</span>';
+
+      var rmEl=document.createElement('div');
+      rmEl.style.cssText='font-size:11px;color:'+(isTopSet?'var(--accent)':'var(--text2)')+';text-align:right';
+      rmEl.textContent=rm?'1RM '+rm+'kg':'';
+
+      row.appendChild(numEl);row.appendChild(wEl);row.appendChild(rEl);row.appendChild(rmEl);
+      exBlock.appendChild(row);
+    });
+
+    // メモ
+    if(w.memo&&w.memo.trim()){
+      var memoEl=document.createElement('div');
+      memoEl.style.cssText='font-size:12px;color:var(--text2);padding:5px 4px;font-style:italic';
+      memoEl.textContent='📝 '+w.memo;
+      exBlock.appendChild(memoEl);
+    }
+
+    body.appendChild(exBlock);
+  });
+
+  // フッター合計
+  var totalVol=todayWorkouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var totalSets=todayWorkouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var foot=document.createElement('div');
+  foot.style.cssText='display:flex;justify-content:space-between;padding:8px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+  foot.innerHTML='<span>'+todayWorkouts.length+'種目 / '+totalSets+'セット</span><span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>';
+  body.appendChild(foot);
+}
+
 // ===================== 前回の記録表示 =====================
 function showPrevSession(){
   var ex=document.getElementById('r-ex').value;
@@ -788,6 +878,7 @@ function saveW(){
   document.getElementById('r-memo').value='';
   resetTimer();
   showPrevSession();
+  renderTodayLog();
   showSummary(ex,date,sets,isPR,newBestRM,prevBestRM);
 }
 
