@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="筋トレ">
 <title>筋トレトラッカー</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -93,15 +95,16 @@ textarea{min-height:56px;resize:vertical}
 .today-prog-bar{display:none;background:#f0faf5;border:1px solid #b3e4cc;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px;align-items:center;gap:6px}
 .cal-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text2)}
 
-/* 部位色分け */
+/* 部位色分け（英語ベース） */
 .cat-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:6px;color:#fff}
-.cat-badge.chest{background:#E8957C}
-.cat-badge.back{background:#7FA3D1}
-.cat-badge.legs{background:#90D695}
-.cat-badge.shoulders{background:#E8B856}
-.cat-badge.arms{background:#C985E0}
-.cat-badge.core{background:#95C7D4}
-.cat-badge.cardio{background:#E88B7D}
+.cat-badge.chest,.cat-badge.Chest{background:#E8957C}
+.cat-badge.back,.cat-badge.Back{background:#7FA3D1}
+.cat-badge.leg,.cat-badge.Leg,.cat-badge.legs{background:#90D695}
+.cat-badge.shoulder,.cat-badge.Shoulder{background:#E8B856}
+.cat-badge.arm,.cat-badge.Arm{background:#C985E0}
+.cat-badge.core,.cat-badge.Core{background:#95C7D4}
+.cat-badge.cardio,.cat-badge.Cardio{background:#E88B7D}
+.cat-badge.other,.cat-badge.Other{background:#999999}
 
 /* お気に入りマーク */
 .fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 4px;margin:0 4px 0 0;line-height:1;opacity:0.4;transition:opacity .2s}
@@ -225,6 +228,8 @@ textarea{min-height:56px;resize:vertical}
     </div>
     <div id="today-log-body"><div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div></div>
     <div id="al-save" class="alert alert-ok" style="margin-top:8px">保存しました！</div>
+    <!-- 一言サマリー -->
+    <div id="daily-summary" style="display:none;margin-top:8px;padding:12px;background:#f0f7ff;border-left:3px solid var(--accent2);border-radius:6px;font-size:13px;color:var(--text1);line-height:1.6"></div>
     <button id="add-ex-btn" onclick="toggleAddForm()" class="btn btn-primary" style="width:100%;margin-top:12px;padding:13px;font-size:15px;font-weight:600">＋ 種目を追加</button>
   </div>
 
@@ -432,6 +437,11 @@ textarea{min-height:56px;resize:vertical}
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">総レップ数</div></div>
       <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">記録回数</div></div>
     </div>
+    <!-- 3. 日別ボリューム推移 -->
+    <div id="daily-volume-wrap" style="display:none;margin-bottom:12px">
+      <div class="sec" style="margin-bottom:8px">日別ボリューム推移</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="daily-volume-chart"></canvas></div>
+    </div>
     <div class="chart-wrap" style="height:200px"><canvas id="prog-chart"></canvas></div>
     <div id="p-period-compare" style="margin-top:10px"></div>
   </div>
@@ -588,22 +598,67 @@ textarea{min-height:56px;resize:vertical}
 // ===================== データ =====================
 var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{}};
 var currentSets=[];
-var progChart=null,bodyChart=null,catChart=null;
+var progChart=null,bodyChart=null,catChart=null,dailyVolChart=null;
 var pNRM=5;
-var progressCategory='全部';  // 進捗タブで選択中の部位
+var progressCategory='All';  // 進捗タブで選択中の部位
 var histSelectedDate='';
 var graphPeriodMonths=0;  // グラフ期間フィルタ: 0=オール、N=N ヶ月前から今日まで
 var dailyNoteSaveTimer=null;  // メモ自動保存タイマー
+
+// ===== Google Drive 同期設定 =====
+const GOOGLE_CLIENT_ID='478810371543-237rkv46cpkrjcie6mvl3rrhk2e9s9tf.apps.googleusercontent.com';  // Google Cloud から取得したクライアント ID
+const SYNC_FILE_NAME='workout-sync.json';
+const SYNC_SCHEMA_VERSION=1;
+
+var googleAuthState={
+  isLoggedIn:false,
+  userEmail:'',
+  accessToken:'',
+  syncFileId:null,
+  lastSyncTime:0,
+  syncStatus:'idle'  // idle, syncing, success, error
+};
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
-// FitNotes カテゴリ → 日本語
-var CAT_JA={
-  'Chest':'胸','Back':'背中','Legs':'脚','Shoulders':'肩',
-  'Arms':'腕','Core':'体幹','Cardio':'有酸素','Olympic':'オリンピック',
-  'Full Body':'全身','Other':'その他',''  :'その他'
+// ===== カテゴリ統一（英語 ↔ 日本語） =====
+var CATEGORY_COLORS={
+  'Chest':'#E8957C','Back':'#7FA3D1','Leg':'#90D695',
+  'Shoulder':'#E8B856','Arm':'#C985E0','Core':'#95C7D4',
+  'Cardio':'#E88B7D','Other':'#999999'
 };
-function catJa(c){return CAT_JA[c]||(c?c:'その他');}
+
+var CAT_EN_TO_JA={
+  'Chest':'胸','Back':'背中','Leg':'脚','Shoulder':'肩',
+  'Arm':'腕','Core':'体幹','Cardio':'有酸素','Other':'その他'
+};
+
+var CAT_JA_TO_EN={
+  '胸':'Chest','背中':'Back','脚':'Leg','肩':'Shoulder',
+  '腕':'Arm','体幹':'Core','有酸素':'Cardio','その他':'Other'
+};
+
+// FitNotes 互換性: 古いカテゴリ名 → 新英語名
+var CAT_LEGACY_TO_EN={
+  'Chest':'Chest','Back':'Back','Legs':'Leg','Leg':'Leg',
+  'Shoulders':'Shoulder','Shoulder':'Shoulder',
+  'Arms':'Arm','Arm':'Arm',
+  'Core':'Core','Cardio':'Cardio',
+  'Olympic':'Other','Full Body':'Other','Other':'Other',''  :'Other'
+};
+
+function catEn(c){
+  // 英語に統一
+  if(CAT_LEGACY_TO_EN[c])return CAT_LEGACY_TO_EN[c];
+  if(CAT_JA_TO_EN[c])return CAT_JA_TO_EN[c];
+  return 'Other';
+}
+
+function catJa(c){
+  // 日本語に変換
+  var en=catEn(c);
+  return CAT_EN_TO_JA[en]||'その他';
+}
 
 // カテゴリ別グループ配列を返す [{cat:'胸', exercises:[...]}, ...]
 function getExerciseGroups(filterQuery){
@@ -832,12 +887,12 @@ function renderExPicker(query,cat){
       labels.className='ex-item-labels';
 
       var rawCat=DB.exCategories[ex]||'';
+      var cat_en=catEn(rawCat);
       var cat_ja=catJa(rawCat);
-      var catClass=rawCat.toLowerCase().replace(/\\s+/g,'');
 
-      if(cat_ja&&cat_ja!=='その他'){
+      if(cat_en&&cat_en!=='Other'){
         var badge=document.createElement('span');
-        badge.className='cat-badge '+catClass;
+        badge.className='cat-badge '+cat_en;
         badge.textContent=cat_ja;
         labels.appendChild(badge);
       }
@@ -1129,7 +1184,14 @@ function renderMonthCalendar(){
     if(dateStr===histSelectedDate)cls+=' selected';
 
     cell.className=cls;
-    cell.textContent=dayNum;
+
+    // 4. カレンダーメモ点：メモがあれば小さなアイコンを表示
+    var cellContent=dayNum;
+    if(DB.dailyNotes[dateStr]&&DB.dailyNotes[dateStr].memo){
+      cellContent+=' <span style="position:absolute;bottom:0;right:2px;font-size:9px;opacity:0.7;line-height:1">📝</span>';
+    }
+
+    cell.innerHTML=cellContent;
 
     // 日曜=赤、土曜=青（テキスト色は has-workout なければ）
     if(!workoutDays[dateStr]&&dateStr!==todayStr){
@@ -1219,10 +1281,11 @@ function renderWorkoutsInto(workouts,bodyEl){
 
     // 部位ラベル
     var rawCat=DB.exCategories[w.exercise]||'';
+    var cat_en=catEn(rawCat);
     var cat_ja=catJa(rawCat);
-    if(cat_ja&&cat_ja!=='その他'){
+    if(cat_en&&cat_en!=='Other'){
       var badge=document.createElement('span');
-      badge.className='cat-badge '+(rawCat.toLowerCase().replace(/\\s+/g,''));
+      badge.className='cat-badge '+cat_en;
       badge.textContent=cat_ja;
       badge.style.cssText='padding:2px 8px;font-size:10px;margin:0';
       exNameLeft.appendChild(badge);
@@ -1330,6 +1393,19 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
     exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
     exName.textContent=w.exercise;
     content.appendChild(exName);
+
+    // 2. 種目別次回目標を表示
+    var nextTarget=suggestNextTarget(w.exercise);
+    var lastSet=getLastWorkoutForExercise(w.exercise);
+    if(lastSet&&nextTarget){
+      var targetDiv=document.createElement('div');
+      targetDiv.style.cssText='padding:6px 8px;background:#f0f7ff;border-left:3px solid var(--accent2);margin-bottom:8px;font-size:12px;border-radius:4px';
+      var targetHtml='前回 <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'</b> → ';
+      var targetPrimary=nextTarget[0];
+      targetHtml+='<b style="color:var(--accent2)">'+targetPrimary.w.toFixed(1)+'kg × '+targetPrimary.r+'</b> ('+targetPrimary.label+')';
+      targetDiv.innerHTML=targetHtml;
+      content.appendChild(targetDiv);
+    }
 
     // セット情報
     var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
@@ -1455,25 +1531,37 @@ function loadDailyNote(date){
   var input=document.getElementById('daily-note-input');
   var memo=DB.dailyNotes[date]?DB.dailyNotes[date].memo:'';
 
-  if(!memo){
-    // メモがない場合は非表示
-    section.style.display='none';
-  } else {
-    section.style.display='block';
-    input.value=memo;
-  }
+  // 常時表示（ユーザー要望）
+  section.style.display='block';
+  input.value=memo;
+
+  // 自動拡大を設定
+  setupAutoExpandTextarea('daily-note-input');
 
   // 入力イベント：オン
   input.oninput=function(){
     if(!this.value.trim()){
-      section.style.display='none';
       delete DB.dailyNotes[date];
       save();
     } else {
-      section.style.display='block';
       debouncedSaveDailyNote(date);
     }
   };
+}
+
+// テキストエリアの自動拡大
+function autoExpandTextarea(el){
+  el.style.height='auto';
+  el.style.height=Math.max(70, el.scrollHeight)+'px';
+}
+
+function setupAutoExpandTextarea(elId){
+  var el=document.getElementById(elId);
+  if(el){
+    autoExpandTextarea(el);
+    el.addEventListener('input',function(){autoExpandTextarea(this);});
+    el.addEventListener('change',function(){autoExpandTextarea(this);});
+  }
 }
 
 function debouncedSaveDailyNote(date){
@@ -1481,6 +1569,7 @@ function debouncedSaveDailyNote(date){
   dailyNoteSaveTimer=setTimeout(function(){
     var input=document.getElementById('daily-note-input');
     saveDailyNote(date,input.value);
+    autoExpandTextarea(input);
   },1000);
 }
 
@@ -1600,6 +1689,54 @@ function renderSets(){
 }
 
 function US(i,f,v){currentSets[i][f]=v;renderSets();saveDraft();}
+// ===== 一言サマリー生成（保存後） =====
+function generateDailySummary(){
+  var date=document.getElementById('r-date').value;
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var summaryEl=document.getElementById('daily-summary');
+
+  if(!workouts.length){
+    summaryEl.style.display='none';
+    return;
+  }
+
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+
+  // カテゴリ別集計
+  var catStats={};
+  workouts.forEach(function(w){
+    var cat_en=catEn(DB.exCategories[w.exercise]||'');
+    if(!catStats[cat_en])catStats[cat_en]={count:0,vol:0};
+    catStats[cat_en].count++;
+    catStats[cat_en].vol+=w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+  });
+
+  // メイン部位を特定
+  var mainCat=Object.keys(catStats).sort(function(a,b){return catStats[b].count-catStats[a].count;})[0];
+  var mainCatJa=CAT_EN_TO_JA[mainCat]||mainCat;
+
+  // サマリー文を生成
+  var summary='💪 '+mainCatJa+'メインで'+workouts.length+'種目、計'+totalSets+'セット';
+
+  // ボーナス情報
+  if(totalVol>0)summary+=', 総量 '+Math.round(totalVol)+'kg';
+
+  // 日別メモがあれば追加
+  if(DB.dailyNotes[date]&&DB.dailyNotes[date].memo){
+    var memo=DB.dailyNotes[date].memo.split('\\n')[0].slice(0,30);
+    if(memo)summary+=' | 📝 '+memo;
+  }
+
+  summaryEl.textContent=summary;
+  summaryEl.style.display='block';
+
+  // 5秒後に自動消去
+  setTimeout(function(){
+    summaryEl.style.display='none';
+  },5000);
+}
+
 function saveW(){
   var sets=currentSets.filter(function(s){return s.w!==''&&s.r!=='';});
   if(!sets.length)return;
@@ -1625,6 +1762,11 @@ function saveW(){
   save();
   localStorage.removeItem('wt2_draft');
   document.getElementById('draft-banner').style.display='none';
+
+  // 一言サマリーを生成して表示
+  generateDailySummary();
+  renderTodayLog();  // ログ一覧を再描画
+
   currentSets=[];addSet();addSet();addSet();
   document.getElementById('r-memo').value='';
   resetTimer();
@@ -1862,11 +2004,98 @@ function movingAvg(arr,n){
   });
 }
 
-// ===================== 進捗タブ：部位起点 =====================
+// ===================== 新機能：部位偏り、次回目標、日別ボリューム、メモ点 =====================
+
+// 1. 部位別の最後の実施日を取得
+function getLastWorkoutDateForCategory(catEng){
+  var last='記録なし';
+  var ws=DB.workouts.filter(function(w){
+    var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+    return ex_cat_en===catEng;
+  }).sort(function(a,b){return a.date<b.date?1:-1;});
+  if(ws.length>0)last=ws[0].date;
+  return last;
+}
+
+// 2. 本日から何日空いているか計算
+function getDaysSinceCategory(catEng){
+  var lastStr=getLastWorkoutDateForCategory(catEng);
+  if(lastStr==='記録なし')return {daysAgo:null,hasData:false};
+  var lastDate=new Date(lastStr+'T00:00:00');
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var diff=Math.floor((today-lastDate)/(1000*60*60*24));
+  return {daysAgo:diff,hasData:true};
+}
+
+// 3. 色分けスタイルを返す（赤：7日以上、黄：3-6日、緑：0-2日）
+function getCategoryDelayColor(daysAgo){
+  if(daysAgo===null||daysAgo===undefined)return {bg:'#FFF3E0',text:'#E67E22'};
+  if(daysAgo>=7)return {bg:'#FCEBEB',text:'#A32D2D'};
+  if(daysAgo>=3)return {bg:'#FEF8E7',text:'#D68910'};
+  return {bg:'#EAF3DE',text:'#3B6D11'};
+}
+
+// 4. 種目の前回最大記録を取得
+function getLastWorkoutForExercise(ex){
+  var ws=DB.workouts.filter(function(w){return w.exercise===ex;})
+    .sort(function(a,b){return a.date<b.date?1:-1;});
+  if(!ws.length)return null;
+  var w=ws[0];
+  if(!w.sets.length)return null;
+  var maxSet={w:0,r:0};
+  w.sets.forEach(function(s){
+    var ww=parseFloat(s.w)||0;
+    var rr=parseInt(s.r)||0;
+    if(ww>maxSet.w||ww===maxSet.w&&rr>maxSet.r){maxSet.w=ww;maxSet.r=rr;}
+  });
+  return maxSet.w?maxSet:null;
+}
+
+// 5. 次回目標を提案（+2.5kg または +1rep）
+function suggestNextTarget(ex){
+  var last=getLastWorkoutForExercise(ex);
+  if(!last)return null;
+  var isCardio=!last.w;
+  if(isCardio)return null;
+  var w=last.w,r=last.r;
+  var targets=[];
+  // +2.5kg, 同じrep数
+  targets.push({w:w+2.5,r:r,label:'+2.5kg'});
+  // 同じweight, +1rep
+  targets.push({w:w,r:r+1,label:'+1rep'});
+  return targets;
+}
+
+// 6. 日別ボリューム推移を計算（選択部位フィルタ適用）
+function getDailyVolumeData(catEng,months){
+  var cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-months);
+  var cutoffStr=cutoff.getFullYear()+'-'+pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+
+  var dayVol={};
+  DB.workouts.forEach(function(w){
+    if(w.date<cutoffStr)return;
+    if(catEng&&catEng!=='All'){
+      var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+      if(ex_cat_en!==catEng)return;
+    }
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+    dayVol[w.date]=(dayVol[w.date]||0)+vol;
+  });
+
+  var dates=Object.keys(dayVol).sort();
+  var vals=dates.map(function(d){return dayVol[d];});
+  var maVals=movingAvg(vals,3);
+
+  return {dates:dates,values:vals,maValues:maVals};
+}
+
+// ===================== 進捗タブ：部位起点（英語統一） =====================
 function getCategories(){
-  var cats=new Set(['全部']);
-  Object.values(CAT_JA||{}).forEach(function(c){if(c)cats.add(c);});
-  return Array.from(cats).sort();
+  // 英語の部位のみを返す
+  var cats=new Set(['All']);
+  Object.keys(CATEGORY_COLORS||{}).forEach(function(c){if(c)cats.add(c);});
+  return ['All'].concat(Array.from(cats).filter(function(c){return c!=='All';}).sort());
 }
 
 function renderProgressCategoryButtons(){
@@ -1876,7 +2105,9 @@ function renderProgressCategoryButtons(){
   cats.forEach(function(cat){
     var btn=document.createElement('button');
     btn.className='btn btn-sm'+(progressCategory===cat?'btn-primary':'');
-    btn.textContent=cat;
+    // 英語 → 日本語表示
+    var label=CAT_EN_TO_JA[cat]||cat;
+    btn.textContent=label;
     btn.onclick=function(){setProgressCategory(cat);};
     buttonEl.appendChild(btn);
   });
@@ -1889,12 +2120,13 @@ function setProgressCategory(cat){
   var groups=getExerciseGroups();
   var filtered=groups;
 
-  if(cat!=='全部'){
+  if(cat!=='All'){
     filtered=groups.map(function(g){
       return{
         cat:g.cat,
         exercises:g.exercises.filter(function(e){
-          return catJa(DB.exCategories[e]||'')===(cat||'その他');
+          var ex_cat_en=catEn(DB.exCategories[e]||'');
+          return ex_cat_en===cat;
         })
       };
     }).filter(function(g){return g.exercises.length;});
@@ -1923,14 +2155,15 @@ function renderProgressCategoryStats(cat){
   var el=document.getElementById('p-cat-stats');
   var content=document.getElementById('p-cat-stats-content');
 
-  if(cat==='全部'){
+  if(cat==='All'){
     el.style.display='none';
     return;
   }
 
   el.style.display='block';
   var workouts=DB.workouts.filter(function(w){
-    return catJa(DB.exCategories[w.exercise]||'')===(cat||'その他');
+    var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+    return ex_cat_en===cat;
   });
 
   var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
@@ -1938,12 +2171,25 @@ function renderProgressCategoryStats(cat){
   var lastDate=workouts.length>0?workouts[workouts.length-1].date:'記録なし';
   var uniqueEx=new Set(workouts.map(function(w){return w.exercise;})).size;
 
-  content.innerHTML='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+
+  var html='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+
     '<div class="metric"><div class="metric-val">'+totalSets+'</div><div class="metric-lbl">セット</div></div>'+
     '<div class="metric"><div class="metric-val">'+Math.round(totalVol)+'</div><div class="metric-lbl">kg</div></div>'+
     '<div class="metric"><div class="metric-val">'+uniqueEx+'</div><div class="metric-lbl">種目</div></div>'+
     '<div class="metric"><div class="metric-val">'+lastDate+'</div><div class="metric-lbl">最終実施</div></div>'+
     '</div>';
+
+  // 1. 部位偏り警告を表示（「All」でなく、特定部位選択時）
+  if(cat!=='All'){
+    var days=getDaysSinceCategory(cat);
+    if(days.hasData){
+      var color=getCategoryDelayColor(days.daysAgo);
+      var label=days.daysAgo===0?'今日':days.daysAgo+'日空き';
+      html+='<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:'+color.bg+';color:'+color.text+';font-size:13px;font-weight:500">'+
+        '⚠️ '+label+'</div>';
+    }
+  }
+
+  content.innerHTML=html;
 }
 
 function onProgressModeChange(){
@@ -1968,9 +2214,10 @@ function renderProgress(){
   // 部位フィルタを適用（progressCategory が選択されている場合）
   var allItems=getWorkoutsInPeriod(ex,graphPeriodMonths);
   var items=allItems;
-  if(progressCategory&&progressCategory!=='全部'){
+  if(progressCategory&&progressCategory!=='All'){
     items=allItems.filter(function(w){
-      return catJa(DB.exCategories[w.exercise]||'')===(progressCategory||'その他');
+      var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+      return ex_cat_en===progressCategory;
     });
   }
 
@@ -2043,6 +2290,40 @@ function renderProgress(){
       scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}
     }
   });
+
+  // 3. 日別ボリューム推移グラフ（部位選択時のみ表示、volモード）
+  if(progressCategory&&progressCategory!=='All'&&mode==='vol'){
+    var volData=getDailyVolumeData(progressCategory,graphPeriodMonths);
+    if(volData.dates.length>0){
+      var volCtx=document.getElementById('daily-volume-chart').getContext('2d');
+      if(dailyVolChart)dailyVolChart.destroy();
+      document.getElementById('daily-volume-wrap').style.display='block';
+
+      dailyVolChart=new Chart(volCtx,{
+        type:'line',
+        data:{
+          labels:volData.dates,
+          datasets:[
+            {label:'日別ボリューム(kg)',data:volData.values,borderColor:'#378ADD',backgroundColor:'#378ADD22',tension:.3,pointRadius:3,pointHoverRadius:5,order:1},
+            {label:'3日移動平均',data:volData.maValues,borderColor:'#378ADD99',borderDash:[5,3],borderWidth:1.5,pointRadius:0,tension:.4,fill:false,order:0}
+          ]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          interaction:{mode:'index',intersect:false},
+          plugins:{
+            legend:{labels:{font:{size:11},boxWidth:12}},
+            tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.raw!==null?Math.round(ctx.raw):'データなし')+'kg';}}}
+          },
+          scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}
+        }
+      });
+    } else {
+      document.getElementById('daily-volume-wrap').style.display='none';
+    }
+  } else {
+    document.getElementById('daily-volume-wrap').style.display='none';
+  }
 
   // 前月比
   renderPeriodCompare(items,mode);
