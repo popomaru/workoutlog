@@ -2856,39 +2856,130 @@ if('serviceWorker' in navigator) {
 
 // 1. Google ログイン初期化
 function initGoogleAuth(){
-  // Google Sign-In ボタンをレンダリング
-  if(window.google && google.accounts && google.accounts.id){
+  var container = document.getElementById('google-auth-container');
+  if(!container) return;
+
+  console.log('Initializing Google OAuth');
+
+  // 両方のライブラリを読み込む
+  // 1. Google Identity Services for UI (ID token)
+  // 2. gapi.auth2 for Drive API access (access token)
+
+  try {
+    // Google Identity Services 初期化
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      callback: onGoogleSuccess
+      callback: handleGoogleSignIn
     });
 
-    google.accounts.id.renderButton(
-      document.getElementById('google-auth-container'),
-      { theme: 'outline', size: 'large', text: 'signin_with' }
-    );
+    // ボタンをレンダリング
+    google.accounts.id.renderButton(container, {
+      theme: 'outline',
+      size: 'large',
+      text: 'signin'
+    });
+
+    // コンテナの幅を全体に広げる
+    var buttonDiv = container.querySelector('[role="button"]');
+    if(buttonDiv) {
+      buttonDiv.style.width = '100%';
+      buttonDiv.parentElement.style.width = '100%';
+    }
+
+    console.log('Google Identity Services button rendered');
+
+  } catch(e){
+    console.error('Error initializing Google Identity Services:', e);
   }
 
-  // 既に保存されているトークンを確認
-  checkGoogleAuthState();
+  // Drive API の読み込み
+  gapi.load('client:auth2', function(){
+    gapi.client.init({
+      clientId: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.appdata'
+    }).then(function(){
+      console.log('gapi.auth2 and Drive API initialized');
+
+      // ユーザーが既にログインしているか確認
+      var auth2 = gapi.auth2.getAuthInstance();
+      if(auth2 && auth2.isSignedIn.get()){
+        console.log('Already signed in');
+        googleAuthState.isLoggedIn = true;
+        updateGoogleAuthUI();
+        setTimeout(() => loadFromDrive(), 500);
+      }
+    }).catch(function(err){
+      // gapi.client.init() will fail if already initialized, which is OK
+      console.log('gapi.auth2 init note:', err.error || 'init error');
+    });
+  });
 }
 
-// 2. Google ログイン成功時
-function onGoogleSuccess(response){
-  try{
-    // JWT トークンをデコード
-    var parts = response.credential.split('.');
-    var payload = JSON.parse(atob(parts[1]));
+// Google Identity Services コールバック
+function handleGoogleSignIn(response){
+  console.log('Google Sign-In callback received');
 
-    googleAuthState.userEmail = payload.email;
-    googleAuthState.accessToken = response.credential;
+  if(response && response.credential){
+    // JWT をデコードしてメール を取得
+    try {
+      var base64Url = response.credential.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      var payload = JSON.parse(jsonPayload);
+
+      googleAuthState.userEmail = payload.email;
+      googleAuthState.isLoggedIn = true;
+      googleAuthState.idToken = response.credential;
+
+      console.log('Logged in as:', payload.email);
+
+      // gapi.auth2 でも Drive API スコープをリクエスト
+      try {
+        var auth2 = gapi.auth2.getAuthInstance();
+        if(auth2){
+          auth2.signIn().then(function(){
+            console.log('gapi.auth2 also signed in');
+            updateGoogleAuthUI();
+            setTimeout(() => loadFromDrive(), 500);
+          }).catch(function(err){
+            console.log('gapi.auth2 sign-in note:', err.error || 'sign-in error');
+            // ID token で一度ログインしているので、Drive 読み込みを試みる
+            updateGoogleAuthUI();
+            setTimeout(() => loadFromDrive(), 500);
+          });
+        } else {
+          console.log('gapi.auth2 not yet ready');
+          updateGoogleAuthUI();
+          setTimeout(() => loadFromDrive(), 500);
+        }
+      } catch(e){
+        console.log('Error with gapi.auth2:', e);
+        updateGoogleAuthUI();
+        setTimeout(() => loadFromDrive(), 500);
+      }
+    } catch(e){
+      console.error('Error decoding JWT:', e);
+    }
+  }
+}
+
+// 2. Google ログイン成功時（古いAPI用、互換性のため保持）
+function onGoogleSuccess(googleUser){
+  try{
+    var profile = googleUser.getBasicProfile();
+    googleAuthState.userEmail = profile.getEmail();
     googleAuthState.isLoggedIn = true;
+
+    // アクセストークンを取得
+    var authResponse = googleUser.getAuthResponse(true);
+    googleAuthState.accessToken = authResponse.id_token;
 
     // ローカルストレージに保存
     localStorage.setItem('google_auth', JSON.stringify({
-      email: payload.email,
-      token: response.credential,
-      expiry: payload.exp
+      email: profile.getEmail(),
+      expiry: authResponse.expires_in
     }));
 
     updateGoogleAuthUI();
@@ -2899,6 +2990,11 @@ function onGoogleSuccess(response){
     console.error('Login error:', err);
     alert('ログイン処理に失敗しました。ページを再度読み込んでください。');
   }
+}
+
+// Google ログイン失敗時
+function onGoogleFailure(error){
+  console.error('Google Sign-In failed:', error);
 }
 
 // 3. 保存されたトークンを確認
@@ -2919,6 +3015,15 @@ function checkGoogleAuthState(){
 
 // 4. ログアウト
 function signOutGoogle(){
+  try{
+    var auth2 = gapi.auth2.getAuthInstance();
+    if(auth2){
+      auth2.signOut();
+    }
+  } catch(e){
+    console.log('Error signing out:', e);
+  }
+
   googleAuthState.isLoggedIn = false;
   googleAuthState.accessToken = '';
   googleAuthState.userEmail = '';
@@ -2950,7 +3055,7 @@ function updateGoogleAuthUI(){
   updateSyncStatus();
 }
 
-// 6. Drive に保存
+// 6. Drive に保存（gapi.client 使用）
 function saveToDrive(){
   if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
 
@@ -2958,105 +3063,99 @@ function saveToDrive(){
   updateSyncStatus();
 
   var syncData = getSyncData();
-  var token = googleAuthState.accessToken;
 
   // appDataFolder 内のファイルを検索
-  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id,modifiedTime)', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.files && data.files.length > 0){
+  gapi.client.drive.files.list({
+    spaces: 'appData',
+    fields: 'files(id)',
+    q: 'name="' + SYNC_FILE_NAME + '"',
+    pageSize: 1
+  }).then(function(response){
+    var files = response.result.files;
+    if(files && files.length > 0){
       // 既存ファイル更新
-      var fileId = data.files[0].id;
-      return updateDriveFile(fileId, syncData, token);
+      return updateDriveFile(files[0].id, syncData);
     } else {
       // 新規作成
-      return createDriveFile(syncData, token);
+      return createDriveFile(syncData);
     }
-  })
-  .then(() => {
+  }).then(function(){
     googleAuthState.syncStatus = 'success';
     googleAuthState.lastSyncTime = new Date().toISOString();
     console.log('Drive sync success');
-  })
-  .catch(err => {
+    updateSyncStatus();
+  }).catch(function(err){
     console.error('Drive sync error:', err);
     googleAuthState.syncStatus = 'error';
-  })
-  .finally(() => updateSyncStatus());
+    updateSyncStatus();
+  });
 }
 
-// 7. Drive から読み込み
+// 7. Drive から読み込み（gapi.client 使用）
 function loadFromDrive(){
   if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
 
   googleAuthState.syncStatus = 'syncing';
   updateSyncStatus();
 
-  var token = googleAuthState.accessToken;
-
-  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id)', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.files && data.files.length > 0){
-      var fileId = data.files[0].id;
-      return getDriveFileContent(fileId, token);
+  gapi.client.drive.files.list({
+    spaces: 'appData',
+    fields: 'files(id)',
+    q: 'name="' + SYNC_FILE_NAME + '"',
+    pageSize: 1
+  }).then(function(response){
+    var files = response.result.files;
+    if(files && files.length > 0){
+      return getDriveFileContent(files[0].id);
     }
     return null;
-  })
-  .then(cloudData => {
+  }).then(function(cloudData){
     if(cloudData){
       mergeCloudData(cloudData);
       googleAuthState.syncStatus = 'success';
       console.log('Drive load success');
-      renderTodayLog();
+      if(document.getElementById('today-log-body')){
+        renderTodayLog();
+      }
     }
-  })
-  .catch(err => {
+    updateSyncStatus();
+  }).catch(function(err){
     console.error('Drive load error:', err);
     googleAuthState.syncStatus = 'error';
-  })
-  .finally(() => updateSyncStatus());
+    updateSyncStatus();
+  });
 }
 
-// 8. Drive ファイル新規作成
-function createDriveFile(data, token){
+// 8. Drive ファイル新規作成（gapi.client 使用）
+function createDriveFile(data){
   var metadata = {
     name: SYNC_FILE_NAME,
     parents: ['appDataFolder']
   };
 
-  var body = new FormData();
-  body.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-  body.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}));
-
-  return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token },
-    body: body
-  }).then(r => r.json());
+  return gapi.client.drive.files.create({
+    resource: metadata,
+    media: { body: JSON.stringify(data), mimeType: 'application/json' },
+    fields: 'id'
+  });
 }
 
-// 9. Drive ファイル更新
-function updateDriveFile(fileId, data, token){
-  return fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
-    method: 'PATCH',
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  }).then(r => r.json());
+// 9. Drive ファイル更新（gapi.client 使用）
+function updateDriveFile(fileId, data){
+  return gapi.client.drive.files.update({
+    fileId: fileId,
+    media: { body: JSON.stringify(data), mimeType: 'application/json' }
+  });
 }
 
-// 10. Drive ファイルコンテンツ取得
-function getDriveFileContent(fileId, token){
-  return fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  }).then(r => r.json());
+// 10. Drive ファイルコンテンツ取得（gapi.client 使用）
+function getDriveFileContent(fileId){
+  return gapi.client.drive.files.get({
+    fileId: fileId,
+    alt: 'media'
+  }).then(function(response){
+    return response.result;
+  });
 }
 
 // 11. 同期対象データを集約
@@ -3117,7 +3216,7 @@ function manualSync(){
   saveToDrive();
 }
 
-// 15. Drive から復元
+// 15. Drive から復元（gapi.client 使用）
 function restoreFromDrive(){
   if(!googleAuthState.isLoggedIn){
     alert('先にログインしてください');
@@ -3137,24 +3236,22 @@ function restoreFromDrive(){
   googleAuthState.syncStatus = 'syncing';
   updateSyncStatus();
 
-  var token = googleAuthState.accessToken;
-
-  // Drive からファイルを取得
-  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id)', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(!data.files || data.files.length === 0){
+  // Drive からファイルを検索
+  gapi.client.drive.files.list({
+    spaces: 'appData',
+    fields: 'files(id)',
+    q: 'name="' + SYNC_FILE_NAME + '"',
+    pageSize: 1
+  }).then(function(response){
+    var files = response.result.files;
+    if(!files || files.length === 0){
       alert('❌ Drive にバックアップがありません');
       googleAuthState.syncStatus = 'error';
-      return Promise.reject('No file in Drive');
+      throw new Error('No file in Drive');
     }
 
-    var fileId = data.files[0].id;
-    return getDriveFileContent(fileId, token);
-  })
-  .then(cloudData => {
+    return getDriveFileContent(files[0].id);
+  }).then(function(cloudData){
     if(!cloudData){
       throw new Error('Invalid data');
     }
@@ -3169,17 +3266,20 @@ function restoreFromDrive(){
 
     // UI を再描画
     renderTodayLog();
-    location.reload();  // ページ全体をリロード
 
     googleAuthState.syncStatus = 'success';
+    updateSyncStatus();
+
     alert('✅ Drive からデータを復元しました！');
-  })
-  .catch(err => {
+    setTimeout(function(){
+      location.reload();  // ページ全体をリロード
+    }, 1000);
+  }).catch(function(err){
     console.error('Restore error:', err);
     googleAuthState.syncStatus = 'error';
+    updateSyncStatus();
     alert('❌ 復元に失敗しました。もう一度お試しください。');
-  })
-  .finally(() => updateSyncStatus());
+  });
 }
 
 // ===================== 起動 =====================
