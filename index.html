@@ -561,6 +561,37 @@ textarea{min-height:56px;resize:vertical}
       <button class="btn btn-danger btn-sm" onclick="clearData()">削除</button>
     </div>
   </div>
+
+  <!-- Google Drive 同期セクション -->
+  <div class="card" style="background:#f0f7ff;border-left:3px solid var(--accent2)">
+    <div class="sec" style="color:var(--accent2)">☁️ Google Drive 同期</div>
+
+    <!-- ログイン状態表示 -->
+    <div id="google-status" style="font-size:13px;color:var(--text2);margin-bottom:12px;padding:10px;background:#fff;border-radius:6px;border:1px solid var(--border)">
+      未ログイン - Google ドライブにバックアップすると便利です
+    </div>
+
+    <!-- ログインボタンコンテナ -->
+    <div id="google-auth-container" style="margin-bottom:12px"></div>
+
+    <!-- ログアウトボタン（ログイン済み時のみ表示） -->
+    <button id="google-logout-btn" style="display:none;width:100%;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;color:#A32D2D;font-weight:500" onclick="signOutGoogle()">ログアウト</button>
+
+    <!-- 同期ステータス -->
+    <div id="sync-status" style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--border)">
+      手動同期ボタン...
+    </div>
+
+    <!-- 手動同期ボタン -->
+    <button id="manual-sync-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:var(--accent2);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500" onclick="manualSync()">今すぐ同期</button>
+
+    <!-- 説明文 -->
+    <div style="font-size:12px;color:var(--text2);margin-top:12px;padding:10px;background:#fff;border-radius:6px;line-height:1.6">
+      ✅ ログインすることで、Google Drive に自動バックアップされます<br>
+      ✅ 別の端末でも同じアカウントでログインして、データを復元できます<br>
+      ✅ ローカル保存は常に有効（オフラインでも記録できます）
+    </div>
+  </div>
 </div>
 
 </div><!-- /app -->
@@ -2818,10 +2849,285 @@ if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(){});
 }
 
+// ===================== Google Drive 同期関数 =====================
+
+// 1. Google ログイン初期化
+function initGoogleAuth(){
+  // Google Sign-In ボタンをレンダリング
+  if(window.google && google.accounts && google.accounts.id){
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: onGoogleSuccess
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById('google-auth-container'),
+      { theme: 'outline', size: 'large', text: 'signin_with' }
+    );
+  }
+
+  // 既に保存されているトークンを確認
+  checkGoogleAuthState();
+}
+
+// 2. Google ログイン成功時
+function onGoogleSuccess(response){
+  try{
+    // JWT トークンをデコード
+    var parts = response.credential.split('.');
+    var payload = JSON.parse(atob(parts[1]));
+
+    googleAuthState.userEmail = payload.email;
+    googleAuthState.accessToken = response.credential;
+    googleAuthState.isLoggedIn = true;
+
+    // ローカルストレージに保存
+    localStorage.setItem('google_auth', JSON.stringify({
+      email: payload.email,
+      token: response.credential,
+      expiry: payload.exp
+    }));
+
+    updateGoogleAuthUI();
+
+    // ログイン直後に Drive データを読み込み
+    setTimeout(() => loadFromDrive(), 500);
+  } catch(err){
+    console.error('Login error:', err);
+    alert('ログイン処理に失敗しました。ページを再度読み込んでください。');
+  }
+}
+
+// 3. 保存されたトークンを確認
+function checkGoogleAuthState(){
+  var saved = localStorage.getItem('google_auth');
+  if(saved){
+    try{
+      var data = JSON.parse(saved);
+      googleAuthState.userEmail = data.email;
+      googleAuthState.accessToken = data.token;
+      googleAuthState.isLoggedIn = true;
+      updateGoogleAuthUI();
+    } catch(e){
+      console.log('Saved auth data invalid');
+    }
+  }
+}
+
+// 4. ログアウト
+function signOutGoogle(){
+  googleAuthState.isLoggedIn = false;
+  googleAuthState.accessToken = '';
+  googleAuthState.userEmail = '';
+  localStorage.removeItem('google_auth');
+  updateGoogleAuthUI();
+}
+
+// 5. UI 更新
+function updateGoogleAuthUI(){
+  var statusEl = document.getElementById('google-status');
+  var authContainer = document.getElementById('google-auth-container');
+  var logoutBtn = document.getElementById('google-logout-btn');
+  var syncBtn = document.getElementById('manual-sync-btn');
+
+  if(googleAuthState.isLoggedIn){
+    statusEl.textContent = '✅ ログイン済み: ' + googleAuthState.userEmail;
+    authContainer.style.display = 'none';
+    logoutBtn.style.display = 'block';
+    syncBtn.style.display = 'block';
+  } else {
+    statusEl.textContent = '未ログイン - Google ドライブにバックアップすると便利です';
+    authContainer.style.display = 'block';
+    logoutBtn.style.display = 'none';
+    syncBtn.style.display = 'none';
+  }
+
+  updateSyncStatus();
+}
+
+// 6. Drive に保存
+function saveToDrive(){
+  if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
+
+  googleAuthState.syncStatus = 'syncing';
+  updateSyncStatus();
+
+  var syncData = getSyncData();
+  var token = googleAuthState.accessToken;
+
+  // appDataFolder 内のファイルを検索
+  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id,modifiedTime)', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.files && data.files.length > 0){
+      // 既存ファイル更新
+      var fileId = data.files[0].id;
+      return updateDriveFile(fileId, syncData, token);
+    } else {
+      // 新規作成
+      return createDriveFile(syncData, token);
+    }
+  })
+  .then(() => {
+    googleAuthState.syncStatus = 'success';
+    googleAuthState.lastSyncTime = new Date().toISOString();
+    console.log('Drive sync success');
+  })
+  .catch(err => {
+    console.error('Drive sync error:', err);
+    googleAuthState.syncStatus = 'error';
+  })
+  .finally(() => updateSyncStatus());
+}
+
+// 7. Drive から読み込み
+function loadFromDrive(){
+  if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
+
+  googleAuthState.syncStatus = 'syncing';
+  updateSyncStatus();
+
+  var token = googleAuthState.accessToken;
+
+  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id)', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.files && data.files.length > 0){
+      var fileId = data.files[0].id;
+      return getDriveFileContent(fileId, token);
+    }
+    return null;
+  })
+  .then(cloudData => {
+    if(cloudData){
+      mergeCloudData(cloudData);
+      googleAuthState.syncStatus = 'success';
+      console.log('Drive load success');
+      renderTodayLog();
+    }
+  })
+  .catch(err => {
+    console.error('Drive load error:', err);
+    googleAuthState.syncStatus = 'error';
+  })
+  .finally(() => updateSyncStatus());
+}
+
+// 8. Drive ファイル新規作成
+function createDriveFile(data, token){
+  var metadata = {
+    name: SYNC_FILE_NAME,
+    parents: ['appDataFolder']
+  };
+
+  var body = new FormData();
+  body.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+  body.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}));
+
+  return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token },
+    body: body
+  }).then(r => r.json());
+}
+
+// 9. Drive ファイル更新
+function updateDriveFile(fileId, data, token){
+  return fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+    method: 'PATCH',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  }).then(r => r.json());
+}
+
+// 10. Drive ファイルコンテンツ取得
+function getDriveFileContent(fileId, token){
+  return fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).then(r => r.json());
+}
+
+// 11. 同期対象データを集約
+function getSyncData(){
+  return {
+    schemaVersion: SYNC_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    workouts: DB.workouts,
+    dailyNotes: DB.dailyNotes,
+    favorites: DB.favorites,
+    routines: DB.routines || [],
+    settings: { theme: 'light', unit: 'kg' }
+  };
+}
+
+// 12. Cloud データとマージ（Last-Write-Wins）
+function mergeCloudData(cloudData){
+  if(!cloudData) return;
+
+  // 簡易版：Cloud データを優先
+  DB.workouts = cloudData.workouts || DB.workouts;
+  DB.dailyNotes = cloudData.dailyNotes || DB.dailyNotes;
+  DB.favorites = cloudData.favorites || DB.favorites;
+  save();
+}
+
+// 13. 同期ステータス更新
+function updateSyncStatus(){
+  var el = document.getElementById('sync-status');
+  var status = googleAuthState.syncStatus;
+
+  if(status === 'syncing'){
+    el.textContent = '🔄 同期中...';
+  } else if(status === 'success'){
+    var time = googleAuthState.lastSyncTime ? new Date(googleAuthState.lastSyncTime).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
+    el.textContent = '✓ 同期済み (' + time + ')';
+  } else if(status === 'error'){
+    el.textContent = '✗ 同期失敗';
+  } else {
+    el.textContent = '準備完了';
+  }
+
+  googleAuthState.syncStatus = 'idle';
+}
+
+// 14. 手動同期
+function manualSync(){
+  if(!googleAuthState.isLoggedIn){
+    alert('先にログインしてください');
+    return;
+  }
+
+  if(!navigator.onLine){
+    alert('インターネット接続がありません');
+    return;
+  }
+
+  saveToDrive();
+}
+
 // ===================== 起動 =====================
 load();
 addSet();addSet();addSet();
 renderBody();
+
+// Google 認証初期化
+setTimeout(() => initGoogleAuth(), 1000);
+
+// 保存時に自動 Drive 同期
+var originalSave = save;
+save = function(){
+  originalSave();
+  if(googleAuthState.isLoggedIn && navigator.onLine){
+    saveToDrive();
+  }
+};
 </script>
 
 <!-- FitNotes データ埋め込み -->
