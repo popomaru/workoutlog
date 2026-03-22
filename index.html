@@ -657,35 +657,32 @@ var prevSessionData=null;
 
 // ===== カテゴリ統一（英語 ↔ 日本語） =====
 var CATEGORY_COLORS={
-  'Chest':'#E8957C','Back':'#7FA3D1','Leg':'#90D695',
-  'Shoulder':'#E8B856','Arm':'#C985E0','Core':'#95C7D4',
-  'Cardio':'#E88B7D','Other':'#999999'
+  'Triceps':'#7FA5D1','Biceps':'#B8A5D1','Weightlifting':'#8B9E6D','Abs':'#D4A574'
 };
 
 var CAT_EN_TO_JA={
-  'Chest':'胸','Back':'背中','Leg':'脚','Shoulder':'肩',
-  'Arm':'腕','Core':'体幹','Cardio':'有酸素','Other':'その他'
+  'Triceps':'三頭筋','Biceps':'二頭筋','Weightlifting':'ウェイトリフティング','Abs':'腹筋'
 };
 
 var CAT_JA_TO_EN={
-  '胸':'Chest','背中':'Back','脚':'Leg','肩':'Shoulder',
-  '腕':'Arm','体幹':'Core','有酸素':'Cardio','その他':'Other'
+  '三頭筋':'Triceps','二頭筋':'Biceps','ウェイトリフティング':'Weightlifting','腹筋':'Abs'
 };
 
 // FitNotes 互換性: 古いカテゴリ名 → 新英語名
 var CAT_LEGACY_TO_EN={
-  'Chest':'Chest','Back':'Back','Legs':'Leg','Leg':'Leg',
-  'Shoulders':'Shoulder','Shoulder':'Shoulder',
-  'Arms':'Arm','Arm':'Arm',
-  'Core':'Core','Cardio':'Cardio',
-  'Olympic':'Other','Full Body':'Other','Other':'Other',''  :'Other'
+  'Chest':'Weightlifting','Back':'Weightlifting','Legs':'Weightlifting','Leg':'Weightlifting',
+  'Shoulders':'Weightlifting','Shoulder':'Weightlifting',
+  'Arms':'Biceps','Arm':'Biceps',
+  'Core':'Abs','Cardio':'Weightlifting',
+  'Triceps':'Triceps','Biceps':'Biceps','Weightlifting':'Weightlifting','Abs':'Abs',
+  'Olympic':'Weightlifting','Full Body':'Weightlifting','Other':'Weightlifting',''  :'Weightlifting'
 };
 
 function catEn(c){
   // 英語に統一
   if(CAT_LEGACY_TO_EN[c])return CAT_LEGACY_TO_EN[c];
   if(CAT_JA_TO_EN[c])return CAT_JA_TO_EN[c];
-  return 'Other';
+  return 'Weightlifting';
 }
 
 function catJa(c){
@@ -964,10 +961,10 @@ function showAddExercise(prefill){
   var name=prompt('種目名を入力してください:',prefill||'');
   if(!name||!name.trim())return;
   name=name.trim();
-  var catChoices=['胸(Chest)','背中(Back)','脚(Legs)','肩(Shoulders)','腕(Arms)','体幹(Core)','有酸素(Cardio)','その他'];
+  var catChoices=['三頭筋(Triceps)','二頭筋(Biceps)','ウェイトリフティング(Weightlifting)','腹筋(Abs)'];
   var catStr=prompt('部位を番号で選んでください:\n'+catChoices.map(function(c,i){return (i+1)+'. '+c;}).join('\n'),'');
-  var catKeys=['Chest','Back','Legs','Shoulders','Arms','Core','Cardio','Other'];
-  var catVal=catKeys[(parseInt(catStr)||8)-1]||'Other';
+  var catKeys=['Triceps','Biceps','Weightlifting','Abs'];
+  var catVal=catKeys[(parseInt(catStr)||4)-1]||'Weightlifting';
   if(!DB.customExercises)DB.customExercises=[];
   if(DB.customExercises.indexOf(name)===-1)DB.customExercises.push(name);
   DB.exCategories[name]=catVal;
@@ -3332,13 +3329,14 @@ setTimeout(() => {
   setTimeout(() => autoRestoreIfEmpty(), 2000);
 }, 1000);
 
-// 保存時に自動 Drive 同期
+// 保存時に自動 Drive 同期（一時無効化：大量データ同期時のハング問題対応）
+// TODO: 差分同期を実装してから有効化
 var originalSave = save;
 save = function(){
   originalSave();
-  if(googleAuthState.isLoggedIn && navigator.onLine){
-    saveToDrive();
-  }
+  // if(googleAuthState.isLoggedIn && navigator.onLine){
+  //   saveToDrive();
+  // }
 };
 </script>
 
