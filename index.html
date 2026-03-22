@@ -585,6 +585,9 @@ textarea{min-height:56px;resize:vertical}
     <!-- 手動同期ボタン -->
     <button id="manual-sync-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:var(--accent2);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500" onclick="manualSync()">今すぐ同期</button>
 
+    <!-- Drive から復元ボタン -->
+    <button id="restore-from-drive-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:#FFA500;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500" onclick="restoreFromDrive()">🔄 Drive から復元</button>
+
     <!-- 説明文 -->
     <div style="font-size:12px;color:var(--text2);margin-top:12px;padding:10px;background:#fff;border-radius:6px;line-height:1.6">
       ✅ ログインすることで、Google Drive に自動バックアップされます<br>
@@ -2935,11 +2938,13 @@ function updateGoogleAuthUI(){
     authContainer.style.display = 'none';
     logoutBtn.style.display = 'block';
     syncBtn.style.display = 'block';
+    document.getElementById('restore-from-drive-btn').style.display = 'block';
   } else {
     statusEl.textContent = '未ログイン - Google ドライブにバックアップすると便利です';
     authContainer.style.display = 'block';
     logoutBtn.style.display = 'none';
     syncBtn.style.display = 'none';
+    document.getElementById('restore-from-drive-btn').style.display = 'none';
   }
 
   updateSyncStatus();
@@ -3110,6 +3115,71 @@ function manualSync(){
   }
 
   saveToDrive();
+}
+
+// 15. Drive から復元
+function restoreFromDrive(){
+  if(!googleAuthState.isLoggedIn){
+    alert('先にログインしてください');
+    return;
+  }
+
+  if(!navigator.onLine){
+    alert('インターネット接続がありません');
+    return;
+  }
+
+  // 確認ダイアログ
+  if(!confirm('⚠️ 現在のローカルデータを Google Drive のデータで上書きします。よろしいですか？\n\n（ローカルデータは失われます。一度上書きすると戻せません）')){
+    return;
+  }
+
+  googleAuthState.syncStatus = 'syncing';
+  updateSyncStatus();
+
+  var token = googleAuthState.accessToken;
+
+  // Drive からファイルを取得
+  fetch('https://www.googleapis.com/drive/v3/files?spaces=appData&q=name=%27' + SYNC_FILE_NAME + '%27&fields=files(id)', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(!data.files || data.files.length === 0){
+      alert('❌ Drive にバックアップがありません');
+      googleAuthState.syncStatus = 'error';
+      return Promise.reject('No file in Drive');
+    }
+
+    var fileId = data.files[0].id;
+    return getDriveFileContent(fileId, token);
+  })
+  .then(cloudData => {
+    if(!cloudData){
+      throw new Error('Invalid data');
+    }
+
+    // Drive データでローカルを上書き
+    DB.workouts = cloudData.workouts || [];
+    DB.dailyNotes = cloudData.dailyNotes || {};
+    DB.favorites = cloudData.favorites || {};
+    DB.routines = cloudData.routines || [];
+
+    save();
+
+    // UI を再描画
+    renderTodayLog();
+    location.reload();  // ページ全体をリロード
+
+    googleAuthState.syncStatus = 'success';
+    alert('✅ Drive からデータを復元しました！');
+  })
+  .catch(err => {
+    console.error('Restore error:', err);
+    googleAuthState.syncStatus = 'error';
+    alert('❌ 復元に失敗しました。もう一度お試しください。');
+  })
+  .finally(() => updateSyncStatus());
 }
 
 // ===================== 起動 =====================
