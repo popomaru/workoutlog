@@ -3063,6 +3063,12 @@ function saveToDrive(){
   updateSyncStatus();
 
   var syncData = getSyncData();
+  var timeout = setTimeout(function(){
+    googleAuthState.syncStatus = 'error';
+    console.error('Drive sync timeout (30s)');
+    updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
+  }, 30000);
 
   // appDataFolder 内のファイルを検索
   gapi.client.drive.files.list({
@@ -3071,6 +3077,7 @@ function saveToDrive(){
     q: 'name="' + SYNC_FILE_NAME + '"',
     pageSize: 1
   }).then(function(response){
+    clearTimeout(timeout);
     var files = response.result.files;
     if(files && files.length > 0){
       // 既存ファイル更新
@@ -3084,10 +3091,13 @@ function saveToDrive(){
     googleAuthState.lastSyncTime = new Date().toISOString();
     console.log('Drive sync success');
     updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
   }).catch(function(err){
+    clearTimeout(timeout);
     console.error('Drive sync error:', err);
     googleAuthState.syncStatus = 'error';
     updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
   });
 }
 
@@ -3098,12 +3108,20 @@ function loadFromDrive(){
   googleAuthState.syncStatus = 'syncing';
   updateSyncStatus();
 
+  var timeout = setTimeout(function(){
+    googleAuthState.syncStatus = 'error';
+    console.error('Drive load timeout (30s)');
+    updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
+  }, 30000);
+
   gapi.client.drive.files.list({
     spaces: 'appData',
     fields: 'files(id)',
     q: 'name="' + SYNC_FILE_NAME + '"',
     pageSize: 1
   }).then(function(response){
+    clearTimeout(timeout);
     var files = response.result.files;
     if(files && files.length > 0){
       return getDriveFileContent(files[0].id);
@@ -3119,10 +3137,13 @@ function loadFromDrive(){
       }
     }
     updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
   }).catch(function(err){
+    clearTimeout(timeout);
     console.error('Drive load error:', err);
     googleAuthState.syncStatus = 'error';
     updateSyncStatus();
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
   });
 }
 
@@ -3197,8 +3218,6 @@ function updateSyncStatus(){
   } else {
     el.textContent = '準備完了';
   }
-
-  googleAuthState.syncStatus = 'idle';
 }
 
 // 14. 手動同期
@@ -3236,6 +3255,14 @@ function restoreFromDrive(){
   googleAuthState.syncStatus = 'syncing';
   updateSyncStatus();
 
+  var timeout = setTimeout(function(){
+    googleAuthState.syncStatus = 'error';
+    console.error('Drive restore timeout (30s)');
+    updateSyncStatus();
+    alert('❌ 復元がタイムアウトしました。インターネット接続を確認してください。');
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
+  }, 30000);
+
   // Drive からファイルを検索
   gapi.client.drive.files.list({
     spaces: 'appData',
@@ -3243,6 +3270,7 @@ function restoreFromDrive(){
     q: 'name="' + SYNC_FILE_NAME + '"',
     pageSize: 1
   }).then(function(response){
+    clearTimeout(timeout);
     var files = response.result.files;
     if(!files || files.length === 0){
       alert('❌ Drive にバックアップがありません');
@@ -3275,10 +3303,12 @@ function restoreFromDrive(){
       location.reload();  // ページ全体をリロード
     }, 1000);
   }).catch(function(err){
+    clearTimeout(timeout);
     console.error('Restore error:', err);
     googleAuthState.syncStatus = 'error';
     updateSyncStatus();
     alert('❌ 復元に失敗しました。もう一度お試しください。');
+    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
   });
 }
 
@@ -3287,8 +3317,20 @@ load();
 addSet();addSet();addSet();
 renderBody();
 
+// 初回訪問時の自動復元（ローカルが空 && ログイン済み → Drive から復元）
+function autoRestoreIfEmpty(){
+  if(DB.workouts.length === 0 && googleAuthState.isLoggedIn && navigator.onLine){
+    console.log('Local data is empty and user is logged in. Auto-restoring from Drive...');
+    loadFromDrive();
+  }
+}
+
 // Google 認証初期化
-setTimeout(() => initGoogleAuth(), 1000);
+setTimeout(() => {
+  initGoogleAuth();
+  // 認証完了後、初回復元をチェック
+  setTimeout(() => autoRestoreIfEmpty(), 2000);
+}, 1000);
 
 // 保存時に自動 Drive 同期
 var originalSave = save;
