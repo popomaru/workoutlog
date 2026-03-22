@@ -512,20 +512,13 @@ textarea{min-height:56px;resize:vertical}
 <div id="tab-import" class="panel">
   <!-- FitNotes JSONインポート -->
   <div class="card">
-    <div class="sec">🚀 FitNotes 全データインポート</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotes バックアップファイル（.fitnotes）から全データを一括インポート。日別コメント（workoutcomment）も含まれます。</p>
-    <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;font-weight:600" onclick="importFitNotesJSON()">FitNotes データを読み込む</button>
-    <div id="al-fitnotes" class="alert" style="margin-top:10px;display:none"></div>
-  </div>
-
-  <div class="card">
-    <div class="sec">FitNotes CSVインポート</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotesの「エクスポート」で出力したCSVを読み込みます。重複データは自動スキップされます。</p>
+    <div class="sec">📂 FitNotes データインポート</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotes の JSON または CSV ファイルをドラッグ＆ドロップで読み込みます。日別コメントも含まれます。</p>
     <label class="import-drop" id="import-drop" for="csv-file">
-      <input type="file" id="csv-file" accept=".csv">
+      <input type="file" id="csv-file" accept=".csv,.json">
       <div style="font-size:36px;margin-bottom:8px">📂</div>
-      <div style="font-size:14px;font-weight:500;margin-bottom:4px">CSVファイルを選択</div>
-      <div style="font-size:12px;color:var(--text2)">またはここにドラッグ＆ドロップ</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">ファイルを選択</div>
+      <div style="font-size:12px;color:var(--text2)">JSON または CSV をドラッグ＆ドロップ</div>
     </label>
     <div id="al-import" class="alert" style="margin-top:10px"></div>
   </div>
@@ -2802,16 +2795,37 @@ function handleFile(file){
   var reader=new FileReader();
   reader.onload=function(e){
     try{
-      var result=importFitNotes(e.target.result);
       var al=document.getElementById('al-import');
-      if(result.total===0){
-        al.className='alert alert-err';
-        al.textContent='データが見つかりません。FitNotesのCSVファイルか確認してください。';
-      } else {
+      var content=e.target.result;
+
+      // ファイル拡張子で JSON か CSV か判定
+      if(file.name.endsWith('.json')){
+        // JSON ファイル（FitNotes JSON エクスポート）
+        var data=JSON.parse(content);
+        if(!data.workouts){
+          throw new Error('Invalid JSON format. "workouts" key not found.');
+        }
+
+        // FitNotes JSON データをセット
+        window.FITNOTES_DATA=data;
+        importFitNotesJSON();
+
         al.className='alert alert-ok';
-        al.textContent=result.imported+'件インポートしました。'+(result.skipped?' (重複'+result.skipped+'件はスキップ)':'');
+        al.textContent='FitNotes JSON をインポートしました。（'+data.workouts.length+'件のワークアウト）';
+        al.style.display='block';
+      } else {
+        // CSV ファイル
+        var result=importFitNotes(content);
+        if(result.total===0){
+          al.className='alert alert-err';
+          al.textContent='データが見つかりません。FitNotesのCSVファイルか確認してください。';
+        } else {
+          al.className='alert alert-ok';
+          al.textContent=result.imported+'件インポートしました。'+(result.skipped?' (重複'+result.skipped+'件はスキップ)':'');
+        }
+        al.style.display='block';
       }
-      al.style.display='block';
+
       refreshImportStats();
     }catch(err){
       var al=document.getElementById('al-import');
