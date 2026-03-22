@@ -2750,6 +2750,53 @@ function importFitNotes(csvText){
   return{imported:imported,skipped:skipped,total:order.length};
 }
 
+// FitNotes JSON インポート（fitnotes_embed.js のバージョンをオーバーライド）
+function importFitNotesJSON(){
+  var data = FITNOTES_DATA;
+  if(!data.workouts){
+    alert('Invalid FitNotes data');
+    return;
+  }
+
+  // dailyNotes 形式を修正
+  var notesList={};
+  if(typeof data.dailyNotes==='object'){
+    Object.keys(data.dailyNotes).forEach(function(date){
+      notesList[date]={memo: data.dailyNotes[date]};
+    });
+  }
+
+  // exCategories を新しいカテゴリに自動マッピング
+  var exCat = data.exCategories || {};
+  Object.keys(exCat).forEach(function(exercise){
+    var oldCat = exCat[exercise];
+    // 古いカテゴリを新しいカテゴリに変換
+    exCat[exercise] = catEn(oldCat) || 'Weightlifting';
+  });
+
+  // DB をリセット
+  DB={
+    workouts: data.workouts || [],
+    bodyLogs: [],
+    user: {nick:'あなた',weight:'',goal:'筋肥大'},
+    rivals: [],
+    exCategories: exCat,
+    recentExercises: [],
+    customExercises: [],
+    dailyNotes: notesList,
+    favorites: data.favorites || {}
+  };
+
+  save();
+  updateExerciseLists();
+  renderBody();
+  alert('FitNotes data imported!\n'+
+    'Workouts: '+DB.workouts.length+'\n'+
+    'Exercises: '+Object.keys(DB.exCategories).length+'\n'+
+    'Favorites: '+Object.keys(DB.favorites).length+'\n'+
+    'Daily notes: '+Object.keys(DB.dailyNotes).length);
+}
+
 function handleFile(file){
   if(!file)return;
   var reader=new FileReader();
@@ -3232,7 +3279,7 @@ function manualSync(){
   saveToDrive();
 }
 
-// 15. Drive から復元（gapi.client 使用）
+// 15. Drive から復元（バックグラウンド処理）
 function restoreFromDrive(){
   if(!googleAuthState.isLoggedIn){
     alert('先にログインしてください');
@@ -3249,16 +3296,23 @@ function restoreFromDrive(){
     return;
   }
 
+  // バックグラウンドで復元を実行
+  alert('✅ Drive から復元を開始しました。バックグラウンドで処理中です...');
+  setTimeout(() => performRestoreInBackground(), 100);
+}
+
+function performRestoreInBackground(){
   googleAuthState.syncStatus = 'syncing';
   updateSyncStatus();
 
+  // タイムアウト: 120秒（大量データ対応）
   var timeout = setTimeout(function(){
     googleAuthState.syncStatus = 'error';
-    console.error('Drive restore timeout (30s)');
+    console.error('Drive restore timeout (120s)');
     updateSyncStatus();
     alert('❌ 復元がタイムアウトしました。インターネット接続を確認してください。');
     setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
-  }, 30000);
+  }, 120000);
 
   // Drive からファイルを検索
   gapi.client.drive.files.list({
@@ -3270,8 +3324,10 @@ function restoreFromDrive(){
     clearTimeout(timeout);
     var files = response.result.files;
     if(!files || files.length === 0){
-      alert('❌ Drive にバックアップがありません');
+      console.error('No backup in Drive');
       googleAuthState.syncStatus = 'error';
+      updateSyncStatus();
+      setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
       throw new Error('No file in Drive');
     }
 
@@ -3286,25 +3342,29 @@ function restoreFromDrive(){
     DB.dailyNotes = cloudData.dailyNotes || {};
     DB.favorites = cloudData.favorites || {};
     DB.routines = cloudData.routines || [];
+    DB.exCategories = cloudData.exCategories || DB.exCategories;
 
     save();
 
     // UI を再描画
+    updateExerciseLists();
     renderTodayLog();
+    renderBody();
 
     googleAuthState.syncStatus = 'success';
     updateSyncStatus();
 
-    alert('✅ Drive からデータを復元しました！');
+    console.log('Restore success! Reloading...');
+    alert('✅ Drive からデータを復元しました！ページをリロードします...');
     setTimeout(function(){
       location.reload();  // ページ全体をリロード
-    }, 1000);
+    }, 2000);
   }).catch(function(err){
     clearTimeout(timeout);
     console.error('Restore error:', err);
     googleAuthState.syncStatus = 'error';
     updateSyncStatus();
-    alert('❌ 復元に失敗しました。もう一度お試しください。');
+    alert('❌ 復元に失敗しました。もう一度お試しください。\nエラー: ' + err.message);
     setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
   });
 }
