@@ -222,6 +222,33 @@ textarea{min-height:56px;resize:vertical}
 .btn-discord:hover{opacity:.88}
 .dc-import-check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
 .dc-import-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5865F2}
+
+/* FitNotes スタイル 種目カード */
+.fn-block{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.07);background:#fff;display:flex}
+.fn-drag-handle{flex-shrink:0;cursor:grab;color:#ccc;padding:0 8px;font-size:17px;user-select:none;display:flex;align-items:center}
+.fn-cat-strip{width:5px;flex-shrink:0}
+.fn-card-inner{flex:1;min-width:0;overflow:hidden}
+.fn-ex-header{display:flex;align-items:center;gap:6px;padding:10px 12px 8px;border-bottom:1px solid #f0ede8}
+.fn-ex-title{font-size:16px;font-weight:700;flex:1;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fn-fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;flex-shrink:0}
+.fn-edit-btn{border:none;background:none;cursor:pointer;font-size:15px;padding:2px 6px;color:var(--text2);flex-shrink:0}
+.fn-set-table{width:100%;border-collapse:collapse}
+.fn-set-table thead th{padding:5px 10px;font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.06em;background:#f8f7f3;border-bottom:1px solid #f0ede8;text-align:right}
+.fn-set-table thead th:first-child{text-align:center;width:30px}
+.fn-set-table thead th.fn-del-col{width:30px;text-align:center}
+.fn-set-table tbody td{padding:8px 10px;border-bottom:1px solid #f5f5f0;text-align:right;font-size:16px;font-weight:600;vertical-align:middle}
+.fn-set-table tbody td:first-child{text-align:center;font-size:11px;color:var(--text2);font-weight:400;background:#f8f7f3;width:30px;padding:8px 6px}
+.fn-set-table tbody td.fn-unit{font-size:11px;color:var(--text2);font-weight:400;padding-left:2px;padding-right:6px;min-width:20px}
+.fn-set-table tbody td.fn-del-col{text-align:center;width:30px;padding:4px 2px}
+.fn-set-table tbody tr:last-child td{border-bottom:none}
+.fn-pr{display:inline-block;background:#FFF8E6;color:#C97A00;border:1px solid #F5C842;border-radius:4px;font-size:10px;font-weight:700;padding:1px 5px;margin-left:4px;vertical-align:middle}
+.fn-add-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #f0ede8;background:#fafafa}
+.fn-add-input{flex:1;padding:7px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;text-align:center;font-family:inherit;min-width:0}
+.fn-add-input:focus{outline:none;border-color:var(--accent)}
+.fn-add-unit{font-size:11px;color:var(--text2);flex-shrink:0}
+.fn-add-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.fn-cat-hdr{padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;border-radius:8px;margin-top:4px;margin-bottom:8px;display:inline-block}
+.fn-prev-hint{padding:4px 12px 6px;font-size:11px;color:var(--text2);background:#f0f8ff;border-bottom:1px solid #e0eeff}
 </style>
 </head>
 <body>
@@ -1474,7 +1501,14 @@ function renderTodayLog(){
   loadDailyNote(date);
 }
 
-// 記録タブ用：ドラッグ対応版
+// カテゴリ別カラーマップ
+var FN_CAT_COLORS={
+  'Chest':'#E8957C','Shoulders':'#E8B856','Back':'#7BB5E8','Biceps':'#B8A5D1',
+  'Triceps':'#7FA5D1','Legs':'#90D695','Abs':'#D4A574','Cardio':'#E88B7D',
+  'Neck':'#C985E0','Weightlifting':'#8B9E6D','Conditioning':'#95C7D4'
+};
+
+// 記録タブ用：FitNotes スタイル カード描画
 function renderTodayLogWithDrag(workouts,bodyEl,date){
   bodyEl.innerHTML='';
   if(!workouts.length){
@@ -1483,97 +1517,148 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   }
 
   var draggedIdx=null;
+  var prevCat=null;
 
   workouts.forEach(function(w,idx){
+    var cat=catEn(DB.exCategories[w.exercise]||'');
+    var color=FN_CAT_COLORS[cat]||'#aaa';
+
+    // カテゴリヘッダー（切り替わり時）
+    if(cat&&cat!==prevCat){
+      var catHdr=document.createElement('div');
+      catHdr.className='fn-cat-hdr';
+      catHdr.style.background=color;
+      catHdr.textContent=(CAT_EN_TO_JA[cat]||cat);
+      bodyEl.appendChild(catHdr);
+      prevCat=cat;
+    }
+
+    // ========== カードブロック ==========
     var block=document.createElement('div');
-    block.style.cssText='margin-bottom:18px;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;display:flex;gap:8px;align-items:flex-start';
+    block.className='fn-block';
     block.draggable=true;
     block.dataset.idx=idx;
 
     // ドラッグハンドル
     var handle=document.createElement('div');
-    handle.style.cssText='flex-shrink:0;cursor:grab;font-size:20px;color:var(--text2);user-select:none;padding-top:4px';
-    handle.textContent='☰';
+    handle.className='fn-drag-handle';
+    handle.innerHTML='&#8942;';
     block.appendChild(handle);
 
-    // コンテンツ
-    var content=document.createElement('div');
-    content.style.cssText='flex:1;min-width:0';
+    // カラーストリップ
+    var strip=document.createElement('div');
+    strip.className='fn-cat-strip';
+    strip.style.background=color;
+    block.appendChild(strip);
 
-    // 種目名
-    var exName=document.createElement('div');
-    exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
-    exName.textContent=w.exercise;
-    content.appendChild(exName);
+    // カード本体
+    var inner=document.createElement('div');
+    inner.className='fn-card-inner';
 
-    // 2. 種目別次回目標を表示
-    var nextTarget=suggestNextTarget(w.exercise);
+    // --- 種目ヘッダー ---
+    var isFav=!!DB.favorites[w.exercise];
+    var exHdr=document.createElement('div');
+    exHdr.className='fn-ex-header';
+    exHdr.innerHTML=
+      '<button class="fn-fav-btn" onclick="fnToggleFav(\''+escAttr(w.exercise)+'\')" title="お気に入り" style="color:'+(isFav?'#378ADD':'#ccc')+'">★</button>'+
+      '<span class="fn-ex-title">'+escHtml(w.exercise)+'</span>'+
+      '<button class="fn-edit-btn" onclick="fnEditEx(\''+escAttr(w.exercise)+'\',\''+date+'\')" title="セット編集">✏️</button>';
+    inner.appendChild(exHdr);
+
+    // --- 前回記録ヒント ---
     var lastSet=getLastWorkoutForExercise(w.exercise);
-    if(lastSet&&nextTarget){
-      var targetDiv=document.createElement('div');
-      targetDiv.style.cssText='padding:6px 8px;background:#f0f7ff;border-left:3px solid var(--accent2);margin-bottom:8px;font-size:12px;border-radius:4px';
-      var targetHtml='前回 <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'</b> → ';
-      var targetPrimary=nextTarget[0];
-      targetHtml+='<b style="color:var(--accent2)">'+targetPrimary.w.toFixed(1)+'kg × '+targetPrimary.r+'</b> ('+targetPrimary.label+')';
-      targetDiv.innerHTML=targetHtml;
-      content.appendChild(targetDiv);
+    var nextTargets=suggestNextTarget(w.exercise);
+    if(lastSet&&nextTargets&&nextTargets[0]){
+      var hint=document.createElement('div');
+      hint.className='fn-prev-hint';
+      hint.innerHTML='前回: <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'回</b>　→　目標: <b style="color:var(--accent2)">'+nextTargets[0].w.toFixed(1)+'kg × '+nextTargets[0].r+'回</b>';
+      inner.appendChild(hint);
     }
 
-    // セット情報
+    // --- セットテーブル ---
+    var table=document.createElement('table');
+    table.className='fn-set-table';
+
     var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
-    w.sets.forEach(function(s){
-      var row=document.createElement('div');
-      row.style.cssText='display:flex;justify-content:flex-end;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:14px';
 
-      if(isCardio){
-        row.innerHTML='<span style="font-weight:600">'+(s.dist||'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin:0 8px">'+(s.distUnit||'km')+'</span> '+
-          '<span style="font-weight:600">'+(s.time||'－')+'</span>';
-      } else {
+    if(!isCardio){
+      table.innerHTML='<thead><tr><th>SET</th><th>重量</th><th class="fn-unit"></th><th>回数</th><th class="fn-unit"></th><th class="fn-del-col"></th></tr></thead>';
+    } else {
+      table.innerHTML='<thead><tr><th>SET</th><th>距離</th><th class="fn-unit"></th><th>時間</th><th class="fn-del-col"></th></tr></thead>';
+    }
+
+    var tbody=document.createElement('tbody');
+    // PRのベースライン（今日より前の最高1RM）
+    var prBase=myBestRM(w.exercise);
+
+    w.sets.forEach(function(s,si){
+      var tr=document.createElement('tr');
+      if(!isCardio){
         var ww=parseFloat(s.w)||0;
-        var r=parseInt(s.r)||0;
-        row.innerHTML='<span style="font-weight:600">'+(ww?ww.toFixed(1):'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin:0 8px">kg</span> '+
-          '<span style="font-weight:600">'+(r||'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin-left:4px">reps</span>';
+        var rr=parseInt(s.r)||0;
+        var rm=rr>0?Math.round(ww*(1+rr/30)):0;
+        var isPR=rm>0&&rm>prBase;
+        var prBadge=isPR?'<span class="fn-pr">PR</span>':'';
+        tr.innerHTML=
+          '<td>'+(si+1)+'</td>'+
+          '<td>'+(ww?ww.toFixed(1):'－')+'</td>'+
+          '<td class="fn-unit">kg</td>'+
+          '<td>'+(rr||'－')+prBadge+'</td>'+
+          '<td class="fn-unit">回</td>'+
+          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
+      } else {
+        tr.innerHTML=
+          '<td>'+(si+1)+'</td>'+
+          '<td>'+(s.dist||'－')+'</td>'+
+          '<td class="fn-unit">'+(s.distUnit||'km')+'</td>'+
+          '<td>'+(s.time||'－')+'</td>'+
+          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
       }
-      content.appendChild(row);
-
-      if(s.comment&&s.comment.trim()){
-        var cmt=document.createElement('div');
-        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 0;font-style:italic';
-        cmt.textContent='💬 '+s.comment;
-        content.appendChild(cmt);
-      }
+      tbody.appendChild(tr);
     });
+    table.appendChild(tbody);
+    inner.appendChild(table);
 
+    // --- クイック追加行 ---
+    var lastW=w.sets.length?(w.sets[w.sets.length-1].w||''):'';
+    var lastR=w.sets.length?(w.sets[w.sets.length-1].r||''):'';
+    var addRow=document.createElement('div');
+    addRow.className='fn-add-row';
+    if(!isCardio){
+      addRow.innerHTML=
+        '<input class="fn-add-input" id="fn-w-'+idx+'" type="number" placeholder="kg" value="'+escHtml(lastW)+'">'+
+        '<span class="fn-add-unit">kg</span>'+
+        '<input class="fn-add-input" id="fn-r-'+idx+'" type="number" placeholder="回" value="'+escHtml(lastR)+'">'+
+        '<span class="fn-add-unit">回</span>'+
+        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
+    } else {
+      addRow.innerHTML=
+        '<input class="fn-add-input" id="fn-dist-'+idx+'" type="number" placeholder="km" style="flex:1">'+
+        '<span class="fn-add-unit">km</span>'+
+        '<input class="fn-add-input" id="fn-time-'+idx+'" type="text" placeholder="時間" style="flex:1">'+
+        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
+    }
+    inner.appendChild(addRow);
+
+    // メモ
     if(w.memo&&w.memo.trim()){
       var memo=document.createElement('div');
-      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 0 0;font-style:italic;margin-top:4px';
+      memo.style.cssText='padding:6px 12px;font-size:11px;color:var(--text2);font-style:italic;border-top:1px solid #f0ede8';
       memo.textContent='📝 '+w.memo;
-      content.appendChild(memo);
+      inner.appendChild(memo);
     }
 
-    block.appendChild(content);
+    block.appendChild(inner);
 
     // ドラッグイベント
     block.addEventListener('dragstart',function(e){
-      draggedIdx=idx;
-      e.dataTransfer.effectAllowed='move';
-      block.style.opacity='0.5';
+      draggedIdx=idx;e.dataTransfer.effectAllowed='move';block.style.opacity='0.5';
     });
-
-    block.addEventListener('dragend',function(e){
-      block.style.opacity='1';
-    });
-
+    block.addEventListener('dragend',function(){block.style.opacity='1';});
     block.addEventListener('dragover',function(e){
       e.preventDefault();
-      e.dataTransfer.dropEffect='move';
       if(draggedIdx!==null&&draggedIdx!==idx){
-        var temp=workouts[draggedIdx];
-        workouts[draggedIdx]=workouts[idx];
-        workouts[idx]=temp;
+        var temp=workouts[draggedIdx];workouts[draggedIdx]=workouts[idx];workouts[idx]=temp;
         draggedIdx=idx;
         renderTodayLogWithDrag(workouts,bodyEl,date);
       }
@@ -1585,22 +1670,82 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   // フッター合計
   var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
   var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
-  if(workouts.length>1||totalSets>0){
-    var foot=document.createElement('div');
-    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
-    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
-    bodyEl.appendChild(foot);
-  }
+  var foot=document.createElement('div');
+  foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+  foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+  bodyEl.appendChild(foot);
 
   // 並び順を DB に反映
   var date_val=document.getElementById('r-date').value;
   DB.workouts.forEach(function(w){
-    if(w.date===date_val){
-      w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);
-    }
+    if(w.date===date_val){w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);}
   });
   save();
 }
+
+// === FitNotes カード操作ヘルパー ===
+
+// クイック追加
+function fnAddSet(date,wIdx){
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var w=workouts[wIdx];if(!w)return;
+  var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+  var newSet;
+  if(!isCardio){
+    var wEl=document.getElementById('fn-w-'+wIdx);
+    var rEl=document.getElementById('fn-r-'+wIdx);
+    var wVal=(wEl?wEl.value.trim():'');
+    var rVal=(rEl?rEl.value.trim():'');
+    if(!wVal&&!rVal)return;
+    newSet={w:wVal,r:rVal,dist:'',distUnit:'km',time:'',comment:''};
+  } else {
+    var dEl=document.getElementById('fn-dist-'+wIdx);
+    var tEl=document.getElementById('fn-time-'+wIdx);
+    newSet={w:'',r:'',dist:(dEl?dEl.value.trim():''),distUnit:'km',time:(tEl?tEl.value.trim():''),comment:''};
+  }
+  w.sets.push(newSet);
+  save();
+  renderTodayLog();
+}
+
+// セット削除
+function fnDelSet(date,wIdx,sIdx){
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var w=workouts[wIdx];if(!w)return;
+  w.sets.splice(sIdx,1);
+  if(w.sets.length===0){
+    var dbIdx=DB.workouts.indexOf(w);
+    if(dbIdx!==-1)DB.workouts.splice(dbIdx,1);
+  }
+  save();
+  renderTodayLog();
+}
+
+// お気に入りトグル（カードから）
+function fnToggleFav(ex){
+  if(DB.favorites[ex])delete DB.favorites[ex];else DB.favorites[ex]=true;
+  save();renderTodayLog();
+}
+
+// 編集フォームを開く（カードから）
+function fnEditEx(ex,date){
+  var w=DB.workouts.find(function(w){return w.date===date&&w.exercise===ex;});
+  document.getElementById('r-ex').value=ex;
+  document.getElementById('ex-picker-label').textContent=ex;
+  if(w){
+    currentSets=w.sets.map(function(s){return{w:s.w,r:s.r,comment:s.comment||''};});
+  } else {
+    currentSets=[];addSet();addSet();addSet();
+  }
+  renderSets();showPrevSession();
+  var form=document.getElementById('rec-input-form');
+  form.style.display='block';
+  document.getElementById('add-ex-btn').textContent='✕ 閉じる';
+  setTimeout(function(){form.scrollIntoView({behavior:'smooth'});},50);
+}
+
+// HTML属性用エスケープ
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ===================== 前回の記録表示 =====================
 function showPrevSession(){
