@@ -189,6 +189,39 @@ textarea{min-height:56px;resize:vertical}
 
 /* 草稿バナー */
 #draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+
+/* Discord インポートモーダル */
+#discord-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:flex-end;justify-content:center}
+#discord-modal.show{display:flex}
+#discord-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;animation:slideUp .25s ease}
+.dc-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.dc-header h2{font-size:17px;font-weight:700;color:#5865F2}
+.dc-body{overflow-y:auto;flex:1;padding:16px 20px;-webkit-overflow-scrolling:touch}
+.dc-step{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.dc-textarea{width:100%;min-height:160px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;resize:vertical;line-height:1.5}
+.dc-textarea:focus{outline:none;border-color:#5865F2}
+.dc-result-card{background:#f8f7f3;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.dc-result-card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#1a1a1a}
+.dc-summary-text{font-size:13px;line-height:1.7;color:#333;white-space:pre-wrap}
+.dc-session-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.dc-session-header{background:#5865F2;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.dc-session-date{font-size:14px;font-weight:700}
+.dc-session-summary{font-size:11px;opacity:.9}
+.dc-ex-row{padding:8px 14px;border-bottom:1px solid #f5f5f0;font-size:13px}
+.dc-ex-row:last-child{border-bottom:none}
+.dc-ex-name{font-weight:600;margin-bottom:4px}
+.dc-set-chips{display:flex;flex-wrap:wrap;gap:4px}
+.dc-set-chip{background:#f0f0f0;border-radius:6px;padding:3px 8px;font-size:12px;color:#333}
+.dc-err{background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
+.dc-ok{background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
+.dc-loading{text-align:center;padding:2rem;color:var(--text2);font-size:14px}
+.dc-spinner{display:inline-block;width:32px;height:32px;border:3px solid #f0ede8;border-top-color:#5865F2;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dc-footer{padding:12px 20px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap}
+.btn-discord{background:#5865F2;color:#fff;border-color:#5865F2}
+.btn-discord:hover{opacity:.88}
+.dc-import-check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.dc-import-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5865F2}
 </style>
 </head>
 <body>
@@ -512,6 +545,17 @@ textarea{min-height:56px;resize:vertical}
 
 <!-- ========== 取込 ========== -->
 <div id="tab-import" class="panel">
+
+  <!-- Discord パーソナルトレーニング サマリー -->
+  <div class="card" style="background:#f0f1fe;border-left:3px solid #5865F2">
+    <div class="sec" style="color:#5865F2">💬 Discord トレーニングサマリー（AI）</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">DiscordのパーソナルトレーニングチャットをClaudeに読み込ませて、ワークアウト内容を自動でサマリー・取り込みます。</p>
+    <button class="btn btn-discord" style="width:100%;padding:12px;font-size:14px;font-weight:600" onclick="openDiscordModal()">
+      📋 Discordログを読み込む
+    </button>
+    <div id="dc-last-import" style="font-size:12px;color:var(--text2);margin-top:8px;text-align:center;display:none"></div>
+  </div>
+
   <!-- FitNotes JSONインポート -->
   <div class="card">
     <div class="sec">📂 FitNotes データインポート</div>
@@ -3458,10 +3502,342 @@ save = function(){
 };
 </script>
 
+<!-- Discord インポートモーダル -->
+<div id="discord-modal" onclick="if(event.target===this)closeDiscordModal()">
+  <div id="discord-inner">
+    <div class="dc-header">
+      <h2>💬 Discord トレーニングサマリー</h2>
+      <button onclick="closeDiscordModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1">×</button>
+    </div>
+    <div class="dc-body" id="discord-modal-body">
+      <!-- Step 1: API Key -->
+      <div id="dc-step-apikey">
+        <div class="dc-step">Step 1 — Claude API キー</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Anthropic の Claude API キーを入力してください。キーはこのブラウザにのみ保存されます。</p>
+        <input type="password" id="dc-apikey-input" placeholder="sk-ant-..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:monospace;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text2)">※ <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#5865F2">console.anthropic.com</a> でAPIキーを取得できます。キーは端末に保存されます（サーバー送信なし）。</div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <!-- Step 2: Discord Messages -->
+      <div id="dc-step-messages">
+        <div class="dc-step">Step 2 — Discordのメッセージを貼り付け</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Discordのトレーニングチャンネルのメッセージをコピー＆ペーストするか、<br>Discordデータエクスポート（messages.jsonの中身）を貼り付けてください。</p>
+        <textarea class="dc-textarea" id="dc-messages-input" placeholder="例：
+トレーナー: 今日はベンチプレス3セット、スクワット4セットやりましょう
+あなた: ベンチ 80kg x 10rep x 3set完了！
+トレーナー: いい感じ！次はスクワット 70kg x 12rep
+あなた: スクワット完了 70kg x 12 x 4set"></textarea>
+
+        <div style="margin-top:10px">
+          <div class="dc-step">または JSON ファイルをアップロード</div>
+          <label class="import-drop" style="margin-top:6px" for="dc-json-file">
+            <input type="file" id="dc-json-file" accept=".json,.csv,.txt" onchange="loadDiscordFile(this)">
+            <div style="font-size:24px;margin-bottom:4px">📂</div>
+            <div style="font-size:13px;font-weight:500">Discordエクスポート JSON / テキスト</div>
+            <div style="font-size:11px;color:var(--text2)">messages.json, channel.json, .txt など</div>
+          </label>
+        </div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <!-- Step 3: Results (hidden initially) -->
+      <div id="dc-step-results" style="display:none">
+        <div class="dc-step">サマリー結果</div>
+        <div id="dc-results-body"></div>
+      </div>
+    </div>
+
+    <div class="dc-footer">
+      <button class="btn" onclick="closeDiscordModal()" style="flex:1">キャンセル</button>
+      <button class="btn btn-discord" id="dc-analyze-btn" onclick="analyzeDiscordMessages()" style="flex:2;font-weight:600">🤖 AIでサマリーを生成</button>
+      <button class="btn btn-green" id="dc-import-btn" onclick="importDiscordWorkouts()" style="flex:2;font-weight:600;display:none">✅ ワークアウトを取り込む</button>
+    </div>
+  </div>
+</div>
+
 <!-- FitNotes データ埋め込み -->
 <script src="fitnotes_embed.js"></script>
 
 <script>
+// ============================================================
+// Discord トレーニングサマリー機能
+// ============================================================
+
+var dcExtractedSessions = []; // Claude から抽出したセッション
+
+function openDiscordModal() {
+  var modal = document.getElementById('discord-modal');
+  modal.classList.add('show');
+  // 保存済みAPIキーをセット
+  var savedKey = localStorage.getItem('claude_api_key') || '';
+  document.getElementById('dc-apikey-input').value = savedKey;
+  document.getElementById('dc-step-results').style.display = 'none';
+  document.getElementById('dc-import-btn').style.display = 'none';
+  document.getElementById('dc-analyze-btn').style.display = '';
+  dcExtractedSessions = [];
+}
+
+function closeDiscordModal() {
+  document.getElementById('discord-modal').classList.remove('show');
+}
+
+function loadDiscordFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var content = e.target.result;
+    var text = '';
+    try {
+      var json = JSON.parse(content);
+      // Discord公式エクスポート形式: messages配列
+      if (Array.isArray(json)) {
+        // messages.csvをJSONとして扱う場合
+        text = json.map(function(m) {
+          return (m.Timestamp || m.timestamp || '') + ' ' +
+                 (m.Author || m.author || '') + ': ' +
+                 (m.Contents || m.content || '');
+        }).join('\n');
+      } else if (json.messages && Array.isArray(json.messages)) {
+        // DiscordChatExporter形式
+        text = json.messages.map(function(m) {
+          var ts = m.timestamp ? m.timestamp.substring(0, 10) : '';
+          var author = m.author ? (m.author.nickname || m.author.name || '') : '';
+          return ts + ' ' + author + ': ' + (m.content || '');
+        }).filter(function(l) { return l.trim().length > 5; }).join('\n');
+      } else {
+        text = JSON.stringify(json, null, 2);
+      }
+    } catch(ex) {
+      // テキストファイルとして扱う
+      text = content;
+    }
+    document.getElementById('dc-messages-input').value = text;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function analyzeDiscordMessages() {
+  var apiKey = document.getElementById('dc-apikey-input').value.trim();
+  var messages = document.getElementById('dc-messages-input').value.trim();
+
+  if (!apiKey) {
+    showDcError('Claude APIキーを入力してください。');
+    return;
+  }
+  if (!messages) {
+    showDcError('Discordのメッセージを貼り付けてください。');
+    return;
+  }
+  if (!apiKey.startsWith('sk-ant-')) {
+    showDcError('APIキーの形式が正しくありません（sk-ant-... で始まるキーを入力してください）。');
+    return;
+  }
+
+  // APIキーを保存
+  localStorage.setItem('claude_api_key', apiKey);
+
+  // ローディング表示
+  document.getElementById('dc-step-results').style.display = 'block';
+  document.getElementById('dc-results-body').innerHTML =
+    '<div class="dc-loading"><div class="dc-spinner"></div><br>Claudeがトレーニング内容を解析中...</div>';
+  document.getElementById('dc-analyze-btn').disabled = true;
+  document.getElementById('dc-import-btn').style.display = 'none';
+
+  var prompt = 'あなたはフィットネストラッカーのアシスタントです。\n' +
+    '以下はDiscordのパーソナルトレーニングに関するチャットログです。\n' +
+    'このログを分析し、以下のJSON形式で回答してください。\n\n' +
+    '**重要**: 必ずJSONのみを返してください（前後の説明文は不要）。\n\n' +
+    '出力JSON形式:\n' +
+    '{\n' +
+    '  "summary": "全体のトレーニングサマリー（日本語・200文字以内）",\n' +
+    '  "sessions": [\n' +
+    '    {\n' +
+    '      "date": "YYYY-MM-DD（推定日付、不明なら今日の日付）",\n' +
+    '      "summary": "このセッションの概要",\n' +
+    '      "exercises": [\n' +
+    '        {\n' +
+    '          "name": "種目名（日本語）",\n' +
+    '          "sets": [\n' +
+    '            {"w": "重量(kg、なければ空文字)", "r": "レップ数（なければ空文字）", "comment": "メモ"}\n' +
+    '          ]\n' +
+    '        }\n' +
+    '      ]\n' +
+    '    }\n' +
+    '  ]\n' +
+    '}\n\n' +
+    'ルール:\n' +
+    '- 種目名が英語の場合は日本語に変換（例: Bench Press → ベンチプレス）\n' +
+    '- 重量・レップ数が不明なセットは w="" r="" で記録\n' +
+    '- 日付が明示されていない場合は会話の文脈から推定するか、今日の日付 (' + todayStr() + ') を使用\n' +
+    '- トレーニング内容が含まれないメッセージは無視してよい\n\n' +
+    'チャットログ:\n' +
+    '---\n' +
+    messages.substring(0, 12000) + // APIコスト削減のため12000文字まで
+    '\n---';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(res) {
+    if (!res.ok) {
+      return res.json().then(function(err) {
+        throw new Error(err.error ? err.error.message : 'API error ' + res.status);
+      });
+    }
+    return res.json();
+  })
+  .then(function(data) {
+    var text = data.content && data.content[0] ? data.content[0].text : '';
+    // JSONを抽出（```json ... ``` ブロックにも対応）
+    var jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    var jsonStr = jsonMatch ? jsonMatch[1] : text;
+    // 最初の { から最後の } まで抽出
+    var start = jsonStr.indexOf('{');
+    var end = jsonStr.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('JSONが見つかりませんでした');
+    jsonStr = jsonStr.substring(start, end + 1);
+    var result = JSON.parse(jsonStr);
+    dcExtractedSessions = result.sessions || [];
+    renderDiscordResults(result);
+  })
+  .catch(function(err) {
+    showDcError('エラー: ' + err.message);
+  })
+  .finally(function() {
+    document.getElementById('dc-analyze-btn').disabled = false;
+  });
+}
+
+function todayStr() {
+  return new Date().toISOString().substring(0, 10);
+}
+
+function showDcError(msg) {
+  document.getElementById('dc-step-results').style.display = 'block';
+  document.getElementById('dc-results-body').innerHTML = '<div class="dc-err">' + escHtml(msg) + '</div>';
+}
+
+function renderDiscordResults(result) {
+  var sessions = result.sessions || [];
+  var html = '';
+
+  // 全体サマリー
+  if (result.summary) {
+    html += '<div class="dc-result-card">' +
+      '<h3>📊 トレーニングサマリー</h3>' +
+      '<div class="dc-summary-text">' + escHtml(result.summary) + '</div>' +
+      '</div>';
+  }
+
+  if (sessions.length === 0) {
+    html += '<div class="dc-err">トレーニングデータが見つかりませんでした。メッセージ内容を確認してください。</div>';
+    document.getElementById('dc-results-body').innerHTML = html;
+    return;
+  }
+
+  // セッション一覧（インポート選択チェックボックス付き）
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px">インポートするセッションを選択:</div>';
+
+  sessions.forEach(function(session, si) {
+    var exHtml = '';
+    (session.exercises || []).forEach(function(ex) {
+      var setChips = (ex.sets || []).map(function(s) {
+        var label = '';
+        if (s.w) label += s.w + 'kg';
+        if (s.w && s.r) label += ' × ';
+        if (s.r) label += s.r + 'rep';
+        if (!label) label = 'セット';
+        return '<span class="dc-set-chip">' + escHtml(label) + '</span>';
+      }).join('');
+      exHtml += '<div class="dc-ex-row">' +
+        '<div class="dc-ex-name">' + escHtml(ex.name || '') + '</div>' +
+        '<div class="dc-set-chips">' + setChips + '</div>' +
+        '</div>';
+    });
+
+    html += '<div class="dc-import-check">' +
+      '<input type="checkbox" id="dc-chk-' + si + '" checked>' +
+      '<label for="dc-chk-' + si + '" style="cursor:pointer;font-weight:600">' +
+        escHtml(session.date || '') + ' — ' + escHtml(session.summary || '') +
+      '</label>' +
+      '</div>' +
+      '<div class="dc-session-card" style="margin-bottom:12px">' +
+        exHtml +
+      '</div>';
+  });
+
+  document.getElementById('dc-results-body').innerHTML = html;
+  document.getElementById('dc-import-btn').style.display = '';
+  document.getElementById('dc-step-results').style.display = 'block';
+}
+
+function importDiscordWorkouts() {
+  var imported = 0;
+  var skipped = 0;
+
+  dcExtractedSessions.forEach(function(session, si) {
+    var chk = document.getElementById('dc-chk-' + si);
+    if (!chk || !chk.checked) return;
+
+    var date = session.date || todayStr();
+    (session.exercises || []).forEach(function(ex) {
+      if (!ex.name) return;
+      var sets = (ex.sets || []).map(function(s) {
+        return { w: s.w || '', r: s.r || '', dist: '', distUnit: 'km', time: '', comment: s.comment || '' };
+      });
+      if (sets.length === 0) sets = [{ w: '', r: '', dist: '', distUnit: 'km', time: '', comment: '' }];
+
+      // 重複チェック
+      var exists = DB.workouts.some(function(w) { return w.date === date && w.exercise === ex.name; });
+      if (exists) { skipped++; return; }
+
+      DB.workouts.push({ date: date, exercise: ex.name, sets: sets, memo: session.summary || '' });
+      // カテゴリ自動分類
+      if (!DB.exCategories[ex.name]) {
+        DB.exCategories[ex.name] = categorizeExerciseByName(ex.name);
+      }
+      imported++;
+    });
+  });
+
+  save();
+  updateImportStats();
+
+  var msg = imported + '件のエクササイズをインポートしました。';
+  if (skipped) msg += '（重複 ' + skipped + ' 件はスキップ）';
+  document.getElementById('dc-results-body').innerHTML =
+    '<div class="dc-ok">✅ ' + escHtml(msg) + '</div>' +
+    document.getElementById('dc-results-body').innerHTML;
+
+  var lastEl = document.getElementById('dc-last-import');
+  if (lastEl) {
+    lastEl.style.display = '';
+    lastEl.textContent = '最終取り込み: ' + new Date().toLocaleDateString('ja-JP') + '（' + imported + '件）';
+  }
+
+  document.getElementById('dc-import-btn').style.display = 'none';
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
 // importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
 function importFitNotesJSON(){
   var data = FITNOTES_DATA;
