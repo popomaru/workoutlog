@@ -718,6 +718,17 @@ var googleAuthState={
   lastSyncTime:0,
   syncStatus:'idle'  // idle, syncing, success, error
 };
+
+// ===== Google Sheets API 統合設定 =====
+const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
+const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
+
+var sheetsAuthState={
+  isAuthorized:false,
+  accessToken:'',
+  expiresIn:0
+};
+
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
@@ -3350,6 +3361,122 @@ function clearData(){
   alert('削除しました。');
 }
 
+// ===================== Google Sheets API 統合 =====================
+// Google Drive 認証を拡張して Sheets API を使用
+function initSheetsAPI(){
+  if(!SHEETS_SPREADSHEET_ID){
+    console.warn('Sheets Spreadsheet ID not configured');
+    return false;
+  }
+  // gapi.client.sheets をロード
+  gapi.client.load('sheets','v4',function(){
+    console.log('Sheets API loaded');
+  });
+  return true;
+}
+
+// 1. Sheets からデータ読み込み（全シート対応）
+async function getSheetData(sheetName, range){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.error('Sheets: not logged in or spreadsheet not configured');
+    return null;
+  }
+  try{
+    var fullRange = sheetName + '!' + (range || 'A:Z');
+    var response = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      range:fullRange,
+      majorDimension:'ROWS'
+    });
+    return response.result.values || [];
+  }catch(e){
+    console.error('Sheets getSheetData error:',e);
+    return null;
+  }
+}
+
+// 2. 複数シート一括読み込み
+async function getMultipleSheetsData(sheetNames){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.error('Sheets: not logged in or spreadsheet not configured');
+    return {};
+  }
+  try{
+    var ranges = sheetNames.map(function(name){ return name+'!A:Z'; });
+    var response = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      ranges:ranges
+    });
+    var result={};
+    sheetNames.forEach(function(name,idx){
+      result[name] = response.result.valueRanges[idx].values || [];
+    });
+    return result;
+  }catch(e){
+    console.error('Sheets batchGet error:',e);
+    return {};
+  }
+}
+
+// 3. 行追加（append）
+async function appendSheetData(sheetName,values){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.error('Sheets: not logged in or spreadsheet not configured');
+    return false;
+  }
+  try{
+    await gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      range:sheetName+'!A:Z',
+      valueInputOption:'RAW',
+      resource:{values:[values]}
+    });
+    return true;
+  }catch(e){
+    console.error('Sheets appendSheetData error:',e);
+    return false;
+  }
+}
+
+// 4. 行更新（update）
+async function updateSheetRow(sheetName,rowIndex,values){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.error('Sheets: not logged in or spreadsheet not configured');
+    return false;
+  }
+  try{
+    var rangeA1 = sheetName + '!A' + rowIndex + ':Z' + rowIndex;
+    await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      range:rangeA1,
+      valueInputOption:'RAW',
+      resource:{values:[values]}
+    });
+    return true;
+  }catch(e){
+    console.error('Sheets updateSheetRow error:',e);
+    return false;
+  }
+}
+
+// 5. Sheets メタデータ取得
+async function getSheetsMetadata(){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.error('Sheets: not logged in or spreadsheet not configured');
+    return null;
+  }
+  try{
+    var response = await gapi.client.sheets.spreadsheets.get({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      fields:'spreadsheetId,properties,sheets(properties(sheetId,title))'
+    });
+    return response.result;
+  }catch(e){
+    console.error('Sheets metadata error:',e);
+    return null;
+  }
+}
+
 // ===================== Service Worker 登録 =====================
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(){});
@@ -3860,6 +3987,7 @@ function autoRestoreIfEmpty(){
 // Google 認証初期化
 setTimeout(() => {
   initGoogleAuth();
+  initSheetsAPI();  // Google Sheets API も初期化
   // 認証完了後、初回復元をチェック
   setTimeout(() => autoRestoreIfEmpty(), 2000);
 }, 1000);
@@ -4249,6 +4377,12 @@ function importFitNotesJSON(){
   };
 
   save();
+
+  // Google Sheets にも一括インポート（ログイン済みの場合）
+  if(googleAuthState.isLoggedIn && SHEETS_SPREADSHEET_ID){
+    importFitNotesToSheets(data);
+  }
+
   alert('FitNotes data imported!\n'+
     'Workouts: '+DB.workouts.length+'\n'+
     'Exercises: '+Object.keys(DB.exCategories).length+'\n'+
@@ -4256,6 +4390,120 @@ function importFitNotesJSON(){
     'Daily notes: '+Object.keys(DB.dailyNotes).length);
 
   location.reload();
+}
+
+// FitNotes データを Google Sheets に一括インポート
+async function importFitNotesToSheets(data){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.warn('Sheets not configured or not logged in');
+    return;
+  }
+
+  try{
+    var now = new Date().toISOString();
+    var updates = [];
+
+    // 1. Workouts シート用のデータ準備
+    var workoutRows = [['id','date','exercise','setIndex','weight','reps','dist','distUnit','time','comment','memo','createdAt','updatedAt']];
+    var workoutId = 1;
+
+    data.workouts.forEach(function(wo){
+      wo.sets.forEach(function(set,setIdx){
+        workoutRows.push([
+          workoutId++,
+          wo.date || '',
+          wo.exercise || '',
+          setIdx + 1,
+          set.w || '',
+          set.r || '',
+          set.dist || '',
+          set.distUnit || '',
+          set.time || '',
+          set.comment || '',
+          wo.memo || '',
+          now,
+          now
+        ]);
+      });
+    });
+
+    updates.push({
+      range: 'Workouts!A1:M' + workoutRows.length,
+      values: workoutRows
+    });
+
+    // 2. Exercises シート用のデータ準備
+    var exerciseRows = [['exercise','category','isFavorite','isCustom','createdAt','updatedAt']];
+    var favorites = data.favorites || {};
+
+    Object.keys(data.exCategories || {}).forEach(function(ex){
+      var isFav = favorites[ex] ? 'TRUE' : 'FALSE';
+      exerciseRows.push([
+        ex,
+        data.exCategories[ex] || 'Weightlifting',
+        isFav,
+        'FALSE',  // FitNotes import は custom ではない
+        now,
+        now
+      ]);
+    });
+
+    updates.push({
+      range: 'Exercises!A1:F' + exerciseRows.length,
+      values: exerciseRows
+    });
+
+    // 3. DailyNotes シート用のデータ準備
+    var dailyNoteRows = [['id','date','memo','createdAt','updatedAt']];
+    var noteId = 1;
+
+    Object.keys(data.dailyNotes || {}).forEach(function(date){
+      dailyNoteRows.push([
+        noteId++,
+        date,
+        data.dailyNotes[date] || '',
+        now,
+        now
+      ]);
+    });
+
+    if(dailyNoteRows.length > 1){
+      updates.push({
+        range: 'DailyNotes!A1:E' + dailyNoteRows.length,
+        values: dailyNoteRows
+      });
+    }
+
+    // 4. Users シート に初期ユーザー追加（存在しない場合のみ）
+    var usersRows = [['userId','nick','goal','createdAt','updatedAt']];
+    usersRows.push([
+      1,
+      'あなた',
+      '筋肥大',
+      now,
+      now
+    ]);
+
+    updates.push({
+      range: 'Users!A1:E' + usersRows.length,
+      values: usersRows
+    });
+
+    // バッチ更新
+    await gapi.client.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: SHEETS_SPREADSHEET_ID,
+      resource: {
+        data: updates,
+        valueInputOption: 'RAW'
+      }
+    });
+
+    console.log('FitNotes imported to Sheets: ' + (workoutId - 1) + ' workouts, ' + (exerciseRows.length - 1) + ' exercises');
+    return true;
+  } catch(e){
+    console.error('Sheets import error:', e);
+    return false;
+  }
 }
 </script>
 
