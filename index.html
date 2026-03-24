@@ -3651,13 +3651,15 @@ async function importFitNotesToSheets(data){
   }
 
   try{
-    // Workouts シート用のデータ準備
-    var workoutRows = [['id','date','exercise','setIndex','weight','reps','memo','createdAt','updatedAt']];
+    var now = new Date().toISOString();
+    var updates = [];
+
+    // 1. Workouts シート用のデータ準備
+    var workoutRows = [['id','date','exercise','setIndex','weight','reps','dist','distUnit','time','comment','memo','createdAt','updatedAt']];
     var workoutId = 1;
 
-    data.workouts.forEach(function(wo,woIdx){
+    data.workouts.forEach(function(wo){
       wo.sets.forEach(function(set,setIdx){
-        var now = new Date().toISOString();
         workoutRows.push([
           workoutId++,
           wo.date || '',
@@ -3665,6 +3667,10 @@ async function importFitNotesToSheets(data){
           setIdx + 1,
           set.w || '',
           set.r || '',
+          set.dist || '',
+          set.distUnit || '',
+          set.time || '',
+          set.comment || '',
           wo.memo || '',
           now,
           now
@@ -3672,15 +3678,78 @@ async function importFitNotesToSheets(data){
       });
     });
 
-    // バッチ更新で Workouts シート を作成＆更新
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SHEETS_SPREADSHEET_ID,
-      range: 'Workouts!A1:I' + workoutRows.length,
-      valueInputOption: 'RAW',
-      resource: { values: workoutRows }
+    updates.push({
+      range: 'Workouts!A1:M' + workoutRows.length,
+      values: workoutRows
     });
 
-    console.log('FitNotes imported to Sheets: ' + (workoutId - 1) + ' workout records');
+    // 2. Exercises シート用のデータ準備
+    var exerciseRows = [['exercise','category','isFavorite','isCustom','createdAt','updatedAt']];
+    var favorites = data.favorites || {};
+
+    Object.keys(data.exCategories || {}).forEach(function(ex){
+      var isFav = favorites[ex] ? 'TRUE' : 'FALSE';
+      exerciseRows.push([
+        ex,
+        data.exCategories[ex] || 'Weightlifting',
+        isFav,
+        'FALSE',  // FitNotes import は custom ではない
+        now,
+        now
+      ]);
+    });
+
+    updates.push({
+      range: 'Exercises!A1:F' + exerciseRows.length,
+      values: exerciseRows
+    });
+
+    // 3. DailyNotes シート用のデータ準備
+    var dailyNoteRows = [['id','date','memo','createdAt','updatedAt']];
+    var noteId = 1;
+
+    Object.keys(data.dailyNotes || {}).forEach(function(date){
+      dailyNoteRows.push([
+        noteId++,
+        date,
+        data.dailyNotes[date] || '',
+        now,
+        now
+      ]);
+    });
+
+    if(dailyNoteRows.length > 1){
+      updates.push({
+        range: 'DailyNotes!A1:E' + dailyNoteRows.length,
+        values: dailyNoteRows
+      });
+    }
+
+    // 4. Users シート に初期ユーザー追加（存在しない場合のみ）
+    var usersRows = [['userId','nick','goal','createdAt','updatedAt']];
+    usersRows.push([
+      1,
+      'あなた',
+      '筋肥大',
+      now,
+      now
+    ]);
+
+    updates.push({
+      range: 'Users!A1:E' + usersRows.length,
+      values: usersRows
+    });
+
+    // バッチ更新
+    await gapi.client.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: SHEETS_SPREADSHEET_ID,
+      resource: {
+        data: updates,
+        valueInputOption: 'RAW'
+      }
+    });
+
+    console.log('FitNotes imported to Sheets: ' + (workoutId - 1) + ' workouts, ' + (exerciseRows.length - 1) + ' exercises');
     return true;
   } catch(e){
     console.error('Sheets import error:', e);
