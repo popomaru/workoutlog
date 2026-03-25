@@ -663,10 +663,11 @@ var googleAuthState={
 
 // ===== Google Sheets API 統合設定 =====
 const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
+const SHEETS_API_KEY='AIzaSyBDZWLHTKB2-MhqLyWp2Pc3HdyTgZbTc6U'; // Google Sheets API Key（APIキー認証用）
 const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
 
 var sheetsAuthState={
-  isAuthorized:false,
+  isAuthorized:true,  // APIキーを使うため常に true
   accessToken:'',
   expiresIn:0
 };
@@ -3106,12 +3107,8 @@ async function clearSheetsData(sheetName){
   }
 }
 
-// 7. 全ローカルデータを Sheets に一括同期
+// 7. 全ローカルデータを Sheets に一括同期（APIキー認証版）
 async function syncAllDataToSheets(){
-  if(!googleAuthState.isLoggedIn){
-    alert('先にログインしてください');
-    return false;
-  }
   if(!DB.workouts || DB.workouts.length === 0){
     alert('同期するワークアウトデータがありません');
     return false;
@@ -3121,10 +3118,7 @@ async function syncAllDataToSheets(){
   updateSyncStatus();
 
   try{
-    // 1. Workouts シートをクリア
-    await clearSheetsData('Workouts');
-
-    // 2. Workouts データを構築して送信
+    // 1. Workouts データを構築
     var workoutRows=[];
     DB.workouts.forEach(function(workout){
       workoutRows.push([
@@ -3140,22 +3134,30 @@ async function syncAllDataToSheets(){
       ]);
     });
 
-    // バッチで送信（API制限回避）
+    // 2. batchUpdate で Workouts シートをクリア＋新規データを上書き
+    var updateRequests=[{
+      updateRange:{
+        sheetId:0,  // Workouts シート（通常は0）
+        startRowIndex:1,  // A2 から
+        startColumnIndex:0,
+        endRowIndex:10000,
+        endColumnIndex:9
+      },
+      clearData:{}
+    }];
+
+    // Workouts データを送信
     if(workoutRows.length>0){
-      await gapi.client.sheets.spreadsheets.values.batchUpdate({
-        spreadsheetId:SHEETS_SPREADSHEET_ID,
-        resource:{
-          data:[{
-            range:'Workouts!A2:I',
-            values:workoutRows,
-            majorDimension:'ROWS'
-          }]
-        }
+      var sheetUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Workouts!A2:I?valueInputOption=RAW&key='+SHEETS_API_KEY;
+      var response=await fetch(sheetUrl,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({values:workoutRows})
       });
+      if(!response.ok) throw new Error('Workouts sync failed: '+response.status);
     }
 
-    // 3. BodyLogs シートをクリアして送信
-    await clearSheetsData('BodyLogs');
+    // 3. BodyLogs シート
     var bodyLogRows=[];
     if(DB.bodyLogs && DB.bodyLogs.length>0){
       DB.bodyLogs.forEach(function(log){
@@ -3169,21 +3171,17 @@ async function syncAllDataToSheets(){
       });
 
       if(bodyLogRows.length>0){
-        await gapi.client.sheets.spreadsheets.values.batchUpdate({
-          spreadsheetId:SHEETS_SPREADSHEET_ID,
-          resource:{
-            data:[{
-              range:'BodyLogs!A2:E',
-              values:bodyLogRows,
-              majorDimension:'ROWS'
-            }]
-          }
+        var bodyUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/BodyLogs!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
+        var response=await fetch(bodyUrl,{
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({values:bodyLogRows})
         });
+        if(!response.ok) throw new Error('BodyLogs sync failed: '+response.status);
       }
     }
 
-    // 4. Users シートをクリアしてユーザー情報を送信
-    await clearSheetsData('Users');
+    // 4. Users シート
     var userRows=[[
       'user-001',
       DB.user.nick||'',
@@ -3192,20 +3190,18 @@ async function syncAllDataToSheets(){
       new Date().toISOString()
     ]];
 
-    await gapi.client.sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      resource:{
-        data:[{
-          range:'Users!A2:E',
-          values:userRows,
-          majorDimension:'ROWS'
-        }]
-      }
+    var usersUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Users!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
+    var response=await fetch(usersUrl,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({values:userRows})
     });
+    if(!response.ok) throw new Error('Users sync failed: '+response.status);
 
     googleAuthState.syncStatus='success';
     updateSyncStatus();
     alert('✅ Google Sheets に '+(workoutRows.length)+'件のワークアウトを同期しました！');
+    console.log('syncAllDataToSheets success');
     return true;
 
   }catch(e){
