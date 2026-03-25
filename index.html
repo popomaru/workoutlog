@@ -590,6 +590,19 @@ textarea{min-height:56px;resize:vertical}
       ✅ ローカル保存は常に有効（オフラインでも記録できます）
     </div>
   </div>
+
+  <!-- Google Sheets 同期セクション -->
+  <div class="card" style="background:#f5fff5;border-left:3px solid var(--accent3)">
+    <div class="sec" style="color:var(--accent3)">📊 Google Sheets スプレッドシート連携</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">全ワークアウトデータを Google Sheets に一括同期します。</p>
+    <button class="btn" style="width:100%;padding:12px;background:var(--accent3);color:#fff;font-weight:600;border:none" onclick="syncAllDataToSheets()">📤 Google Sheets に同期</button>
+    <div style="font-size:11px;color:var(--text2);margin-top:10px;padding:10px;background:#fff;border-radius:6px;line-height:1.5">
+      📝 <strong>Sheets ID:</strong> <code style="word-break:break-all;background:#f0f0f0;padding:2px 4px;border-radius:3px">1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI</code><br>
+      ✅ <strong>Workouts</strong> シート: ワークアウト記録<br>
+      ✅ <strong>BodyLogs</strong> シート: 体重記録<br>
+      ✅ <strong>Users</strong> シート: ユーザー情報
+    </div>
+  </div>
 </div>
 
 </div><!-- /app -->
@@ -3076,6 +3089,134 @@ async function getSheetsMetadata(){
   }
 }
 
+// 6. Sheets データクリア（A2以降をクリア）
+async function clearSheetsData(sheetName){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    return false;
+  }
+  try{
+    await gapi.client.sheets.spreadsheets.values.clear({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      range:sheetName+'!A2:Z'
+    });
+    return true;
+  }catch(e){
+    console.error('Sheets clear error:',e);
+    return false;
+  }
+}
+
+// 7. 全ローカルデータを Sheets に一括同期
+async function syncAllDataToSheets(){
+  if(!googleAuthState.isLoggedIn){
+    alert('先にログインしてください');
+    return false;
+  }
+  if(!DB.workouts || DB.workouts.length === 0){
+    alert('同期するワークアウトデータがありません');
+    return false;
+  }
+
+  googleAuthState.syncStatus='syncing';
+  updateSyncStatus();
+
+  try{
+    // 1. Workouts シートをクリア
+    await clearSheetsData('Workouts');
+
+    // 2. Workouts データを構築して送信
+    var workoutRows=[];
+    DB.workouts.forEach(function(workout){
+      workoutRows.push([
+        workout.id||'',
+        workout.date||'',
+        workout.exercise||'',
+        workout.setIndex||'',
+        workout.weight||'',
+        workout.reps||'',
+        workout.memo||'',
+        workout.createdAt||'',
+        workout.updatedAt||''
+      ]);
+    });
+
+    // バッチで送信（API制限回避）
+    if(workoutRows.length>0){
+      await gapi.client.sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId:SHEETS_SPREADSHEET_ID,
+        resource:{
+          data:[{
+            range:'Workouts!A2:I',
+            values:workoutRows,
+            majorDimension:'ROWS'
+          }]
+        }
+      });
+    }
+
+    // 3. BodyLogs シートをクリアして送信
+    await clearSheetsData('BodyLogs');
+    var bodyLogRows=[];
+    if(DB.bodyLogs && DB.bodyLogs.length>0){
+      DB.bodyLogs.forEach(function(log){
+        bodyLogRows.push([
+          log.id||'',
+          log.date||'',
+          log.weight||'',
+          log.createdAt||'',
+          log.updatedAt||''
+        ]);
+      });
+
+      if(bodyLogRows.length>0){
+        await gapi.client.sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId:SHEETS_SPREADSHEET_ID,
+          resource:{
+            data:[{
+              range:'BodyLogs!A2:E',
+              values:bodyLogRows,
+              majorDimension:'ROWS'
+            }]
+          }
+        });
+      }
+    }
+
+    // 4. Users シートをクリアしてユーザー情報を送信
+    await clearSheetsData('Users');
+    var userRows=[[
+      'user-001',
+      DB.user.nick||'',
+      DB.user.goal||'',
+      new Date().toISOString(),
+      new Date().toISOString()
+    ]];
+
+    await gapi.client.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      resource:{
+        data:[{
+          range:'Users!A2:E',
+          values:userRows,
+          majorDimension:'ROWS'
+        }]
+      }
+    });
+
+    googleAuthState.syncStatus='success';
+    updateSyncStatus();
+    alert('✅ Google Sheets に '+(workoutRows.length)+'件のワークアウトを同期しました！');
+    return true;
+
+  }catch(e){
+    console.error('syncAllDataToSheets error:',e);
+    googleAuthState.syncStatus='error';
+    updateSyncStatus();
+    alert('❌ Sheets への同期に失敗しました。\nエラー: '+e.message);
+    return false;
+  }
+}
+
 // ===================== Service Worker 登録 =====================
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(){});
@@ -3125,7 +3266,7 @@ function initGoogleAuth(){
   gapi.load('client:auth2', function(){
     gapi.client.init({
       clientId: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.appdata'
+      scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/spreadsheets'
     }).then(function(){
       console.log('gapi.auth2 and Drive API initialized');
 
