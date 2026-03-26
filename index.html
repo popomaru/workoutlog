@@ -661,6 +661,19 @@ textarea{min-height:56px;resize:vertical}
       ✅ ローカル保存は常に有効（オフラインでも記録できます）
     </div>
   </div>
+
+  <!-- Google Sheets 同期セクション -->
+  <div class="card" style="background:#f5fff5;border-left:3px solid var(--accent3)">
+    <div class="sec" style="color:var(--accent3)">📊 Google Sheets スプレッドシート連携</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">全ワークアウトデータを Google Sheets に一括同期します。</p>
+    <button class="btn" style="width:100%;padding:12px;background:var(--accent3);color:#fff;font-weight:600;border:none" onclick="syncAllDataToSheets()">📤 Google Sheets に同期</button>
+    <div style="font-size:11px;color:var(--text2);margin-top:10px;padding:10px;background:#fff;border-radius:6px;line-height:1.5">
+      📝 <strong>Sheets ID:</strong> <code style="word-break:break-all;background:#f0f0f0;padding:2px 4px;border-radius:3px">1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI</code><br>
+      ✅ <strong>Workouts</strong> シート: ワークアウト記録<br>
+      ✅ <strong>BodyLogs</strong> シート: 体重記録<br>
+      ✅ <strong>Users</strong> シート: ユーザー情報
+    </div>
+  </div>
 </div>
 
 </div><!-- /app -->
@@ -721,10 +734,11 @@ var googleAuthState={
 
 // ===== Google Sheets API 統合設定 =====
 const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
+const SHEETS_API_KEY='AIzaSyDTpGzG56FenRksxAPMR3LP10lYw05Afg4'; // Google Sheets API Key（APIキー認証用）
 const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
 
 var sheetsAuthState={
-  isAuthorized:false,
+  isAuthorized:true,  // APIキーを使うため常に true
   accessToken:'',
   expiresIn:0
 };
@@ -3477,6 +3491,129 @@ async function getSheetsMetadata(){
   }
 }
 
+// 6. Sheets データクリア（A2以降をクリア）
+async function clearSheetsData(sheetName){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    return false;
+  }
+  try{
+    await gapi.client.sheets.spreadsheets.values.clear({
+      spreadsheetId:SHEETS_SPREADSHEET_ID,
+      range:sheetName+'!A2:Z'
+    });
+    return true;
+  }catch(e){
+    console.error('Sheets clear error:',e);
+    return false;
+  }
+}
+
+// 7. 全ローカルデータを Sheets に一括同期（APIキー認証版）
+async function syncAllDataToSheets(){
+  if(!DB.workouts || DB.workouts.length === 0){
+    alert('同期するワークアウトデータがありません');
+    return false;
+  }
+
+  googleAuthState.syncStatus='syncing';
+  updateSyncStatus();
+
+  try{
+    // 1. Workouts データを構築
+    var workoutRows=[];
+    DB.workouts.forEach(function(workout){
+      workoutRows.push([
+        workout.id||'',
+        workout.date||'',
+        workout.exercise||'',
+        workout.setIndex||'',
+        workout.weight||'',
+        workout.reps||'',
+        workout.memo||'',
+        workout.createdAt||'',
+        workout.updatedAt||''
+      ]);
+    });
+
+    // 2. batchUpdate で Workouts シートをクリア＋新規データを上書き
+    var updateRequests=[{
+      updateRange:{
+        sheetId:0,  // Workouts シート（通常は0）
+        startRowIndex:1,  // A2 から
+        startColumnIndex:0,
+        endRowIndex:10000,
+        endColumnIndex:9
+      },
+      clearData:{}
+    }];
+
+    // Workouts データを送信
+    if(workoutRows.length>0){
+      var sheetUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Workouts!A2:I?valueInputOption=RAW&key='+SHEETS_API_KEY;
+      var response=await fetch(sheetUrl,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({values:workoutRows})
+      });
+      if(!response.ok) throw new Error('Workouts sync failed: '+response.status);
+    }
+
+    // 3. BodyLogs シート
+    var bodyLogRows=[];
+    if(DB.bodyLogs && DB.bodyLogs.length>0){
+      DB.bodyLogs.forEach(function(log){
+        bodyLogRows.push([
+          log.id||'',
+          log.date||'',
+          log.weight||'',
+          log.createdAt||'',
+          log.updatedAt||''
+        ]);
+      });
+
+      if(bodyLogRows.length>0){
+        var bodyUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/BodyLogs!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
+        var response=await fetch(bodyUrl,{
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({values:bodyLogRows})
+        });
+        if(!response.ok) throw new Error('BodyLogs sync failed: '+response.status);
+      }
+    }
+
+    // 4. Users シート
+    var userRows=[[
+      'user-001',
+      DB.user.nick||'',
+      DB.user.goal||'',
+      new Date().toISOString(),
+      new Date().toISOString()
+    ]];
+
+    var usersUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Users!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
+    var response=await fetch(usersUrl,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({values:userRows})
+    });
+    if(!response.ok) throw new Error('Users sync failed: '+response.status);
+
+    googleAuthState.syncStatus='success';
+    updateSyncStatus();
+    alert('✅ Google Sheets に '+(workoutRows.length)+'件のワークアウトを同期しました！');
+    console.log('syncAllDataToSheets success');
+    return true;
+
+  }catch(e){
+    console.error('syncAllDataToSheets error:',e);
+    googleAuthState.syncStatus='error';
+    updateSyncStatus();
+    alert('❌ Sheets への同期に失敗しました。\nエラー: '+e.message);
+    return false;
+  }
+}
+
 // ===================== Service Worker 登録 =====================
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(){});
@@ -3526,7 +3663,7 @@ function initGoogleAuth(){
   gapi.load('client:auth2', function(){
     gapi.client.init({
       clientId: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.appdata'
+      scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/spreadsheets'
     }).then(function(){
       console.log('gapi.auth2 and Drive API initialized');
 
