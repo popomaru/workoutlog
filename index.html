@@ -663,11 +663,12 @@ var googleAuthState={
 
 // ===== Google Sheets API 統合設定 =====
 const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
-const SHEETS_API_KEY='AIzaSyDTpGzG56FenRksxAPMR3LP10lYw05Afg4'; // Google Sheets API Key（APIキー認証用）
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycby8mIhsXKgAmqZ6Dn7vcexAZuTJwtfzUBVVSmaVx1hAzoJU0HS9OajSbUR0evhjOr7IpQ/exec'; // Google Apps Script Web App URL
+const APPS_SCRIPT_TOKEN='workout-sync-secret-key-2025'; // Apps Script のトークン
 const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
 
 var sheetsAuthState={
-  isAuthorized:true,  // APIキーを使うため常に true
+  isAuthorized:true,  // Apps Script 認証（常に true）
   accessToken:'',
   expiresIn:0
 };
@@ -3107,7 +3108,7 @@ async function clearSheetsData(sheetName){
   }
 }
 
-// 7. 全ローカルデータを Sheets に一括同期（APIキー認証版）
+// 7. 全ローカルデータを Sheets に一括同期（Google Apps Script 版）
 async function syncAllDataToSheets(){
   if(!DB.workouts || DB.workouts.length === 0){
     alert('同期するワークアウトデータがありません');
@@ -3118,7 +3119,7 @@ async function syncAllDataToSheets(){
   updateSyncStatus();
 
   try{
-    // 1. Workouts データを構築
+    // 1. データを構築
     var workoutRows=[];
     DB.workouts.forEach(function(workout){
       workoutRows.push([
@@ -3134,30 +3135,6 @@ async function syncAllDataToSheets(){
       ]);
     });
 
-    // 2. batchUpdate で Workouts シートをクリア＋新規データを上書き
-    var updateRequests=[{
-      updateRange:{
-        sheetId:0,  // Workouts シート（通常は0）
-        startRowIndex:1,  // A2 から
-        startColumnIndex:0,
-        endRowIndex:10000,
-        endColumnIndex:9
-      },
-      clearData:{}
-    }];
-
-    // Workouts データを送信
-    if(workoutRows.length>0){
-      var sheetUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Workouts!A2:I?valueInputOption=RAW&key='+SHEETS_API_KEY;
-      var response=await fetch(sheetUrl,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({values:workoutRows})
-      });
-      if(!response.ok) throw new Error('Workouts sync failed: '+response.status);
-    }
-
-    // 3. BodyLogs シート
     var bodyLogRows=[];
     if(DB.bodyLogs && DB.bodyLogs.length>0){
       DB.bodyLogs.forEach(function(log){
@@ -3169,19 +3146,8 @@ async function syncAllDataToSheets(){
           log.updatedAt||''
         ]);
       });
-
-      if(bodyLogRows.length>0){
-        var bodyUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/BodyLogs!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
-        var response=await fetch(bodyUrl,{
-          method:'PUT',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({values:bodyLogRows})
-        });
-        if(!response.ok) throw new Error('BodyLogs sync failed: '+response.status);
-      }
     }
 
-    // 4. Users シート
     var userRows=[[
       'user-001',
       DB.user.nick||'',
@@ -3190,13 +3156,24 @@ async function syncAllDataToSheets(){
       new Date().toISOString()
     ]];
 
-    var usersUrl='https://sheets.googleapis.com/v4/spreadsheets/'+SHEETS_SPREADSHEET_ID+'/values/Users!A2:E?valueInputOption=RAW&key='+SHEETS_API_KEY;
-    var response=await fetch(usersUrl,{
-      method:'PUT',
+    // 2. Google Apps Script に POST リクエスト
+    var payload={
+      workouts:workoutRows,
+      bodyLogs:bodyLogRows,
+      users:userRows
+    };
+
+    var response=await fetch(APPS_SCRIPT_URL+'?token='+encodeURIComponent(APPS_SCRIPT_TOKEN),{
+      method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({values:userRows})
+      body:JSON.stringify(payload)
     });
-    if(!response.ok) throw new Error('Users sync failed: '+response.status);
+
+    var result=await response.json();
+
+    if(result.error){
+      throw new Error(result.error);
+    }
 
     googleAuthState.syncStatus='success';
     updateSyncStatus();
