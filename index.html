@@ -189,6 +189,66 @@ textarea{min-height:56px;resize:vertical}
 
 /* 草稿バナー */
 #draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+
+/* Discord インポートモーダル */
+#discord-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:flex-end;justify-content:center}
+#discord-modal.show{display:flex}
+#discord-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;animation:slideUp .25s ease}
+.dc-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.dc-header h2{font-size:17px;font-weight:700;color:#5865F2}
+.dc-body{overflow-y:auto;flex:1;padding:16px 20px;-webkit-overflow-scrolling:touch}
+.dc-step{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.dc-textarea{width:100%;min-height:160px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;resize:vertical;line-height:1.5}
+.dc-textarea:focus{outline:none;border-color:#5865F2}
+.dc-result-card{background:#f8f7f3;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.dc-result-card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#1a1a1a}
+.dc-summary-text{font-size:13px;line-height:1.7;color:#333;white-space:pre-wrap}
+.dc-session-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.dc-session-header{background:#5865F2;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.dc-session-date{font-size:14px;font-weight:700}
+.dc-session-summary{font-size:11px;opacity:.9}
+.dc-ex-row{padding:8px 14px;border-bottom:1px solid #f5f5f0;font-size:13px}
+.dc-ex-row:last-child{border-bottom:none}
+.dc-ex-name{font-weight:600;margin-bottom:4px}
+.dc-set-chips{display:flex;flex-wrap:wrap;gap:4px}
+.dc-set-chip{background:#f0f0f0;border-radius:6px;padding:3px 8px;font-size:12px;color:#333}
+.dc-err{background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
+.dc-ok{background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
+.dc-loading{text-align:center;padding:2rem;color:var(--text2);font-size:14px}
+.dc-spinner{display:inline-block;width:32px;height:32px;border:3px solid #f0ede8;border-top-color:#5865F2;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dc-footer{padding:12px 20px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap}
+.btn-discord{background:#5865F2;color:#fff;border-color:#5865F2}
+.btn-discord:hover{opacity:.88}
+.dc-import-check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.dc-import-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5865F2}
+
+/* FitNotes スタイル 種目カード */
+.fn-block{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.07);background:#fff;display:flex}
+.fn-drag-handle{flex-shrink:0;cursor:grab;color:#ccc;padding:0 8px;font-size:17px;user-select:none;display:flex;align-items:center}
+.fn-cat-strip{width:5px;flex-shrink:0}
+.fn-card-inner{flex:1;min-width:0;overflow:hidden}
+.fn-ex-header{display:flex;align-items:center;gap:6px;padding:10px 12px 8px;border-bottom:1px solid #f0ede8}
+.fn-ex-title{font-size:16px;font-weight:700;flex:1;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fn-fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;flex-shrink:0}
+.fn-edit-btn{border:none;background:none;cursor:pointer;font-size:15px;padding:2px 6px;color:var(--text2);flex-shrink:0}
+.fn-set-table{width:100%;border-collapse:collapse}
+.fn-set-table thead th{padding:5px 10px;font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.06em;background:#f8f7f3;border-bottom:1px solid #f0ede8;text-align:right}
+.fn-set-table thead th:first-child{text-align:center;width:30px}
+.fn-set-table thead th.fn-del-col{width:30px;text-align:center}
+.fn-set-table tbody td{padding:8px 10px;border-bottom:1px solid #f5f5f0;text-align:right;font-size:16px;font-weight:600;vertical-align:middle}
+.fn-set-table tbody td:first-child{text-align:center;font-size:11px;color:var(--text2);font-weight:400;background:#f8f7f3;width:30px;padding:8px 6px}
+.fn-set-table tbody td.fn-unit{font-size:11px;color:var(--text2);font-weight:400;padding-left:2px;padding-right:6px;min-width:20px}
+.fn-set-table tbody td.fn-del-col{text-align:center;width:30px;padding:4px 2px}
+.fn-set-table tbody tr:last-child td{border-bottom:none}
+.fn-pr{display:inline-block;background:#FFF8E6;color:#C97A00;border:1px solid #F5C842;border-radius:4px;font-size:10px;font-weight:700;padding:1px 5px;margin-left:4px;vertical-align:middle}
+.fn-add-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #f0ede8;background:#fafafa}
+.fn-add-input{flex:1;padding:7px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;text-align:center;font-family:inherit;min-width:0}
+.fn-add-input:focus{outline:none;border-color:var(--accent)}
+.fn-add-unit{font-size:11px;color:var(--text2);flex-shrink:0}
+.fn-add-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.fn-cat-hdr{padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;border-radius:8px;margin-top:4px;margin-bottom:8px;display:inline-block}
+.fn-prev-hint{padding:4px 12px 6px;font-size:11px;color:var(--text2);background:#f0f8ff;border-bottom:1px solid #e0eeff}
 </style>
 </head>
 <body>
@@ -512,6 +572,17 @@ textarea{min-height:56px;resize:vertical}
 
 <!-- ========== 取込 ========== -->
 <div id="tab-import" class="panel">
+
+  <!-- Discord パーソナルトレーニング サマリー -->
+  <div class="card" style="background:#f0f1fe;border-left:3px solid #5865F2">
+    <div class="sec" style="color:#5865F2">💬 Discord トレーニングサマリー（AI）</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">DiscordのパーソナルトレーニングチャットをClaudeに読み込ませて、ワークアウト内容を自動でサマリー・取り込みます。</p>
+    <button class="btn btn-discord" style="width:100%;padding:12px;font-size:14px;font-weight:600" onclick="openDiscordModal()">
+      📋 Discordログを読み込む
+    </button>
+    <div id="dc-last-import" style="font-size:12px;color:var(--text2);margin-top:8px;text-align:center;display:none"></div>
+  </div>
+
   <!-- FitNotes JSONインポート -->
   <div class="card">
     <div class="sec">📂 FitNotes データインポート</div>
@@ -676,6 +747,216 @@ var sheetsAuthState={
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
+// ===== FitNotesデータから生成した完全な種目→カテゴリ対応表 =====
+var FITNOTES_CAT_MAP={
+  '4 Way Neck Hammer Strength':'Neck',
+  'Ab-Wheel Rollout Keee':'Abs',
+  'Arnold Dumbbell Press':'Shoulders',
+  'Back Lat Pulldown':'Weightlifting',
+  'Back extension':'Weightlifting',
+  'Barbell Curl':'Biceps',
+  'Barbell Half sq':'Legs',
+  'Barbell Row':'Weightlifting',
+  'Barbell Squat Wide(内転狙い)':'Legs',
+  'Barbell benchpress Uバー':'Chest',
+  'Barbell curl 含むチーティグ':'Biceps',
+  'Barbell pause SQ (ボトムで止める)':'Legs',
+  'Barbell shrug バーベルシュラッグ':'Shoulders',
+  'Barbell upright row アップライトローぶん回し':'Shoulders',
+  'Bench Dips\u3000自重':'Triceps',
+  'Cable Crossover':'Chest',
+  'Cable Crossover 地面垂直寺島':'Chest',
+  'Cable Curl':'Biceps',
+  'Cable Face Pull':'Shoulders',
+  'Cable Press Down Bar':'Triceps',
+  'Cable Upright Raw':'Shoulders',
+  'Cable external rotation':'Shoulders',
+  'Cable internal rotation':'Shoulders',
+  'Chest press machine':'Chest',
+  'Chin Up (Reverse grip) body weight':'Weightlifting',
+  'Chin up straight(BW)':'Weightlifting',
+  'Close Grip Barbell Bench Press クローズベンチ':'Triceps',
+  'Crunch':'Abs',
+  'Crunch Machine':'Abs',
+  'Cycling':'Cardio',
+  'DEADLift hex bar':'Weightlifting',
+  'DY Row(片手重量)':'Weightlifting',
+  'Deadlift (Wide)':'Weightlifting',
+  'Deadlift Half (narrow) ハーフ膝下デッドリフト':'Weightlifting',
+  'Deadlift half (wide)':'Weightlifting',
+  'Decline Crunch':'Abs',
+  'Dips (BW)':'Chest',
+  'Dragon Flag':'Abs',
+  'Dumbbel French Press ダンベルフレンチプレス':'Triceps',
+  'Dumbbell Curl 含むチーティング':'Biceps',
+  'Dumbbell Hammer Curl 含むﾁｰﾃｨﾝｸﾞ':'Biceps',
+  'Dumbbell Lying Rear Raise':'Shoulders',
+  'Dumbbell Overhead Triceps Extension':'Triceps',
+  'Dumbbell Preacher Curl':'Biceps',
+  'Dumbbell Rear Raise':'Shoulders',
+  'Dumbbell Row':'Weightlifting',
+  'Dumbbell Upright Row':'Shoulders',
+  'Dumbell shrug [片手あたり':'Shoulders',
+  'Dummbel Pull Over':'Weightlifting',
+  'EZ Bar Upright Row':'Shoulders',
+  'EZ-Bar Preacher Curl':'Biceps',
+  'Elliptical Trainer':'Cardio',
+  'Ez -bar upright row アップライトローぶんまわし':'Shoulders',
+  'FLEX DIP MACHINE (好き ゴールド大森さうあね':'Chest',
+  'Flat Barbell Bench Press ケツアゲ':'Chest',
+  'Flat Dumbbell Bench Press ダンベルプレス':'Chest',
+  'Front Dumbbell Raise':'Shoulders',
+  'Front lunge':'Legs',
+  'Ground Base Jammer':'Shoulders',
+  'HIIT Treadmill 傾斜0':'Cardio',
+  'Hack Squat':'Legs',
+  'Hanging Leg Raise':'Abs',
+  'High pull':'Weightlifting',
+  'Hip Abduction 外へ':'Legs',
+  'Hip Adduction 内へ':'Legs',
+  'Incline Barbell Bench Press':'Chest',
+  'Incline Chest Press':'Chest',
+  'Incline Dumbbell Bench Press':'Chest',
+  'Incline Dumbbell Fly':'Chest',
+  'Incline Dumbbell Front Raise':'Shoulders',
+  'Incline Hummer Curl':'Biceps',
+  'Incline Smith Barbell benchpress':'Chest',
+  'Incline dummbel lateral raise':'Shoulders',
+  'Isolated High Row':'Weightlifting',
+  'Isolated Lut Pull Down':'Weightlifting',
+  'Isolateral Incline Press':'Chest',
+  'Isolateral Wide Chest Press Machine':'Chest',
+  'Isolateral Wide pull down':'Weightlifting',
+  'Isolateral front latpull down':'Weightlifting',
+  'Isolateral sholder press':'Shoulders',
+  'Kick back':'Triceps',
+  'Lat Pulldown Reverse Narrow Grip':'Weightlifting',
+  'Lat flexor':'Weightlifting',
+  'Lat prayer Cable pullover':'Weightlifting',
+  'Lateral Machine Raise':'Shoulders',
+  'Latpulldown MAG narrow parallels':'Weightlifting',
+  'Latpulldown arcuate':'Weightlifting',
+  'Leg Extension Machine':'Legs',
+  'Leg Press':'Legs',
+  'Long pull PRECOR':'Weightlifting',
+  'Lying Leg Curl Machine':'Legs',
+  'Machibe dips':'Chest',
+  'NAUTILUS Vertical Chest チェストプレス パラレルグリップ':'Chest',
+  'One Hand Dummbel Front Raise':'Shoulders',
+  'One Hand Preacher Dumbbell Curl':'Biceps',
+  'One hand DY row':'Weightlifting',
+  'One-hand dummbel fly (including cheating)':'Chest',
+  'Palm Press':'Chest',
+  'Parallel Bar Triceps Dip(BW)':'Triceps',
+  'Pendlay Row':'Weightlifting',
+  'Plank':'Abs',
+  'Prone leg curl':'Legs',
+  'Push Up':'Chest',
+  'Push Up Close':'Triceps',
+  'Rear Delt Dumbbell Raise':'Shoulders',
+  'Rear Delt Machine Fly リアデルトフライ':'Shoulders',
+  'Reverse Cable Curl':'Biceps',
+  'Reverse EZbar curl (含チーティング)':'Biceps',
+  'Reverse cable push down':'Triceps',
+  'Romanian Deadlift':'Legs',
+  'Rope Push Down (pronation回内) 含むチーティグ':'Triceps',
+  'Rotary Torso':'Abs',
+  'Rowing Machine':'Cardio',
+  'Running (Outdoor)':'Cardio',
+  'Running (Treadmill)':'Cardio',
+  'Sato special':'Weightlifting',
+  'Seatead shoulderpress':'Shoulders',
+  'Seated Barbell Shoulder press':'Shoulders',
+  'Seated Cable Row 含ﾁｰﾃｨﾝｸﾞ':'Weightlifting',
+  'Seated Calf Raise Machine':'Legs',
+  'Seated Dumbbell Lateral Raise':'Shoulders',
+  'Seated Leg Curl Machine':'Legs',
+  'Seated Machine Curl':'Biceps',
+  'Seated Machine Fly':'Chest',
+  'Seated Mid Row':'Weightlifting',
+  'Seated Row under grip':'Weightlifting',
+  'Seated Smith Machine Overhead Press':'Shoulders',
+  'Seated dummbel curl':'Biceps',
+  'Seated triceps EZ bar EXTEN':'Triceps',
+  'Shoulder press machine':'Shoulders',
+  'Side Plank':'Abs',
+  'Smith Machine Bench Press':'Chest',
+  'Smith machine Sq':'Legs',
+  'Smith machine close bench press':'Triceps',
+  'Smithmachine Front SQ':'Legs',
+  'Smithmachine Military Press':'Shoulders',
+  'Smithましん\u3000ルーマニア':'Legs',
+  'Snatch':'Weightlifting',
+  'Spyder Row':'Weightlifting',
+  'StairMaster':'Cardio',
+  'Standing Calf Raise Machine':'Legs',
+  'Stationary Bike':'Cardio',
+  'Swimming':'Cardio',
+  'T-Bar Row':'Weightlifting',
+  'TECA dorsi pecto 南砂町ゴールド':'Chest',
+  'Triceps Extension Machine':'Triceps',
+  'Tuff Stuff Bio Arc Chest Press':'Chest',
+  'Waiper 往復でカウント':'Abs',
+  'Walking':'Cardio',
+  'bicycle crunch':'Abs',
+  'flat barbell bench press 片側おもり':'Chest',
+  'isolateral high row':'Weightlifting',
+  '★45度レッグプレス Liner Leg Press 斜めに座り足裏面が動く(含む手の補助)':'Legs',
+  '★Barbell Bench Press 2秒止':'Chest',
+  '★Barbell Front Squat':'Legs',
+  '★Barbell Squat スクワット ミドルハイバー':'Legs',
+  '★Bent over row ベントオーバー':'Weightlifting',
+  '★Bulgarian squat ブルガリアンスクワット':'Legs',
+  '★Cable Overhead Triceps Extension ケーブルフレンチプレス':'Triceps',
+  '★Cable lateral raise ケーブルサイドレイズ [含チーティング':'Shoulders',
+  '★Chin Up (Body weight)\u3000Straight geip':'Weightlifting',
+  '★Chin up parallel (BW パラレル)':'Weightlifting',
+  '★Chin up パラレル体幹屈曲\u3000bw':'Weightlifting',
+  '★Crunch 膝つけ、足首離し、上体丸めて下腹部(BW)':'Abs',
+  '★Deadlift (Narrow) デッドリフト':'Weightlifting',
+  '★Dumbbell Concentration Curl(含むチーティング)':'Biceps',
+  '★Dummbell one hand row ワンハンドロー':'Weightlifting',
+  '★EZ-Bar Curl ｲｰｼﾞｰﾊﾞｰｶｰﾙ(含チーティング)':'Biceps',
+  '★Flat Barbell Bench Press ベンチプレス':'Chest',
+  '★Flat Barbell Benchpress 膝立足裏ベンチ乗せ':'Chest',
+  '★Flat Dumbbell Fly ダンベルフライ':'Chest',
+  '★Flat dummbel press 足上げ骨盤後傾':'Chest',
+  '★Incline Dumbbell Curl インクラインダンベルカール 含むﾁｰﾃｨﾝｸﾞ':'Biceps',
+  '★Larsen Bench Press ラーセン':'Chest',
+  '★Lat Pulldown Mid Parallel ラットプルダウンパラレル':'Weightlifting',
+  '★Lat pulldown ミッド オーバーグリップ':'Weightlifting',
+  '★Lateral Dumbbell Raise サイドレイズ 除くチーティング':'Shoulders',
+  '★Lying Triceps Extension Ez ライイングエクステンション':'Triceps',
+  '★Military Press ミリタリープレス':'Shoulders',
+  '★Romanian ルーマニアンデッドリフト':'Weightlifting',
+  '★Seated Dumbbell Press ショルダープレス':'Shoulders',
+  '★Standing Dummbel Shoulder Press 含むチーティング':'Shoulders',
+  '★latpull down 体幹屈曲':'Weightlifting',
+  '★オーバーヘッドスクワット':'Legs',
+  '★ゴブレットブルガリアンスクワット':'Legs',
+  '【しお】ダンベルフライ':'Chest',
+  '【しお】ベンチプレス':'Chest',
+  '【しお】マシンフライ':'Chest',
+  'お山座りなんとかトレーニング':'Conditioning',
+  'お山座り万歳(腸腰筋)+ローテ(前鋸筋下部.僧帽筋下部)':'Conditioning',
+  'アブベンチ in GOLDGYM':'Abs',
+  'キャット':'Conditioning',
+  'ゴブレットスクワット':'Legs',
+  'スパインロールダウン':'Conditioning',
+  'デクラインプレスマシン':'Chest',
+  'ヒップウォーク':'Conditioning',
+  'ポールクランチ':'Conditioning',
+  'ミリタリーのバックプレス':'Shoulders',
+  'リバースグリップのケーブルエクステンション\u3000肘ケア':'Triceps',
+  '傾斜10%のトレッドミル':'Cardio',
+  '僧帽筋下部線維エクササイズ\u3000うつ伏せ親指天井上げ':'Conditioning',
+  '壁につま先おいてスパイロンロール':'Conditioning',
+  '腸腰筋ストレッチ':'Conditioning',
+  '自重カール':'Biceps',
+  '風船トレーニング':'Conditioning',
+  '鰻1周':'Abs'
+};
+
 // ===== カテゴリ統一（英語 ↔ 日本語） =====
 var CATEGORY_COLORS={
   'Abs':'#D4A574','Biceps':'#B8A5D1','Triceps':'#7FA5D1','Cardio':'#E88B7D',
@@ -709,6 +990,8 @@ var CAT_LEGACY_TO_EN={
 // 種目名からカテゴリを判定する関数
 function categorizeExerciseByName(exerciseName){
   if(!exerciseName) return 'Weightlifting';
+  // まずFitNotesの完全一致テーブルで検索
+  if(FITNOTES_CAT_MAP[exerciseName]) return FITNOTES_CAT_MAP[exerciseName];
   var name=exerciseName.toLowerCase();
 
   // Abs
@@ -1456,7 +1739,14 @@ function renderTodayLog(){
   loadDailyNote(date);
 }
 
-// 記録タブ用：ドラッグ対応版
+// カテゴリ別カラーマップ
+var FN_CAT_COLORS={
+  'Chest':'#E8957C','Shoulders':'#E8B856','Back':'#7BB5E8','Biceps':'#B8A5D1',
+  'Triceps':'#7FA5D1','Legs':'#90D695','Abs':'#D4A574','Cardio':'#E88B7D',
+  'Neck':'#C985E0','Weightlifting':'#8B9E6D','Conditioning':'#95C7D4'
+};
+
+// 記録タブ用：FitNotes スタイル カード描画
 function renderTodayLogWithDrag(workouts,bodyEl,date){
   bodyEl.innerHTML='';
   if(!workouts.length){
@@ -1465,97 +1755,148 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   }
 
   var draggedIdx=null;
+  var prevCat=null;
 
   workouts.forEach(function(w,idx){
+    var cat=catEn(DB.exCategories[w.exercise]||'');
+    var color=FN_CAT_COLORS[cat]||'#aaa';
+
+    // カテゴリヘッダー（切り替わり時）
+    if(cat&&cat!==prevCat){
+      var catHdr=document.createElement('div');
+      catHdr.className='fn-cat-hdr';
+      catHdr.style.background=color;
+      catHdr.textContent=(CAT_EN_TO_JA[cat]||cat);
+      bodyEl.appendChild(catHdr);
+      prevCat=cat;
+    }
+
+    // ========== カードブロック ==========
     var block=document.createElement('div');
-    block.style.cssText='margin-bottom:18px;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;display:flex;gap:8px;align-items:flex-start';
+    block.className='fn-block';
     block.draggable=true;
     block.dataset.idx=idx;
 
     // ドラッグハンドル
     var handle=document.createElement('div');
-    handle.style.cssText='flex-shrink:0;cursor:grab;font-size:20px;color:var(--text2);user-select:none;padding-top:4px';
-    handle.textContent='☰';
+    handle.className='fn-drag-handle';
+    handle.innerHTML='&#8942;';
     block.appendChild(handle);
 
-    // コンテンツ
-    var content=document.createElement('div');
-    content.style.cssText='flex:1;min-width:0';
+    // カラーストリップ
+    var strip=document.createElement('div');
+    strip.className='fn-cat-strip';
+    strip.style.background=color;
+    block.appendChild(strip);
 
-    // 種目名
-    var exName=document.createElement('div');
-    exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
-    exName.textContent=w.exercise;
-    content.appendChild(exName);
+    // カード本体
+    var inner=document.createElement('div');
+    inner.className='fn-card-inner';
 
-    // 2. 種目別次回目標を表示
-    var nextTarget=suggestNextTarget(w.exercise);
+    // --- 種目ヘッダー ---
+    var isFav=!!DB.favorites[w.exercise];
+    var exHdr=document.createElement('div');
+    exHdr.className='fn-ex-header';
+    exHdr.innerHTML=
+      '<button class="fn-fav-btn" onclick="fnToggleFav(\''+escAttr(w.exercise)+'\')" title="お気に入り" style="color:'+(isFav?'#378ADD':'#ccc')+'">★</button>'+
+      '<span class="fn-ex-title">'+escHtml(w.exercise)+'</span>'+
+      '<button class="fn-edit-btn" onclick="fnEditEx(\''+escAttr(w.exercise)+'\',\''+date+'\')" title="セット編集">✏️</button>';
+    inner.appendChild(exHdr);
+
+    // --- 前回記録ヒント ---
     var lastSet=getLastWorkoutForExercise(w.exercise);
-    if(lastSet&&nextTarget){
-      var targetDiv=document.createElement('div');
-      targetDiv.style.cssText='padding:6px 8px;background:#f0f7ff;border-left:3px solid var(--accent2);margin-bottom:8px;font-size:12px;border-radius:4px';
-      var targetHtml='前回 <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'</b> → ';
-      var targetPrimary=nextTarget[0];
-      targetHtml+='<b style="color:var(--accent2)">'+targetPrimary.w.toFixed(1)+'kg × '+targetPrimary.r+'</b> ('+targetPrimary.label+')';
-      targetDiv.innerHTML=targetHtml;
-      content.appendChild(targetDiv);
+    var nextTargets=suggestNextTarget(w.exercise);
+    if(lastSet&&nextTargets&&nextTargets[0]){
+      var hint=document.createElement('div');
+      hint.className='fn-prev-hint';
+      hint.innerHTML='前回: <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'回</b>　→　目標: <b style="color:var(--accent2)">'+nextTargets[0].w.toFixed(1)+'kg × '+nextTargets[0].r+'回</b>';
+      inner.appendChild(hint);
     }
 
-    // セット情報
+    // --- セットテーブル ---
+    var table=document.createElement('table');
+    table.className='fn-set-table';
+
     var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
-    w.sets.forEach(function(s){
-      var row=document.createElement('div');
-      row.style.cssText='display:flex;justify-content:flex-end;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:14px';
 
-      if(isCardio){
-        row.innerHTML='<span style="font-weight:600">'+(s.dist||'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin:0 8px">'+(s.distUnit||'km')+'</span> '+
-          '<span style="font-weight:600">'+(s.time||'－')+'</span>';
-      } else {
+    if(!isCardio){
+      table.innerHTML='<thead><tr><th>SET</th><th>重量</th><th class="fn-unit"></th><th>回数</th><th class="fn-unit"></th><th class="fn-del-col"></th></tr></thead>';
+    } else {
+      table.innerHTML='<thead><tr><th>SET</th><th>距離</th><th class="fn-unit"></th><th>時間</th><th class="fn-del-col"></th></tr></thead>';
+    }
+
+    var tbody=document.createElement('tbody');
+    // PRのベースライン（今日より前の最高1RM）
+    var prBase=myBestRM(w.exercise);
+
+    w.sets.forEach(function(s,si){
+      var tr=document.createElement('tr');
+      if(!isCardio){
         var ww=parseFloat(s.w)||0;
-        var r=parseInt(s.r)||0;
-        row.innerHTML='<span style="font-weight:600">'+(ww?ww.toFixed(1):'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin:0 8px">kg</span> '+
-          '<span style="font-weight:600">'+(r||'－')+'</span> '+
-          '<span style="font-size:11px;color:var(--text2);margin-left:4px">reps</span>';
+        var rr=parseInt(s.r)||0;
+        var rm=rr>0?Math.round(ww*(1+rr/30)):0;
+        var isPR=rm>0&&rm>prBase;
+        var prBadge=isPR?'<span class="fn-pr">PR</span>':'';
+        tr.innerHTML=
+          '<td>'+(si+1)+'</td>'+
+          '<td>'+(ww?ww.toFixed(1):'－')+'</td>'+
+          '<td class="fn-unit">kg</td>'+
+          '<td>'+(rr||'－')+prBadge+'</td>'+
+          '<td class="fn-unit">回</td>'+
+          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
+      } else {
+        tr.innerHTML=
+          '<td>'+(si+1)+'</td>'+
+          '<td>'+(s.dist||'－')+'</td>'+
+          '<td class="fn-unit">'+(s.distUnit||'km')+'</td>'+
+          '<td>'+(s.time||'－')+'</td>'+
+          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
       }
-      content.appendChild(row);
-
-      if(s.comment&&s.comment.trim()){
-        var cmt=document.createElement('div');
-        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 0;font-style:italic';
-        cmt.textContent='💬 '+s.comment;
-        content.appendChild(cmt);
-      }
+      tbody.appendChild(tr);
     });
+    table.appendChild(tbody);
+    inner.appendChild(table);
 
+    // --- クイック追加行 ---
+    var lastW=w.sets.length?(w.sets[w.sets.length-1].w||''):'';
+    var lastR=w.sets.length?(w.sets[w.sets.length-1].r||''):'';
+    var addRow=document.createElement('div');
+    addRow.className='fn-add-row';
+    if(!isCardio){
+      addRow.innerHTML=
+        '<input class="fn-add-input" id="fn-w-'+idx+'" type="number" placeholder="kg" value="'+escHtml(lastW)+'">'+
+        '<span class="fn-add-unit">kg</span>'+
+        '<input class="fn-add-input" id="fn-r-'+idx+'" type="number" placeholder="回" value="'+escHtml(lastR)+'">'+
+        '<span class="fn-add-unit">回</span>'+
+        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
+    } else {
+      addRow.innerHTML=
+        '<input class="fn-add-input" id="fn-dist-'+idx+'" type="number" placeholder="km" style="flex:1">'+
+        '<span class="fn-add-unit">km</span>'+
+        '<input class="fn-add-input" id="fn-time-'+idx+'" type="text" placeholder="時間" style="flex:1">'+
+        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
+    }
+    inner.appendChild(addRow);
+
+    // メモ
     if(w.memo&&w.memo.trim()){
       var memo=document.createElement('div');
-      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 0 0;font-style:italic;margin-top:4px';
+      memo.style.cssText='padding:6px 12px;font-size:11px;color:var(--text2);font-style:italic;border-top:1px solid #f0ede8';
       memo.textContent='📝 '+w.memo;
-      content.appendChild(memo);
+      inner.appendChild(memo);
     }
 
-    block.appendChild(content);
+    block.appendChild(inner);
 
     // ドラッグイベント
     block.addEventListener('dragstart',function(e){
-      draggedIdx=idx;
-      e.dataTransfer.effectAllowed='move';
-      block.style.opacity='0.5';
+      draggedIdx=idx;e.dataTransfer.effectAllowed='move';block.style.opacity='0.5';
     });
-
-    block.addEventListener('dragend',function(e){
-      block.style.opacity='1';
-    });
-
+    block.addEventListener('dragend',function(){block.style.opacity='1';});
     block.addEventListener('dragover',function(e){
       e.preventDefault();
-      e.dataTransfer.dropEffect='move';
       if(draggedIdx!==null&&draggedIdx!==idx){
-        var temp=workouts[draggedIdx];
-        workouts[draggedIdx]=workouts[idx];
-        workouts[idx]=temp;
+        var temp=workouts[draggedIdx];workouts[draggedIdx]=workouts[idx];workouts[idx]=temp;
         draggedIdx=idx;
         renderTodayLogWithDrag(workouts,bodyEl,date);
       }
@@ -1567,22 +1908,82 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   // フッター合計
   var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
   var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
-  if(workouts.length>1||totalSets>0){
-    var foot=document.createElement('div');
-    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
-    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
-    bodyEl.appendChild(foot);
-  }
+  var foot=document.createElement('div');
+  foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+  foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+  bodyEl.appendChild(foot);
 
   // 並び順を DB に反映
   var date_val=document.getElementById('r-date').value;
   DB.workouts.forEach(function(w){
-    if(w.date===date_val){
-      w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);
-    }
+    if(w.date===date_val){w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);}
   });
   save();
 }
+
+// === FitNotes カード操作ヘルパー ===
+
+// クイック追加
+function fnAddSet(date,wIdx){
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var w=workouts[wIdx];if(!w)return;
+  var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+  var newSet;
+  if(!isCardio){
+    var wEl=document.getElementById('fn-w-'+wIdx);
+    var rEl=document.getElementById('fn-r-'+wIdx);
+    var wVal=(wEl?wEl.value.trim():'');
+    var rVal=(rEl?rEl.value.trim():'');
+    if(!wVal&&!rVal)return;
+    newSet={w:wVal,r:rVal,dist:'',distUnit:'km',time:'',comment:''};
+  } else {
+    var dEl=document.getElementById('fn-dist-'+wIdx);
+    var tEl=document.getElementById('fn-time-'+wIdx);
+    newSet={w:'',r:'',dist:(dEl?dEl.value.trim():''),distUnit:'km',time:(tEl?tEl.value.trim():''),comment:''};
+  }
+  w.sets.push(newSet);
+  save();
+  renderTodayLog();
+}
+
+// セット削除
+function fnDelSet(date,wIdx,sIdx){
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var w=workouts[wIdx];if(!w)return;
+  w.sets.splice(sIdx,1);
+  if(w.sets.length===0){
+    var dbIdx=DB.workouts.indexOf(w);
+    if(dbIdx!==-1)DB.workouts.splice(dbIdx,1);
+  }
+  save();
+  renderTodayLog();
+}
+
+// お気に入りトグル（カードから）
+function fnToggleFav(ex){
+  if(DB.favorites[ex])delete DB.favorites[ex];else DB.favorites[ex]=true;
+  save();renderTodayLog();
+}
+
+// 編集フォームを開く（カードから）
+function fnEditEx(ex,date){
+  var w=DB.workouts.find(function(w){return w.date===date&&w.exercise===ex;});
+  document.getElementById('r-ex').value=ex;
+  document.getElementById('ex-picker-label').textContent=ex;
+  if(w){
+    currentSets=w.sets.map(function(s){return{w:s.w,r:s.r,comment:s.comment||''};});
+  } else {
+    currentSets=[];addSet();addSet();addSet();
+  }
+  renderSets();showPrevSession();
+  var form=document.getElementById('rec-input-form');
+  form.style.display='block';
+  document.getElementById('add-ex-btn').textContent='✕ 閉じる';
+  setTimeout(function(){form.scrollIntoView({behavior:'smooth'});},50);
+}
+
+// HTML属性用エスケープ
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ===================== 前回の記録表示 =====================
 function showPrevSession(){
@@ -3670,6 +4071,22 @@ function performRestoreInBackground(){
 
 // ===================== 起動 =====================
 load();
+
+// 起動時：全種目のカテゴリをFitNotesマップで再分類
+(function recategorizeAll(){
+  var updated=0;
+  DB.workouts.forEach(function(w){
+    var ex=w.exercise;
+    if(!ex)return;
+    var correct=categorizeExerciseByName(ex);
+    if(DB.exCategories[ex]!==correct){
+      DB.exCategories[ex]=correct;
+      updated++;
+    }
+  });
+  if(updated>0)save();
+})();
+
 addSet();addSet();addSet();
 renderBody();
 
@@ -3700,10 +4117,342 @@ save = function(){
 };
 </script>
 
+<!-- Discord インポートモーダル -->
+<div id="discord-modal" onclick="if(event.target===this)closeDiscordModal()">
+  <div id="discord-inner">
+    <div class="dc-header">
+      <h2>💬 Discord トレーニングサマリー</h2>
+      <button onclick="closeDiscordModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1">×</button>
+    </div>
+    <div class="dc-body" id="discord-modal-body">
+      <!-- Step 1: API Key -->
+      <div id="dc-step-apikey">
+        <div class="dc-step">Step 1 — Claude API キー</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Anthropic の Claude API キーを入力してください。キーはこのブラウザにのみ保存されます。</p>
+        <input type="password" id="dc-apikey-input" placeholder="sk-ant-..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:monospace;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text2)">※ <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#5865F2">console.anthropic.com</a> でAPIキーを取得できます。キーは端末に保存されます（サーバー送信なし）。</div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <!-- Step 2: Discord Messages -->
+      <div id="dc-step-messages">
+        <div class="dc-step">Step 2 — Discordのメッセージを貼り付け</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Discordのトレーニングチャンネルのメッセージをコピー＆ペーストするか、<br>Discordデータエクスポート（messages.jsonの中身）を貼り付けてください。</p>
+        <textarea class="dc-textarea" id="dc-messages-input" placeholder="例：
+トレーナー: 今日はベンチプレス3セット、スクワット4セットやりましょう
+あなた: ベンチ 80kg x 10rep x 3set完了！
+トレーナー: いい感じ！次はスクワット 70kg x 12rep
+あなた: スクワット完了 70kg x 12 x 4set"></textarea>
+
+        <div style="margin-top:10px">
+          <div class="dc-step">または JSON ファイルをアップロード</div>
+          <label class="import-drop" style="margin-top:6px" for="dc-json-file">
+            <input type="file" id="dc-json-file" accept=".json,.csv,.txt" onchange="loadDiscordFile(this)">
+            <div style="font-size:24px;margin-bottom:4px">📂</div>
+            <div style="font-size:13px;font-weight:500">Discordエクスポート JSON / テキスト</div>
+            <div style="font-size:11px;color:var(--text2)">messages.json, channel.json, .txt など</div>
+          </label>
+        </div>
+      </div>
+
+      <div style="height:16px"></div>
+
+      <!-- Step 3: Results (hidden initially) -->
+      <div id="dc-step-results" style="display:none">
+        <div class="dc-step">サマリー結果</div>
+        <div id="dc-results-body"></div>
+      </div>
+    </div>
+
+    <div class="dc-footer">
+      <button class="btn" onclick="closeDiscordModal()" style="flex:1">キャンセル</button>
+      <button class="btn btn-discord" id="dc-analyze-btn" onclick="analyzeDiscordMessages()" style="flex:2;font-weight:600">🤖 AIでサマリーを生成</button>
+      <button class="btn btn-green" id="dc-import-btn" onclick="importDiscordWorkouts()" style="flex:2;font-weight:600;display:none">✅ ワークアウトを取り込む</button>
+    </div>
+  </div>
+</div>
+
 <!-- FitNotes データ埋め込み -->
 <script src="fitnotes_embed.js"></script>
 
 <script>
+// ============================================================
+// Discord トレーニングサマリー機能
+// ============================================================
+
+var dcExtractedSessions = []; // Claude から抽出したセッション
+
+function openDiscordModal() {
+  var modal = document.getElementById('discord-modal');
+  modal.classList.add('show');
+  // 保存済みAPIキーをセット
+  var savedKey = localStorage.getItem('claude_api_key') || '';
+  document.getElementById('dc-apikey-input').value = savedKey;
+  document.getElementById('dc-step-results').style.display = 'none';
+  document.getElementById('dc-import-btn').style.display = 'none';
+  document.getElementById('dc-analyze-btn').style.display = '';
+  dcExtractedSessions = [];
+}
+
+function closeDiscordModal() {
+  document.getElementById('discord-modal').classList.remove('show');
+}
+
+function loadDiscordFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var content = e.target.result;
+    var text = '';
+    try {
+      var json = JSON.parse(content);
+      // Discord公式エクスポート形式: messages配列
+      if (Array.isArray(json)) {
+        // messages.csvをJSONとして扱う場合
+        text = json.map(function(m) {
+          return (m.Timestamp || m.timestamp || '') + ' ' +
+                 (m.Author || m.author || '') + ': ' +
+                 (m.Contents || m.content || '');
+        }).join('\n');
+      } else if (json.messages && Array.isArray(json.messages)) {
+        // DiscordChatExporter形式
+        text = json.messages.map(function(m) {
+          var ts = m.timestamp ? m.timestamp.substring(0, 10) : '';
+          var author = m.author ? (m.author.nickname || m.author.name || '') : '';
+          return ts + ' ' + author + ': ' + (m.content || '');
+        }).filter(function(l) { return l.trim().length > 5; }).join('\n');
+      } else {
+        text = JSON.stringify(json, null, 2);
+      }
+    } catch(ex) {
+      // テキストファイルとして扱う
+      text = content;
+    }
+    document.getElementById('dc-messages-input').value = text;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function analyzeDiscordMessages() {
+  var apiKey = document.getElementById('dc-apikey-input').value.trim();
+  var messages = document.getElementById('dc-messages-input').value.trim();
+
+  if (!apiKey) {
+    showDcError('Claude APIキーを入力してください。');
+    return;
+  }
+  if (!messages) {
+    showDcError('Discordのメッセージを貼り付けてください。');
+    return;
+  }
+  if (!apiKey.startsWith('sk-ant-')) {
+    showDcError('APIキーの形式が正しくありません（sk-ant-... で始まるキーを入力してください）。');
+    return;
+  }
+
+  // APIキーを保存
+  localStorage.setItem('claude_api_key', apiKey);
+
+  // ローディング表示
+  document.getElementById('dc-step-results').style.display = 'block';
+  document.getElementById('dc-results-body').innerHTML =
+    '<div class="dc-loading"><div class="dc-spinner"></div><br>Claudeがトレーニング内容を解析中...</div>';
+  document.getElementById('dc-analyze-btn').disabled = true;
+  document.getElementById('dc-import-btn').style.display = 'none';
+
+  var prompt = 'あなたはフィットネストラッカーのアシスタントです。\n' +
+    '以下はDiscordのパーソナルトレーニングに関するチャットログです。\n' +
+    'このログを分析し、以下のJSON形式で回答してください。\n\n' +
+    '**重要**: 必ずJSONのみを返してください（前後の説明文は不要）。\n\n' +
+    '出力JSON形式:\n' +
+    '{\n' +
+    '  "summary": "全体のトレーニングサマリー（日本語・200文字以内）",\n' +
+    '  "sessions": [\n' +
+    '    {\n' +
+    '      "date": "YYYY-MM-DD（推定日付、不明なら今日の日付）",\n' +
+    '      "summary": "このセッションの概要",\n' +
+    '      "exercises": [\n' +
+    '        {\n' +
+    '          "name": "種目名（日本語）",\n' +
+    '          "sets": [\n' +
+    '            {"w": "重量(kg、なければ空文字)", "r": "レップ数（なければ空文字）", "comment": "メモ"}\n' +
+    '          ]\n' +
+    '        }\n' +
+    '      ]\n' +
+    '    }\n' +
+    '  ]\n' +
+    '}\n\n' +
+    'ルール:\n' +
+    '- 種目名が英語の場合は日本語に変換（例: Bench Press → ベンチプレス）\n' +
+    '- 重量・レップ数が不明なセットは w="" r="" で記録\n' +
+    '- 日付が明示されていない場合は会話の文脈から推定するか、今日の日付 (' + todayStr() + ') を使用\n' +
+    '- トレーニング内容が含まれないメッセージは無視してよい\n\n' +
+    'チャットログ:\n' +
+    '---\n' +
+    messages.substring(0, 12000) + // APIコスト削減のため12000文字まで
+    '\n---';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(res) {
+    if (!res.ok) {
+      return res.json().then(function(err) {
+        throw new Error(err.error ? err.error.message : 'API error ' + res.status);
+      });
+    }
+    return res.json();
+  })
+  .then(function(data) {
+    var text = data.content && data.content[0] ? data.content[0].text : '';
+    // JSONを抽出（```json ... ``` ブロックにも対応）
+    var jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    var jsonStr = jsonMatch ? jsonMatch[1] : text;
+    // 最初の { から最後の } まで抽出
+    var start = jsonStr.indexOf('{');
+    var end = jsonStr.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('JSONが見つかりませんでした');
+    jsonStr = jsonStr.substring(start, end + 1);
+    var result = JSON.parse(jsonStr);
+    dcExtractedSessions = result.sessions || [];
+    renderDiscordResults(result);
+  })
+  .catch(function(err) {
+    showDcError('エラー: ' + err.message);
+  })
+  .finally(function() {
+    document.getElementById('dc-analyze-btn').disabled = false;
+  });
+}
+
+function todayStr() {
+  return new Date().toISOString().substring(0, 10);
+}
+
+function showDcError(msg) {
+  document.getElementById('dc-step-results').style.display = 'block';
+  document.getElementById('dc-results-body').innerHTML = '<div class="dc-err">' + escHtml(msg) + '</div>';
+}
+
+function renderDiscordResults(result) {
+  var sessions = result.sessions || [];
+  var html = '';
+
+  // 全体サマリー
+  if (result.summary) {
+    html += '<div class="dc-result-card">' +
+      '<h3>📊 トレーニングサマリー</h3>' +
+      '<div class="dc-summary-text">' + escHtml(result.summary) + '</div>' +
+      '</div>';
+  }
+
+  if (sessions.length === 0) {
+    html += '<div class="dc-err">トレーニングデータが見つかりませんでした。メッセージ内容を確認してください。</div>';
+    document.getElementById('dc-results-body').innerHTML = html;
+    return;
+  }
+
+  // セッション一覧（インポート選択チェックボックス付き）
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px">インポートするセッションを選択:</div>';
+
+  sessions.forEach(function(session, si) {
+    var exHtml = '';
+    (session.exercises || []).forEach(function(ex) {
+      var setChips = (ex.sets || []).map(function(s) {
+        var label = '';
+        if (s.w) label += s.w + 'kg';
+        if (s.w && s.r) label += ' × ';
+        if (s.r) label += s.r + 'rep';
+        if (!label) label = 'セット';
+        return '<span class="dc-set-chip">' + escHtml(label) + '</span>';
+      }).join('');
+      exHtml += '<div class="dc-ex-row">' +
+        '<div class="dc-ex-name">' + escHtml(ex.name || '') + '</div>' +
+        '<div class="dc-set-chips">' + setChips + '</div>' +
+        '</div>';
+    });
+
+    html += '<div class="dc-import-check">' +
+      '<input type="checkbox" id="dc-chk-' + si + '" checked>' +
+      '<label for="dc-chk-' + si + '" style="cursor:pointer;font-weight:600">' +
+        escHtml(session.date || '') + ' — ' + escHtml(session.summary || '') +
+      '</label>' +
+      '</div>' +
+      '<div class="dc-session-card" style="margin-bottom:12px">' +
+        exHtml +
+      '</div>';
+  });
+
+  document.getElementById('dc-results-body').innerHTML = html;
+  document.getElementById('dc-import-btn').style.display = '';
+  document.getElementById('dc-step-results').style.display = 'block';
+}
+
+function importDiscordWorkouts() {
+  var imported = 0;
+  var skipped = 0;
+
+  dcExtractedSessions.forEach(function(session, si) {
+    var chk = document.getElementById('dc-chk-' + si);
+    if (!chk || !chk.checked) return;
+
+    var date = session.date || todayStr();
+    (session.exercises || []).forEach(function(ex) {
+      if (!ex.name) return;
+      var sets = (ex.sets || []).map(function(s) {
+        return { w: s.w || '', r: s.r || '', dist: '', distUnit: 'km', time: '', comment: s.comment || '' };
+      });
+      if (sets.length === 0) sets = [{ w: '', r: '', dist: '', distUnit: 'km', time: '', comment: '' }];
+
+      // 重複チェック
+      var exists = DB.workouts.some(function(w) { return w.date === date && w.exercise === ex.name; });
+      if (exists) { skipped++; return; }
+
+      DB.workouts.push({ date: date, exercise: ex.name, sets: sets, memo: session.summary || '' });
+      // カテゴリ自動分類
+      if (!DB.exCategories[ex.name]) {
+        DB.exCategories[ex.name] = categorizeExerciseByName(ex.name);
+      }
+      imported++;
+    });
+  });
+
+  save();
+  updateImportStats();
+
+  var msg = imported + '件のエクササイズをインポートしました。';
+  if (skipped) msg += '（重複 ' + skipped + ' 件はスキップ）';
+  document.getElementById('dc-results-body').innerHTML =
+    '<div class="dc-ok">✅ ' + escHtml(msg) + '</div>' +
+    document.getElementById('dc-results-body').innerHTML;
+
+  var lastEl = document.getElementById('dc-last-import');
+  if (lastEl) {
+    lastEl.style.display = '';
+    lastEl.textContent = '最終取り込み: ' + new Date().toLocaleDateString('ja-JP') + '（' + imported + '件）';
+  }
+
+  document.getElementById('dc-import-btn').style.display = 'none';
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
 // importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
 function importFitNotesJSON(){
   var data = FITNOTES_DATA;
