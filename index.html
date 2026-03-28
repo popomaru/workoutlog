@@ -510,17 +510,33 @@ textarea{min-height:56px;resize:vertical}
     <div class="sec">データ管理</div>
     <div class="mgmt-row">
       <div>
-        <div style="font-size:13px;font-weight:500">バックアップ（エクスポート）</div>
+        <div style="font-size:13px;font-weight:500">バックアップ（JSON形式）</div>
         <div style="font-size:12px;color:var(--text2)">全データをJSONとして保存</div>
       </div>
       <button class="btn btn-blue btn-sm" onclick="exportData()">ダウンロード</button>
     </div>
     <div class="mgmt-row">
       <div>
-        <div style="font-size:13px;font-weight:500">バックアップから復元</div>
-        <div style="font-size:12px;color:var(--text2)">JSONファイルを読み込んでデータを復元</div>
+        <div style="font-size:13px;font-weight:500">FitNotesエクスポート</div>
+        <div style="font-size:12px;color:var(--text2)">FitNotes CSV形式でダウンロード</div>
+      </div>
+      <button class="btn btn-blue btn-sm" onclick="exportToFitNotes()">ダウンロード</button>
+    </div>
+    <div class="mgmt-row">
+      <div>
+        <div style="font-size:13px;font-weight:500">バックアップをマージ</div>
+        <div style="font-size:12px;color:var(--text2)">JSONファイルをマージして復元（既存データに追加）</div>
       </div>
       <label class="btn btn-green btn-sm" style="cursor:pointer">
+        読み込む<input type="file" accept=".json" style="display:none" onchange="mergeBackup(this)">
+      </label>
+    </div>
+    <div class="mgmt-row">
+      <div>
+        <div style="font-size:13px;font-weight:500">バックアップから置換</div>
+        <div style="font-size:12px;color:var(--text2)">JSONファイルを読み込んでデータを上書き置換</div>
+      </div>
+      <label class="btn btn-blue btn-sm" style="cursor:pointer;opacity:0.7">
         読み込む<input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
       </label>
     </div>
@@ -3083,6 +3099,77 @@ function importBackup(input){
   };
   reader.readAsText(file,'UTF-8');
 }
+// FitNotes CSV形式でエクスポート
+function exportToFitNotes(){
+  var csv='Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Notes\n';
+  DB.workouts.forEach(function(w){
+    var date=w.date||'';
+    var exercise=w.exercise||'';
+    var category=catJa(DB.exCategories[exercise]||'');
+    w.sets.forEach(function(s){
+      var weight=s.w||'';
+      var reps=s.r||'';
+      var distance=s.dist||'';
+      var distUnit=s.distUnit||'';
+      var time=s.time||'';
+      var notes=(s.comment||'');
+      csv+=[date,exercise,category,weight,'kg',reps,distance,distUnit,time,'"'+notes+'"'].join(',')+'\n';
+    });
+  });
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  var d=new Date();
+  a.href=URL.createObjectURL(blob);
+  a.download='FitNotes_export_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// バックアップをマージ（既存データに追加）
+function mergeBackup(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.workouts)throw new Error('形式が違います');
+      if(!confirm('現在のデータにマージしますか？\n'+(data.workouts.length || 0)+'件のワークアウトが追加されます'))return;
+
+      // ワークアウトをマージ（重複チェック）
+      var newWorkouts=data.workouts||[];
+      var merged=0,skipped=0;
+      newWorkouts.forEach(function(newW){
+        var isDuplicate=DB.workouts.some(function(existW){
+          return existW.date===newW.date && existW.exercise===newW.exercise;
+        });
+        if(!isDuplicate){
+          DB.workouts.push(newW);
+          merged++;
+        }else{
+          skipped++;
+        }
+      });
+      DB.workouts.sort(function(a,b){return a.date>b.date?1:-1;});
+
+      // カテゴリをマージ
+      if(data.exCategories){
+        Object.keys(data.exCategories).forEach(function(ex){
+          if(!DB.exCategories[ex]){
+            DB.exCategories[ex]=data.exCategories[ex];
+          }
+        });
+      }
+
+      save();
+      updateExerciseLists();
+      refreshImportStats();
+      showPrevSession();
+      alert('マージ完了\n追加: '+merged+'件\nスキップ（重複）: '+skipped+'件');
+    }catch(err){alert('読み込み失敗: '+err.message);}
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
 function clearData(){
   if(!confirm('全トレーニング記録を削除しますか？\nこの操作は取り消せません。'))return;
   DB.workouts=[];
