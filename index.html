@@ -10,8 +10,6 @@
 <meta name="apple-mobile-web-app-title" content="筋トレ">
 <title>筋トレトラッカー</title>
 <link rel="manifest" href="manifest.json">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -98,6 +96,7 @@ textarea{min-height:56px;resize:vertical}
 /* 部位色分け（英語ベース） */
 .cat-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:6px;color:#fff}
 .cat-badge.abs,.cat-badge.Abs{background:#D4A574}
+.cat-badge.back,.cat-badge.Back{background:#A0826D}
 .cat-badge.biceps,.cat-badge.Biceps{background:#B8A5D1}
 .cat-badge.triceps,.cat-badge.Triceps{background:#7FA5D1}
 .cat-badge.cardio,.cat-badge.Cardio{background:#E88B7D}
@@ -189,66 +188,6 @@ textarea{min-height:56px;resize:vertical}
 
 /* 草稿バナー */
 #draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
-
-/* Discord インポートモーダル */
-#discord-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:flex-end;justify-content:center}
-#discord-modal.show{display:flex}
-#discord-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;animation:slideUp .25s ease}
-.dc-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
-.dc-header h2{font-size:17px;font-weight:700;color:#5865F2}
-.dc-body{overflow-y:auto;flex:1;padding:16px 20px;-webkit-overflow-scrolling:touch}
-.dc-step{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
-.dc-textarea{width:100%;min-height:160px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;resize:vertical;line-height:1.5}
-.dc-textarea:focus{outline:none;border-color:#5865F2}
-.dc-result-card{background:#f8f7f3;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
-.dc-result-card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#1a1a1a}
-.dc-summary-text{font-size:13px;line-height:1.7;color:#333;white-space:pre-wrap}
-.dc-session-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
-.dc-session-header{background:#5865F2;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-.dc-session-date{font-size:14px;font-weight:700}
-.dc-session-summary{font-size:11px;opacity:.9}
-.dc-ex-row{padding:8px 14px;border-bottom:1px solid #f5f5f0;font-size:13px}
-.dc-ex-row:last-child{border-bottom:none}
-.dc-ex-name{font-weight:600;margin-bottom:4px}
-.dc-set-chips{display:flex;flex-wrap:wrap;gap:4px}
-.dc-set-chip{background:#f0f0f0;border-radius:6px;padding:3px 8px;font-size:12px;color:#333}
-.dc-err{background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
-.dc-ok{background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97;border-radius:8px;padding:10px 14px;font-size:13px;margin:8px 0}
-.dc-loading{text-align:center;padding:2rem;color:var(--text2);font-size:14px}
-.dc-spinner{display:inline-block;width:32px;height:32px;border:3px solid #f0ede8;border-top-color:#5865F2;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.dc-footer{padding:12px 20px 24px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap}
-.btn-discord{background:#5865F2;color:#fff;border-color:#5865F2}
-.btn-discord:hover{opacity:.88}
-.dc-import-check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
-.dc-import-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5865F2}
-
-/* FitNotes スタイル 種目カード */
-.fn-block{border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.07);background:#fff;display:flex}
-.fn-drag-handle{flex-shrink:0;cursor:grab;color:#ccc;padding:0 8px;font-size:17px;user-select:none;display:flex;align-items:center}
-.fn-cat-strip{width:5px;flex-shrink:0}
-.fn-card-inner{flex:1;min-width:0;overflow:hidden}
-.fn-ex-header{display:flex;align-items:center;gap:6px;padding:10px 12px 8px;border-bottom:1px solid #f0ede8}
-.fn-ex-title{font-size:16px;font-weight:700;flex:1;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fn-fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;flex-shrink:0}
-.fn-edit-btn{border:none;background:none;cursor:pointer;font-size:15px;padding:2px 6px;color:var(--text2);flex-shrink:0}
-.fn-set-table{width:100%;border-collapse:collapse}
-.fn-set-table thead th{padding:5px 10px;font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.06em;background:#f8f7f3;border-bottom:1px solid #f0ede8;text-align:right}
-.fn-set-table thead th:first-child{text-align:center;width:30px}
-.fn-set-table thead th.fn-del-col{width:30px;text-align:center}
-.fn-set-table tbody td{padding:8px 10px;border-bottom:1px solid #f5f5f0;text-align:right;font-size:16px;font-weight:600;vertical-align:middle}
-.fn-set-table tbody td:first-child{text-align:center;font-size:11px;color:var(--text2);font-weight:400;background:#f8f7f3;width:30px;padding:8px 6px}
-.fn-set-table tbody td.fn-unit{font-size:11px;color:var(--text2);font-weight:400;padding-left:2px;padding-right:6px;min-width:20px}
-.fn-set-table tbody td.fn-del-col{text-align:center;width:30px;padding:4px 2px}
-.fn-set-table tbody tr:last-child td{border-bottom:none}
-.fn-pr{display:inline-block;background:#FFF8E6;color:#C97A00;border:1px solid #F5C842;border-radius:4px;font-size:10px;font-weight:700;padding:1px 5px;margin-left:4px;vertical-align:middle}
-.fn-add-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #f0ede8;background:#fafafa}
-.fn-add-input{flex:1;padding:7px 6px;border:1px solid var(--border);border-radius:6px;font-size:15px;text-align:center;font-family:inherit;min-width:0}
-.fn-add-input:focus{outline:none;border-color:var(--accent)}
-.fn-add-unit{font-size:11px;color:var(--text2);flex-shrink:0}
-.fn-add-btn{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
-.fn-cat-hdr{padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;border-radius:8px;margin-top:4px;margin-bottom:8px;display:inline-block}
-.fn-prev-hint{padding:4px 12px 6px;font-size:11px;color:var(--text2);background:#f0f8ff;border-bottom:1px solid #e0eeff}
 </style>
 </head>
 <body>
@@ -572,17 +511,6 @@ textarea{min-height:56px;resize:vertical}
 
 <!-- ========== 取込 ========== -->
 <div id="tab-import" class="panel">
-
-  <!-- Discord パーソナルトレーニング サマリー -->
-  <div class="card" style="background:#f0f1fe;border-left:3px solid #5865F2">
-    <div class="sec" style="color:#5865F2">💬 Discord トレーニングサマリー（AI）</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">DiscordのパーソナルトレーニングチャットをClaudeに読み込ませて、ワークアウト内容を自動でサマリー・取り込みます。</p>
-    <button class="btn btn-discord" style="width:100%;padding:12px;font-size:14px;font-weight:600" onclick="openDiscordModal()">
-      📋 Discordログを読み込む
-    </button>
-    <div id="dc-last-import" style="font-size:12px;color:var(--text2);margin-top:8px;text-align:center;display:none"></div>
-  </div>
-
   <!-- FitNotes JSONインポート -->
   <div class="card">
     <div class="sec">📂 FitNotes データインポート</div>
@@ -599,6 +527,7 @@ textarea{min-height:56px;resize:vertical}
   <div class="card" id="import-stats" style="display:none">
     <div class="sec">インポート済みデータ</div>
     <div id="import-stat-body"></div>
+    <button class="btn btn-blue" onclick="recategorizeExercises()" style="width:100%;margin-top:12px">🏷️ カテゴリを再分類</button>
   </div>
 
   <div class="card">
@@ -625,53 +554,6 @@ textarea{min-height:56px;resize:vertical}
         <div style="font-size:12px;color:var(--text2)">トレーニング記録をすべて消去</div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="clearData()">削除</button>
-    </div>
-  </div>
-
-  <!-- Google Drive 同期セクション -->
-  <div class="card" style="background:#f0f7ff;border-left:3px solid var(--accent2)">
-    <div class="sec" style="color:var(--accent2)">☁️ Google Drive 同期</div>
-
-    <!-- ログイン状態表示 -->
-    <div id="google-status" style="font-size:13px;color:var(--text2);margin-bottom:12px;padding:10px;background:#fff;border-radius:6px;border:1px solid var(--border)">
-      未ログイン - Google ドライブにバックアップすると便利です
-    </div>
-
-    <!-- ログインボタンコンテナ -->
-    <div id="google-auth-container" style="margin-bottom:12px"></div>
-
-    <!-- ログアウトボタン（ログイン済み時のみ表示） -->
-    <button id="google-logout-btn" style="display:none;width:100%;padding:10px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;color:#A32D2D;font-weight:500" onclick="signOutGoogle()">ログアウト</button>
-
-    <!-- 同期ステータス -->
-    <div id="sync-status" style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center;padding:8px;background:#fff;border-radius:6px;border:1px solid var(--border)">
-      手動同期ボタン...
-    </div>
-
-    <!-- 手動同期ボタン -->
-    <button id="manual-sync-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:var(--accent2);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500" onclick="manualSync()">今すぐ同期</button>
-
-    <!-- Drive から復元ボタン -->
-    <button id="restore-from-drive-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:#FFA500;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500" onclick="restoreFromDrive()">🔄 Drive から復元</button>
-
-    <!-- 説明文 -->
-    <div style="font-size:12px;color:var(--text2);margin-top:12px;padding:10px;background:#fff;border-radius:6px;line-height:1.6">
-      ✅ ログインすることで、Google Drive に自動バックアップされます<br>
-      ✅ 別の端末でも同じアカウントでログインして、データを復元できます<br>
-      ✅ ローカル保存は常に有効（オフラインでも記録できます）
-    </div>
-  </div>
-
-  <!-- Google Sheets 同期セクション -->
-  <div class="card" style="background:#f5fff5;border-left:3px solid var(--accent3)">
-    <div class="sec" style="color:var(--accent3)">📊 Google Sheets スプレッドシート連携</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">全ワークアウトデータを Google Sheets に一括同期します。</p>
-    <button class="btn" style="width:100%;padding:12px;background:var(--accent3);color:#fff;font-weight:600;border:none" onclick="syncAllDataToSheets()">📤 Google Sheets に同期</button>
-    <div style="font-size:11px;color:var(--text2);margin-top:10px;padding:10px;background:#fff;border-radius:6px;line-height:1.5">
-      📝 <strong>Sheets ID:</strong> <code style="word-break:break-all;background:#f0f0f0;padding:2px 4px;border-radius:3px">1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI</code><br>
-      ✅ <strong>Workouts</strong> シート: ワークアウト記録<br>
-      ✅ <strong>BodyLogs</strong> シート: 体重記録<br>
-      ✅ <strong>Users</strong> シート: ユーザー情報
     </div>
   </div>
 </div>
@@ -708,8 +590,17 @@ textarea{min-height:56px;resize:vertical}
 </div>
 
 <script>
+// ===================== ユーティリティ関数 =====================
+function escHtml(str) {
+  if(!str) return '';
+  return str.replace(/[&<>"']/g, function(match) {
+    var escapeMap = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+    return escapeMap[match];
+  });
+}
+
 // ===================== データ =====================
-var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{}};
+var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{},syncTime:0};
 var currentSets=[];
 var progChart=null,bodyChart=null,catChart=null,dailyVolChart=null;
 var pNRM=5;
@@ -718,267 +609,31 @@ var histSelectedDate='';
 var graphPeriodMonths=0;  // グラフ期間フィルタ: 0=オール、N=N ヶ月前から今日まで
 var dailyNoteSaveTimer=null;  // メモ自動保存タイマー
 
-// ===== Google Drive 同期設定 =====
-const GOOGLE_CLIENT_ID='478810371543-237rkv46cpkrjcie6mvl3rrhk2e9s9tf.apps.googleusercontent.com';  // Google Cloud から取得したクライアント ID
-const SYNC_FILE_NAME='workout-sync.json';
-const SYNC_SCHEMA_VERSION=1;
-
-var googleAuthState={
-  isLoggedIn:false,
-  userEmail:'',
-  accessToken:'',
-  syncFileId:null,
-  lastSyncTime:0,
-  syncStatus:'idle'  // idle, syncing, success, error
-};
-
-// ===== Google Sheets API 統合設定 =====
-const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
-const SHEETS_API_KEY='AIzaSyDTpGzG56FenRksxAPMR3LP10lYw05Afg4';
-const APPS_SCRIPT_TOKEN='workout-sync-secret-key-2025'; // Apps Script のトークン
-const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
-
-var sheetsAuthState={
-  isAuthorized:true,  // Apps Script 認証（常に true）
-  accessToken:'',
-  expiresIn:0
-};
-
 var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
 var prevSessionData=null;
 
-// ===== FitNotesデータから生成した完全な種目→カテゴリ対応表 =====
-var FITNOTES_CAT_MAP={
-  '4 Way Neck Hammer Strength':'Neck',
-  'Ab-Wheel Rollout Keee':'Abs',
-  'Arnold Dumbbell Press':'Shoulders',
-  'Back Lat Pulldown':'Weightlifting',
-  'Back extension':'Weightlifting',
-  'Barbell Curl':'Biceps',
-  'Barbell Half sq':'Legs',
-  'Barbell Row':'Weightlifting',
-  'Barbell Squat Wide(内転狙い)':'Legs',
-  'Barbell benchpress Uバー':'Chest',
-  'Barbell curl 含むチーティグ':'Biceps',
-  'Barbell pause SQ (ボトムで止める)':'Legs',
-  'Barbell shrug バーベルシュラッグ':'Shoulders',
-  'Barbell upright row アップライトローぶん回し':'Shoulders',
-  'Bench Dips\u3000自重':'Triceps',
-  'Cable Crossover':'Chest',
-  'Cable Crossover 地面垂直寺島':'Chest',
-  'Cable Curl':'Biceps',
-  'Cable Face Pull':'Shoulders',
-  'Cable Press Down Bar':'Triceps',
-  'Cable Upright Raw':'Shoulders',
-  'Cable external rotation':'Shoulders',
-  'Cable internal rotation':'Shoulders',
-  'Chest press machine':'Chest',
-  'Chin Up (Reverse grip) body weight':'Weightlifting',
-  'Chin up straight(BW)':'Weightlifting',
-  'Close Grip Barbell Bench Press クローズベンチ':'Triceps',
-  'Crunch':'Abs',
-  'Crunch Machine':'Abs',
-  'Cycling':'Cardio',
-  'DEADLift hex bar':'Weightlifting',
-  'DY Row(片手重量)':'Weightlifting',
-  'Deadlift (Wide)':'Weightlifting',
-  'Deadlift Half (narrow) ハーフ膝下デッドリフト':'Weightlifting',
-  'Deadlift half (wide)':'Weightlifting',
-  'Decline Crunch':'Abs',
-  'Dips (BW)':'Chest',
-  'Dragon Flag':'Abs',
-  'Dumbbel French Press ダンベルフレンチプレス':'Triceps',
-  'Dumbbell Curl 含むチーティング':'Biceps',
-  'Dumbbell Hammer Curl 含むﾁｰﾃｨﾝｸﾞ':'Biceps',
-  'Dumbbell Lying Rear Raise':'Shoulders',
-  'Dumbbell Overhead Triceps Extension':'Triceps',
-  'Dumbbell Preacher Curl':'Biceps',
-  'Dumbbell Rear Raise':'Shoulders',
-  'Dumbbell Row':'Weightlifting',
-  'Dumbbell Upright Row':'Shoulders',
-  'Dumbell shrug [片手あたり':'Shoulders',
-  'Dummbel Pull Over':'Weightlifting',
-  'EZ Bar Upright Row':'Shoulders',
-  'EZ-Bar Preacher Curl':'Biceps',
-  'Elliptical Trainer':'Cardio',
-  'Ez -bar upright row アップライトローぶんまわし':'Shoulders',
-  'FLEX DIP MACHINE (好き ゴールド大森さうあね':'Chest',
-  'Flat Barbell Bench Press ケツアゲ':'Chest',
-  'Flat Dumbbell Bench Press ダンベルプレス':'Chest',
-  'Front Dumbbell Raise':'Shoulders',
-  'Front lunge':'Legs',
-  'Ground Base Jammer':'Shoulders',
-  'HIIT Treadmill 傾斜0':'Cardio',
-  'Hack Squat':'Legs',
-  'Hanging Leg Raise':'Abs',
-  'High pull':'Weightlifting',
-  'Hip Abduction 外へ':'Legs',
-  'Hip Adduction 内へ':'Legs',
-  'Incline Barbell Bench Press':'Chest',
-  'Incline Chest Press':'Chest',
-  'Incline Dumbbell Bench Press':'Chest',
-  'Incline Dumbbell Fly':'Chest',
-  'Incline Dumbbell Front Raise':'Shoulders',
-  'Incline Hummer Curl':'Biceps',
-  'Incline Smith Barbell benchpress':'Chest',
-  'Incline dummbel lateral raise':'Shoulders',
-  'Isolated High Row':'Weightlifting',
-  'Isolated Lut Pull Down':'Weightlifting',
-  'Isolateral Incline Press':'Chest',
-  'Isolateral Wide Chest Press Machine':'Chest',
-  'Isolateral Wide pull down':'Weightlifting',
-  'Isolateral front latpull down':'Weightlifting',
-  'Isolateral sholder press':'Shoulders',
-  'Kick back':'Triceps',
-  'Lat Pulldown Reverse Narrow Grip':'Weightlifting',
-  'Lat flexor':'Weightlifting',
-  'Lat prayer Cable pullover':'Weightlifting',
-  'Lateral Machine Raise':'Shoulders',
-  'Latpulldown MAG narrow parallels':'Weightlifting',
-  'Latpulldown arcuate':'Weightlifting',
-  'Leg Extension Machine':'Legs',
-  'Leg Press':'Legs',
-  'Long pull PRECOR':'Weightlifting',
-  'Lying Leg Curl Machine':'Legs',
-  'Machibe dips':'Chest',
-  'NAUTILUS Vertical Chest チェストプレス パラレルグリップ':'Chest',
-  'One Hand Dummbel Front Raise':'Shoulders',
-  'One Hand Preacher Dumbbell Curl':'Biceps',
-  'One hand DY row':'Weightlifting',
-  'One-hand dummbel fly (including cheating)':'Chest',
-  'Palm Press':'Chest',
-  'Parallel Bar Triceps Dip(BW)':'Triceps',
-  'Pendlay Row':'Weightlifting',
-  'Plank':'Abs',
-  'Prone leg curl':'Legs',
-  'Push Up':'Chest',
-  'Push Up Close':'Triceps',
-  'Rear Delt Dumbbell Raise':'Shoulders',
-  'Rear Delt Machine Fly リアデルトフライ':'Shoulders',
-  'Reverse Cable Curl':'Biceps',
-  'Reverse EZbar curl (含チーティング)':'Biceps',
-  'Reverse cable push down':'Triceps',
-  'Romanian Deadlift':'Legs',
-  'Rope Push Down (pronation回内) 含むチーティグ':'Triceps',
-  'Rotary Torso':'Abs',
-  'Rowing Machine':'Cardio',
-  'Running (Outdoor)':'Cardio',
-  'Running (Treadmill)':'Cardio',
-  'Sato special':'Weightlifting',
-  'Seatead shoulderpress':'Shoulders',
-  'Seated Barbell Shoulder press':'Shoulders',
-  'Seated Cable Row 含ﾁｰﾃｨﾝｸﾞ':'Weightlifting',
-  'Seated Calf Raise Machine':'Legs',
-  'Seated Dumbbell Lateral Raise':'Shoulders',
-  'Seated Leg Curl Machine':'Legs',
-  'Seated Machine Curl':'Biceps',
-  'Seated Machine Fly':'Chest',
-  'Seated Mid Row':'Weightlifting',
-  'Seated Row under grip':'Weightlifting',
-  'Seated Smith Machine Overhead Press':'Shoulders',
-  'Seated dummbel curl':'Biceps',
-  'Seated triceps EZ bar EXTEN':'Triceps',
-  'Shoulder press machine':'Shoulders',
-  'Side Plank':'Abs',
-  'Smith Machine Bench Press':'Chest',
-  'Smith machine Sq':'Legs',
-  'Smith machine close bench press':'Triceps',
-  'Smithmachine Front SQ':'Legs',
-  'Smithmachine Military Press':'Shoulders',
-  'Smithましん\u3000ルーマニア':'Legs',
-  'Snatch':'Weightlifting',
-  'Spyder Row':'Weightlifting',
-  'StairMaster':'Cardio',
-  'Standing Calf Raise Machine':'Legs',
-  'Stationary Bike':'Cardio',
-  'Swimming':'Cardio',
-  'T-Bar Row':'Weightlifting',
-  'TECA dorsi pecto 南砂町ゴールド':'Chest',
-  'Triceps Extension Machine':'Triceps',
-  'Tuff Stuff Bio Arc Chest Press':'Chest',
-  'Waiper 往復でカウント':'Abs',
-  'Walking':'Cardio',
-  'bicycle crunch':'Abs',
-  'flat barbell bench press 片側おもり':'Chest',
-  'isolateral high row':'Weightlifting',
-  '★45度レッグプレス Liner Leg Press 斜めに座り足裏面が動く(含む手の補助)':'Legs',
-  '★Barbell Bench Press 2秒止':'Chest',
-  '★Barbell Front Squat':'Legs',
-  '★Barbell Squat スクワット ミドルハイバー':'Legs',
-  '★Bent over row ベントオーバー':'Weightlifting',
-  '★Bulgarian squat ブルガリアンスクワット':'Legs',
-  '★Cable Overhead Triceps Extension ケーブルフレンチプレス':'Triceps',
-  '★Cable lateral raise ケーブルサイドレイズ [含チーティング':'Shoulders',
-  '★Chin Up (Body weight)\u3000Straight geip':'Weightlifting',
-  '★Chin up parallel (BW パラレル)':'Weightlifting',
-  '★Chin up パラレル体幹屈曲\u3000bw':'Weightlifting',
-  '★Crunch 膝つけ、足首離し、上体丸めて下腹部(BW)':'Abs',
-  '★Deadlift (Narrow) デッドリフト':'Weightlifting',
-  '★Dumbbell Concentration Curl(含むチーティング)':'Biceps',
-  '★Dummbell one hand row ワンハンドロー':'Weightlifting',
-  '★EZ-Bar Curl ｲｰｼﾞｰﾊﾞｰｶｰﾙ(含チーティング)':'Biceps',
-  '★Flat Barbell Bench Press ベンチプレス':'Chest',
-  '★Flat Barbell Benchpress 膝立足裏ベンチ乗せ':'Chest',
-  '★Flat Dumbbell Fly ダンベルフライ':'Chest',
-  '★Flat dummbel press 足上げ骨盤後傾':'Chest',
-  '★Incline Dumbbell Curl インクラインダンベルカール 含むﾁｰﾃｨﾝｸﾞ':'Biceps',
-  '★Larsen Bench Press ラーセン':'Chest',
-  '★Lat Pulldown Mid Parallel ラットプルダウンパラレル':'Weightlifting',
-  '★Lat pulldown ミッド オーバーグリップ':'Weightlifting',
-  '★Lateral Dumbbell Raise サイドレイズ 除くチーティング':'Shoulders',
-  '★Lying Triceps Extension Ez ライイングエクステンション':'Triceps',
-  '★Military Press ミリタリープレス':'Shoulders',
-  '★Romanian ルーマニアンデッドリフト':'Weightlifting',
-  '★Seated Dumbbell Press ショルダープレス':'Shoulders',
-  '★Standing Dummbel Shoulder Press 含むチーティング':'Shoulders',
-  '★latpull down 体幹屈曲':'Weightlifting',
-  '★オーバーヘッドスクワット':'Legs',
-  '★ゴブレットブルガリアンスクワット':'Legs',
-  '【しお】ダンベルフライ':'Chest',
-  '【しお】ベンチプレス':'Chest',
-  '【しお】マシンフライ':'Chest',
-  'お山座りなんとかトレーニング':'Conditioning',
-  'お山座り万歳(腸腰筋)+ローテ(前鋸筋下部.僧帽筋下部)':'Conditioning',
-  'アブベンチ in GOLDGYM':'Abs',
-  'キャット':'Conditioning',
-  'ゴブレットスクワット':'Legs',
-  'スパインロールダウン':'Conditioning',
-  'デクラインプレスマシン':'Chest',
-  'ヒップウォーク':'Conditioning',
-  'ポールクランチ':'Conditioning',
-  'ミリタリーのバックプレス':'Shoulders',
-  'リバースグリップのケーブルエクステンション\u3000肘ケア':'Triceps',
-  '傾斜10%のトレッドミル':'Cardio',
-  '僧帽筋下部線維エクササイズ\u3000うつ伏せ親指天井上げ':'Conditioning',
-  '壁につま先おいてスパイロンロール':'Conditioning',
-  '腸腰筋ストレッチ':'Conditioning',
-  '自重カール':'Biceps',
-  '風船トレーニング':'Conditioning',
-  '鰻1周':'Abs'
-};
-
 // ===== カテゴリ統一（英語 ↔ 日本語） =====
 var CATEGORY_COLORS={
-  'Abs':'#D4A574','Biceps':'#B8A5D1','Triceps':'#7FA5D1','Cardio':'#E88B7D',
+  'Abs':'#D4A574','Back':'#A0826D','Biceps':'#B8A5D1','Triceps':'#7FA5D1','Cardio':'#E88B7D',
   'Chest':'#E8957C','Conditioning':'#95C7D4','Legs':'#90D695','Neck':'#C985E0',
   'Shoulders':'#E8B856','Weightlifting':'#8B9E6D'
 };
 
 var CAT_EN_TO_JA={
-  'Abs':'腹筋','Biceps':'二頭筋','Triceps':'三頭筋','Cardio':'有酸素',
+  'Abs':'腹筋','Back':'背中','Biceps':'二頭筋','Triceps':'三頭筋','Cardio':'有酸素',
   'Chest':'胸','Conditioning':'コンディショニング','Legs':'脚','Neck':'首',
   'Shoulders':'肩','Weightlifting':'ウェイトリフティング'
 };
 
 var CAT_JA_TO_EN={
-  '腹筋':'Abs','二頭筋':'Biceps','三頭筋':'Triceps','有酸素':'Cardio',
+  '腹筋':'Abs','背中':'Back','二頭筋':'Biceps','三頭筋':'Triceps','有酸素':'Cardio',
   '胸':'Chest','コンディショニング':'Conditioning','脚':'Legs','首':'Neck',
   '肩':'Shoulders','ウェイトリフティング':'Weightlifting'
 };
 
 // FitNotes 互換性: 古いカテゴリ名 → 新英語名
 var CAT_LEGACY_TO_EN={
-  'Chest':'Chest','Back':'Weightlifting','Legs':'Legs','Leg':'Legs',
+  'Chest':'Chest','Back':'Back','Legs':'Legs','Leg':'Legs',
   'Shoulders':'Shoulders','Shoulder':'Shoulders',
   'Arms':'Biceps','Arm':'Biceps',
   'Core':'Abs','Cardio':'Cardio',
@@ -987,39 +642,41 @@ var CAT_LEGACY_TO_EN={
   'Olympic':'Weightlifting','Full Body':'Weightlifting','Other':'Weightlifting',''  :'Weightlifting'
 };
 
-// 種目名からカテゴリを判定する関数
+// 種目名からカテゴリを判定する関数（11カテゴリ対応）
 function categorizeExerciseByName(exerciseName){
   if(!exerciseName) return 'Weightlifting';
-  // まずFitNotesの完全一致テーブルで検索
-  if(FITNOTES_CAT_MAP[exerciseName]) return FITNOTES_CAT_MAP[exerciseName];
   var name=exerciseName.toLowerCase();
 
   // Abs
-  if(/crunch|ab\s*wheel|decline\s*crunch|dragon\s*flag|sit\s*up|hanging\s*leg/.test(name)) return 'Abs';
+  if(/crunch|ab\s*wheel|decline\s*crunch|dragon\s*flag|sit\s*up|hanging\s*leg|cable\s*crunch|machine\s*crunch|ab\s*roll/.test(name)) return 'Abs';
 
   // Biceps
-  if(/curl|preacher/.test(name) && !/tricep|press\s*down|overhead|extension/.test(name)) return 'Biceps';
+  if(/curl|preacher|barbell\s*curl|dumbbell\s*curl|machine\s*curl|cable\s*curl|ez\s*bar|incline\s*curl/.test(name) && !/tricep|press\s*down|overhead|extension|lat\s*pull/.test(name)) return 'Biceps';
 
   // Triceps
-  if(/tricep|press\s*down|dip|french\s*press|overhead\s*extension/.test(name)) return 'Triceps';
+  if(/tricep|press\s*down|dip|french\s*press|overhead\s*extension|pushdown|v\s*bar|rope|skull\s*crusher/.test(name)) return 'Triceps';
 
   // Chest
-  if(/bench|chest|press|pec/.test(name) && !/decline|row/.test(name)) return 'Chest';
+  if(/bench|chest|press|pec|push\s*up|flye|fly|peck|incline\s*press/.test(name) && !/decline|row|lat\s*pull|pullover|pull\s*over/.test(name)) return 'Chest';
 
   // Cardio
-  if(/cycling|bike|treadmill|rowing|cardio|run/.test(name)) return 'Cardio';
+  if(/cycling|bike|treadmill|rowing|cardio|run|elliptical|stair|climber|jump\s*rope/.test(name)) return 'Cardio';
 
   // Shoulders
-  if(/shoulder|raise|upright\s*row|shrug|arnold|lateral|military|ohp|face\s*pull/.test(name)) return 'Shoulders';
+  if(/shoulder|raise|upright\s*row|shrug|arnold|lateral|military|ohp|face\s*pull|machine\s*shoulder|front\s*raise/.test(name)) return 'Shoulders';
+
+  // Back（背中）- Rows, Pulldowns, Pull-ups, Pullovers
+  if(/lat\s*pulldown|lat\s*pull|pulldown|pull\s*down|pull\s*up|chin\s*up|pullover|pull\s*over/.test(name)) return 'Back';
+  if(/row|t\s*bar|pendulum|seal|seal\s*row|machine\s*row|cable\s*row|barbell\s*row|dumbbell\s*row|bent\s*over\s*row|yates\s*row|inverted\s*row/.test(name)) return 'Back';
 
   // Neck
   if(/neck|4\s*way\s*neck/.test(name)) return 'Neck';
 
   // Legs
-  if(/squat|leg\s*press|leg\s*curl|leg\s*extension|hack|lunge|calf|hamstring|quad|leg\s*raise/.test(name)) return 'Legs';
+  if(/squat|leg\s*press|leg\s*curl|leg\s*extension|hack|lunge|calf|hamstring|quad|leg\s*raise|smith\s*machine\s*squat|leg\s*kick|leg\s*abductor|leg\s*adductor|thigh/.test(name)) return 'Legs';
 
-  // Weightlifting (Deadlift, Rows, Lat Pulldown, Pull Over等)
-  if(/deadlift|lat\s*pulldown|row|pullover|pull\s*over|hex\s*bar/.test(name)) return 'Weightlifting';
+  // Weightlifting (Deadlift, Hex Bar, Olympic lifts)
+  if(/deadlift|sumo\s*deadlift|rdl|reverse\s*hyper|hex\s*bar|clean|snatch|press/.test(name)) return 'Weightlifting';
 
   return 'Weightlifting';
 }
@@ -1739,14 +1396,7 @@ function renderTodayLog(){
   loadDailyNote(date);
 }
 
-// カテゴリ別カラーマップ
-var FN_CAT_COLORS={
-  'Chest':'#E8957C','Shoulders':'#E8B856','Back':'#7BB5E8','Biceps':'#B8A5D1',
-  'Triceps':'#7FA5D1','Legs':'#90D695','Abs':'#D4A574','Cardio':'#E88B7D',
-  'Neck':'#C985E0','Weightlifting':'#8B9E6D','Conditioning':'#95C7D4'
-};
-
-// 記録タブ用：FitNotes スタイル カード描画
+// 記録タブ用：ドラッグ対応版
 function renderTodayLogWithDrag(workouts,bodyEl,date){
   bodyEl.innerHTML='';
   if(!workouts.length){
@@ -1755,148 +1405,108 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   }
 
   var draggedIdx=null;
-  var prevCat=null;
 
   workouts.forEach(function(w,idx){
-    var cat=catEn(DB.exCategories[w.exercise]||'');
-    var color=FN_CAT_COLORS[cat]||'#aaa';
-
-    // カテゴリヘッダー（切り替わり時）
-    if(cat&&cat!==prevCat){
-      var catHdr=document.createElement('div');
-      catHdr.className='fn-cat-hdr';
-      catHdr.style.background=color;
-      catHdr.textContent=(CAT_EN_TO_JA[cat]||cat);
-      bodyEl.appendChild(catHdr);
-      prevCat=cat;
-    }
-
-    // ========== カードブロック ==========
     var block=document.createElement('div');
-    block.className='fn-block';
+    block.style.cssText='margin-bottom:18px;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;display:flex;gap:8px;align-items:flex-start';
     block.draggable=true;
     block.dataset.idx=idx;
 
-    // ドラッグハンドル
+    // ドラッグハンドル + メニューボタン
+    var handleWrap=document.createElement('div');
+    handleWrap.style.cssText='flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px';
+
     var handle=document.createElement('div');
-    handle.className='fn-drag-handle';
-    handle.innerHTML='&#8942;';
-    block.appendChild(handle);
+    handle.style.cssText='cursor:grab;font-size:20px;color:var(--text2);user-select:none';
+    handle.textContent='☰';
+    handleWrap.appendChild(handle);
 
-    // カラーストリップ
-    var strip=document.createElement('div');
-    strip.className='fn-cat-strip';
-    strip.style.background=color;
-    block.appendChild(strip);
+    var menuBtn=document.createElement('button');
+    menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1';
+    menuBtn.textContent='⋮';
+    menuBtn.onclick=function(e){e.stopPropagation();showWorkoutMenu(idx,w,date);};
+    handleWrap.appendChild(menuBtn);
 
-    // カード本体
-    var inner=document.createElement('div');
-    inner.className='fn-card-inner';
+    block.appendChild(handleWrap);
 
-    // --- 種目ヘッダー ---
-    var isFav=!!DB.favorites[w.exercise];
-    var exHdr=document.createElement('div');
-    exHdr.className='fn-ex-header';
-    exHdr.innerHTML=
-      '<button class="fn-fav-btn" onclick="fnToggleFav(\''+escAttr(w.exercise)+'\')" title="お気に入り" style="color:'+(isFav?'#378ADD':'#ccc')+'">★</button>'+
-      '<span class="fn-ex-title">'+escHtml(w.exercise)+'</span>'+
-      '<button class="fn-edit-btn" onclick="fnEditEx(\''+escAttr(w.exercise)+'\',\''+date+'\')" title="セット編集">✏️</button>';
-    inner.appendChild(exHdr);
+    // コンテンツ
+    var content=document.createElement('div');
+    content.style.cssText='flex:1;min-width:0';
 
-    // --- 前回記録ヒント ---
+    // 種目名
+    var exName=document.createElement('div');
+    exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
+    exName.textContent=w.exercise;
+    content.appendChild(exName);
+
+    // 2. 種目別次回目標を表示
+    var nextTarget=suggestNextTarget(w.exercise);
     var lastSet=getLastWorkoutForExercise(w.exercise);
-    var nextTargets=suggestNextTarget(w.exercise);
-    if(lastSet&&nextTargets&&nextTargets[0]){
-      var hint=document.createElement('div');
-      hint.className='fn-prev-hint';
-      hint.innerHTML='前回: <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'回</b>　→　目標: <b style="color:var(--accent2)">'+nextTargets[0].w.toFixed(1)+'kg × '+nextTargets[0].r+'回</b>';
-      inner.appendChild(hint);
+    if(lastSet&&nextTarget){
+      var targetDiv=document.createElement('div');
+      targetDiv.style.cssText='padding:6px 8px;background:#f0f7ff;border-left:3px solid var(--accent2);margin-bottom:8px;font-size:12px;border-radius:4px';
+      var targetHtml='前回 <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'</b> → ';
+      var targetPrimary=nextTarget[0];
+      targetHtml+='<b style="color:var(--accent2)">'+targetPrimary.w.toFixed(1)+'kg × '+targetPrimary.r+'</b> ('+targetPrimary.label+')';
+      targetDiv.innerHTML=targetHtml;
+      content.appendChild(targetDiv);
     }
 
-    // --- セットテーブル ---
-    var table=document.createElement('table');
-    table.className='fn-set-table';
-
+    // セット情報
     var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+    w.sets.forEach(function(s){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:flex-end;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:14px';
 
-    if(!isCardio){
-      table.innerHTML='<thead><tr><th>SET</th><th>重量</th><th class="fn-unit"></th><th>回数</th><th class="fn-unit"></th><th class="fn-del-col"></th></tr></thead>';
-    } else {
-      table.innerHTML='<thead><tr><th>SET</th><th>距離</th><th class="fn-unit"></th><th>時間</th><th class="fn-del-col"></th></tr></thead>';
-    }
-
-    var tbody=document.createElement('tbody');
-    // PRのベースライン（今日より前の最高1RM）
-    var prBase=myBestRM(w.exercise);
-
-    w.sets.forEach(function(s,si){
-      var tr=document.createElement('tr');
-      if(!isCardio){
-        var ww=parseFloat(s.w)||0;
-        var rr=parseInt(s.r)||0;
-        var rm=rr>0?Math.round(ww*(1+rr/30)):0;
-        var isPR=rm>0&&rm>prBase;
-        var prBadge=isPR?'<span class="fn-pr">PR</span>':'';
-        tr.innerHTML=
-          '<td>'+(si+1)+'</td>'+
-          '<td>'+(ww?ww.toFixed(1):'－')+'</td>'+
-          '<td class="fn-unit">kg</td>'+
-          '<td>'+(rr||'－')+prBadge+'</td>'+
-          '<td class="fn-unit">回</td>'+
-          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
+      if(isCardio){
+        row.innerHTML='<span style="font-weight:600">'+(s.dist||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">'+(s.distUnit||'km')+'</span> '+
+          '<span style="font-weight:600">'+(s.time||'－')+'</span>';
       } else {
-        tr.innerHTML=
-          '<td>'+(si+1)+'</td>'+
-          '<td>'+(s.dist||'－')+'</td>'+
-          '<td class="fn-unit">'+(s.distUnit||'km')+'</td>'+
-          '<td>'+(s.time||'－')+'</td>'+
-          '<td class="fn-del-col"><button onclick="fnDelSet(\''+date+'\','+idx+','+si+')" style="border:none;background:none;color:#ccc;cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button></td>';
+        var ww=parseFloat(s.w)||0;
+        var r=parseInt(s.r)||0;
+        row.innerHTML='<span style="font-weight:600">'+(ww?ww.toFixed(1):'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">kg</span> '+
+          '<span style="font-weight:600">'+(r||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin-left:4px">reps</span>';
       }
-      tbody.appendChild(tr);
+      content.appendChild(row);
+
+      if(s.comment&&s.comment.trim()){
+        var cmt=document.createElement('div');
+        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 0;font-style:italic';
+        cmt.textContent='💬 '+s.comment;
+        content.appendChild(cmt);
+      }
     });
-    table.appendChild(tbody);
-    inner.appendChild(table);
 
-    // --- クイック追加行 ---
-    var lastW=w.sets.length?(w.sets[w.sets.length-1].w||''):'';
-    var lastR=w.sets.length?(w.sets[w.sets.length-1].r||''):'';
-    var addRow=document.createElement('div');
-    addRow.className='fn-add-row';
-    if(!isCardio){
-      addRow.innerHTML=
-        '<input class="fn-add-input" id="fn-w-'+idx+'" type="number" placeholder="kg" value="'+escHtml(lastW)+'">'+
-        '<span class="fn-add-unit">kg</span>'+
-        '<input class="fn-add-input" id="fn-r-'+idx+'" type="number" placeholder="回" value="'+escHtml(lastR)+'">'+
-        '<span class="fn-add-unit">回</span>'+
-        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
-    } else {
-      addRow.innerHTML=
-        '<input class="fn-add-input" id="fn-dist-'+idx+'" type="number" placeholder="km" style="flex:1">'+
-        '<span class="fn-add-unit">km</span>'+
-        '<input class="fn-add-input" id="fn-time-'+idx+'" type="text" placeholder="時間" style="flex:1">'+
-        '<button class="fn-add-btn" onclick="fnAddSet(\''+date+'\','+idx+')">＋</button>';
-    }
-    inner.appendChild(addRow);
-
-    // メモ
     if(w.memo&&w.memo.trim()){
       var memo=document.createElement('div');
-      memo.style.cssText='padding:6px 12px;font-size:11px;color:var(--text2);font-style:italic;border-top:1px solid #f0ede8';
+      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 0 0;font-style:italic;margin-top:4px';
       memo.textContent='📝 '+w.memo;
-      inner.appendChild(memo);
+      content.appendChild(memo);
     }
 
-    block.appendChild(inner);
+    block.appendChild(content);
 
     // ドラッグイベント
     block.addEventListener('dragstart',function(e){
-      draggedIdx=idx;e.dataTransfer.effectAllowed='move';block.style.opacity='0.5';
+      draggedIdx=idx;
+      e.dataTransfer.effectAllowed='move';
+      block.style.opacity='0.5';
     });
-    block.addEventListener('dragend',function(){block.style.opacity='1';});
+
+    block.addEventListener('dragend',function(e){
+      block.style.opacity='1';
+    });
+
     block.addEventListener('dragover',function(e){
       e.preventDefault();
+      e.dataTransfer.dropEffect='move';
       if(draggedIdx!==null&&draggedIdx!==idx){
-        var temp=workouts[draggedIdx];workouts[draggedIdx]=workouts[idx];workouts[idx]=temp;
+        var temp=workouts[draggedIdx];
+        workouts[draggedIdx]=workouts[idx];
+        workouts[idx]=temp;
         draggedIdx=idx;
         renderTodayLogWithDrag(workouts,bodyEl,date);
       }
@@ -1908,82 +1518,194 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
   // フッター合計
   var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
   var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
-  var foot=document.createElement('div');
-  foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
-  foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
-  bodyEl.appendChild(foot);
+  if(workouts.length>1||totalSets>0){
+    var foot=document.createElement('div');
+    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+    bodyEl.appendChild(foot);
+  }
 
   // 並び順を DB に反映
   var date_val=document.getElementById('r-date').value;
   DB.workouts.forEach(function(w){
-    if(w.date===date_val){w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);}
+    if(w.date===date_val){
+      w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);
+    }
   });
   save();
 }
 
-// === FitNotes カード操作ヘルパー ===
+// ===================== ワークアウトメニュー =====================
+var currentEditIdx=-1;
+var currentEditWorkout=null;
 
-// クイック追加
-function fnAddSet(date,wIdx){
-  var workouts=DB.workouts.filter(function(w){return w.date===date;});
-  var w=workouts[wIdx];if(!w)return;
-  var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
-  var newSet;
-  if(!isCardio){
-    var wEl=document.getElementById('fn-w-'+wIdx);
-    var rEl=document.getElementById('fn-r-'+wIdx);
-    var wVal=(wEl?wEl.value.trim():'');
-    var rVal=(rEl?rEl.value.trim():'');
-    if(!wVal&&!rVal)return;
-    newSet={w:wVal,r:rVal,dist:'',distUnit:'km',time:'',comment:''};
-  } else {
-    var dEl=document.getElementById('fn-dist-'+wIdx);
-    var tEl=document.getElementById('fn-time-'+wIdx);
-    newSet={w:'',r:'',dist:(dEl?dEl.value.trim():''),distUnit:'km',time:(tEl?tEl.value.trim():''),comment:''};
+function showWorkoutMenu(idx,w,date){
+  var menu=document.createElement('div');
+  menu.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:flex;align-items:flex-end;z-index:9999';
+  menu.onclick=function(){menu.remove();};
+
+  var content=document.createElement('div');
+  content.style.cssText='background:#fff;border-radius:12px 12px 0 0;padding:16px;width:100%;max-height:70vh;overflow-y:auto';
+  content.onclick=function(e){e.stopPropagation();};
+
+  // タイトル
+  var title=document.createElement('div');
+  title.style.cssText='font-size:16px;font-weight:600;margin-bottom:16px';
+  title.textContent=w.exercise;
+  content.appendChild(title);
+
+  // 編集ボタン
+  var editBtn=document.createElement('button');
+  editBtn.style.cssText='width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  editBtn.textContent='✏️ 編集';
+  editBtn.onclick=function(){
+    menu.remove();
+    startEditWorkout(idx,w,date);
+  };
+  content.appendChild(editBtn);
+
+  // 削除ボタン
+  var delBtn=document.createElement('button');
+  delBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;color:#d32f2f;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  delBtn.textContent='🗑️ 削除';
+  delBtn.onclick=function(){
+    menu.remove();
+    deleteWorkout(idx,date);
+  };
+  content.appendChild(delBtn);
+
+  // キャンセル
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;border:none;border-radius:8px;font-size:14px;cursor:pointer';
+  cancelBtn.textContent='キャンセル';
+  cancelBtn.onclick=function(){menu.remove();};
+  content.appendChild(cancelBtn);
+
+  menu.appendChild(content);
+  document.body.appendChild(menu);
+}
+
+function startEditWorkout(idx,w,date){
+  currentEditIdx=idx;
+  currentEditWorkout=w;
+
+  // フォームに値を設定
+  document.getElementById('r-ex').value=w.exercise;
+  document.getElementById('ex-picker-label').textContent=w.exercise;
+  document.getElementById('r-memo').value=w.memo||'';
+
+  // セット情報を設定（ディープコピー）
+  currentSets=JSON.parse(JSON.stringify(w.sets));
+  renderSets();
+
+  // フォームを開く
+  document.getElementById('rec-input-form').style.display='';
+
+  // 保存ボタンの処理を変更
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.setAttribute('data-edit-mode','true');
+    saveBtn.textContent='更新する';
+    saveBtn.onclick=function(e){e.preventDefault();updateW();};
   }
-  w.sets.push(newSet);
+
+  // キャンセルボタンを表示
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(!cancelBtn){
+    cancelBtn=document.createElement('button');
+    cancelBtn.id='cancel-edit-btn';
+    cancelBtn.className='btn';
+    cancelBtn.textContent='キャンセル';
+    cancelBtn.onclick=function(){cancelEditWorkout();};
+    if(saveBtn&&saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(cancelBtn,saveBtn);
+    }
+  }
+  cancelBtn.style.display='';
+
+  // ページトップにスクロール
+  document.getElementById('rec-input-form').scrollIntoView({behavior:'smooth'});
+}
+
+function updateW(){
+  var sets=currentSets.filter(function(s){return s.w!==''&&s.r!=='';});
+  if(!sets.length)return;
+
+  // 既存のワークアウトを更新
+  if(currentEditIdx>=0&&currentEditWorkout){
+    DB.workouts[currentEditIdx].sets=sets;
+    DB.workouts[currentEditIdx].memo=document.getElementById('r-memo').value;
+    save();
+
+    // リセット
+    currentEditIdx=-1;
+    currentEditWorkout=null;
+    currentSets=[];
+    addSet();addSet();addSet();
+    document.getElementById('r-memo').value='';
+    resetTimer();
+    document.getElementById('rec-input-form').style.display='none';
+    document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+    if(document.getElementById('cancel-edit-btn')){
+      document.getElementById('cancel-edit-btn').style.display='none';
+    }
+
+    // 再描画
+    var date_val=document.getElementById('r-date').value;
+    renderTodayLog();
+    renderTodayProgressBar();
+    showAlert('アップデートしました！');
+  }
+}
+
+function cancelEditWorkout(){
+  currentEditIdx=-1;
+  currentEditWorkout=null;
+  currentSets=[];
+  addSet();addSet();addSet();
+  document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
+  resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
+  // フォームを閉じる
+  document.getElementById('rec-input-form').style.display='none';
+  document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+  renderSets();
+}
+
+function deleteWorkout(idx,date){
+  if(!confirm('この種目の記録を削除しますか？')){return;}
+  DB.workouts.splice(idx,1);
   save();
   renderTodayLog();
+  renderTodayProgressBar();
 }
 
-// セット削除
-function fnDelSet(date,wIdx,sIdx){
-  var workouts=DB.workouts.filter(function(w){return w.date===date;});
-  var w=workouts[wIdx];if(!w)return;
-  w.sets.splice(sIdx,1);
-  if(w.sets.length===0){
-    var dbIdx=DB.workouts.indexOf(w);
-    if(dbIdx!==-1)DB.workouts.splice(dbIdx,1);
+function showAlert(msg){
+  var alertEl=document.getElementById('al-save');
+  if(!alertEl){
+    alertEl=document.createElement('div');
+    alertEl.className='alert alert-ok';
+    alertEl.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;padding:16px 24px;border-radius:12px';
+    document.body.appendChild(alertEl);
   }
-  save();
-  renderTodayLog();
+  alertEl.textContent=msg;
+  alertEl.style.display='block';
+  setTimeout(function(){alertEl.style.display='none';},2000);
 }
-
-// お気に入りトグル（カードから）
-function fnToggleFav(ex){
-  if(DB.favorites[ex])delete DB.favorites[ex];else DB.favorites[ex]=true;
-  save();renderTodayLog();
-}
-
-// 編集フォームを開く（カードから）
-function fnEditEx(ex,date){
-  var w=DB.workouts.find(function(w){return w.date===date&&w.exercise===ex;});
-  document.getElementById('r-ex').value=ex;
-  document.getElementById('ex-picker-label').textContent=ex;
-  if(w){
-    currentSets=w.sets.map(function(s){return{w:s.w,r:s.r,comment:s.comment||''};});
-  } else {
-    currentSets=[];addSet();addSet();addSet();
-  }
-  renderSets();showPrevSession();
-  var form=document.getElementById('rec-input-form');
-  form.style.display='block';
-  document.getElementById('add-ex-btn').textContent='✕ 閉じる';
-  setTimeout(function(){form.scrollIntoView({behavior:'smooth'});},50);
-}
-
-// HTML属性用エスケープ
-function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ===================== 前回の記録表示 =====================
 function showPrevSession(){
@@ -2264,7 +1986,22 @@ function saveW(){
 
   currentSets=[];addSet();addSet();addSet();
   document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
   resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
   // 入力フォームを閉じてログ一覧に戻る
   document.getElementById('rec-input-form').style.display='none';
   document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
@@ -2417,12 +2154,29 @@ function renderHistoryItem(w){
   var maxW=Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
   var setsDetail=w.sets.map(function(s){return s.w+'kg×'+s.r;}).join(', ');
   var d=document.createElement('div');d.className='hist-item';
-  d.innerHTML='<div style="flex:1;min-width:0">'+
-    '<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+w.exercise+'</div>'+
+  d.style.cssText='padding:9px 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:flex-start';
+
+  var contentDiv=document.createElement('div');
+  contentDiv.style.cssText='flex:1;min-width:0';
+  contentDiv.innerHTML='<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+w.exercise+'</div>'+
     '<div style="font-size:12px;color:#999;margin-top:2px">'+w.sets.length+'セット &nbsp;最大 '+maxW+'kg &nbsp;総量 '+Math.round(vol)+'kg</div>'+
     '<div style="font-size:11px;color:#bbb;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+setsDetail+'</div>'+
-    (w.memo?'<div style="font-size:11px;color:#999;margin-top:2px">'+w.memo+'</div>':'')+
-    '</div>';
+    (w.memo?'<div style="font-size:11px;color:#999;margin-top:2px">'+w.memo+'</div>':'');
+  d.appendChild(contentDiv);
+
+  // メニューボタン
+  var menuBtn=document.createElement('button');
+  menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1;flex-shrink:0;margin-left:8px';
+  menuBtn.textContent='⋮';
+  menuBtn.onclick=function(e){
+    e.stopPropagation();
+    var idx=DB.workouts.indexOf(w);
+    if(idx>=0){
+      showWorkoutMenu(idx,w,w.date);
+    }
+  };
+  d.appendChild(menuBtn);
+
   return d;
 }
 function renderHistory(){
@@ -3235,7 +2989,13 @@ function importFitNotesJSON(){
   Object.keys(exCat).forEach(function(exercise){
     var oldCat = exCat[exercise];
     // 古いカテゴリを新しいカテゴリに変換
-    exCat[exercise] = catEn(oldCat) || 'Weightlifting';
+    var mappedCat = catEn(oldCat);
+    // Weightliftingのみの場合は、種目名から自動判定を試みる
+    if(!oldCat || mappedCat === 'Weightlifting'){
+      exCat[exercise] = categorizeExerciseByName(exercise);
+    } else {
+      exCat[exercise] = mappedCat;
+    }
   });
 
   // DB をリセット
@@ -3309,6 +3069,36 @@ function handleFile(file){
   reader.readAsText(file,'UTF-8');
 }
 
+// カテゴリを種目名から再分類
+function recategorizeExercises(){
+  if(!DB.workouts.length){
+    alert('ワークアウトデータがありません');
+    return;
+  }
+
+  var changed=0;
+  var uniqueEx={};
+
+  // すべての種目を走査
+  DB.workouts.forEach(function(w){
+    if(uniqueEx[w.exercise])return;
+    uniqueEx[w.exercise]=true;
+
+    var oldCat=DB.exCategories[w.exercise];
+    var newCat=categorizeExerciseByName(w.exercise);
+
+    if(oldCat!==newCat){
+      DB.exCategories[w.exercise]=newCat;
+      changed++;
+    }
+  });
+
+  save();
+  updateExerciseLists();
+  renderTodayLog();
+  alert('✅ カテゴリを再分類しました\n\n更新: '+changed+'種目\n全種目: '+Object.keys(uniqueEx).length);
+}
+
 function refreshImportStats(){
   if(!DB.workouts.length){document.getElementById('import-stats').style.display='none';return;}
   var uniqueEx={};
@@ -3376,1083 +3166,23 @@ function clearData(){
   alert('削除しました。');
 }
 
-// ===================== Google Sheets API 統合 =====================
-// Google Drive 認証を拡張して Sheets API を使用
-function initSheetsAPI(){
-  if(!SHEETS_SPREADSHEET_ID){
-    console.warn('Sheets Spreadsheet ID not configured');
-    return false;
-  }
-  // gapi.client.sheets をロード
-  gapi.client.load('sheets','v4',function(){
-    console.log('Sheets API loaded');
-  });
-  return true;
-}
-
-// 1. Sheets からデータ読み込み（全シート対応）
-async function getSheetData(sheetName, range){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    console.error('Sheets: not logged in or spreadsheet not configured');
-    return null;
-  }
-  try{
-    var fullRange = sheetName + '!' + (range || 'A:Z');
-    var response = await gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      range:fullRange,
-      majorDimension:'ROWS'
-    });
-    return response.result.values || [];
-  }catch(e){
-    console.error('Sheets getSheetData error:',e);
-    return null;
-  }
-}
-
-// 2. 複数シート一括読み込み
-async function getMultipleSheetsData(sheetNames){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    console.error('Sheets: not logged in or spreadsheet not configured');
-    return {};
-  }
-  try{
-    var ranges = sheetNames.map(function(name){ return name+'!A:Z'; });
-    var response = await gapi.client.sheets.spreadsheets.values.batchGet({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      ranges:ranges
-    });
-    var result={};
-    sheetNames.forEach(function(name,idx){
-      result[name] = response.result.valueRanges[idx].values || [];
-    });
-    return result;
-  }catch(e){
-    console.error('Sheets batchGet error:',e);
-    return {};
-  }
-}
-
-// 3. 行追加（append）
-async function appendSheetData(sheetName,values){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    console.error('Sheets: not logged in or spreadsheet not configured');
-    return false;
-  }
-  try{
-    await gapi.client.sheets.spreadsheets.values.append({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      range:sheetName+'!A:Z',
-      valueInputOption:'RAW',
-      resource:{values:[values]}
-    });
-    return true;
-  }catch(e){
-    console.error('Sheets appendSheetData error:',e);
-    return false;
-  }
-}
-
-// 4. 行更新（update）
-async function updateSheetRow(sheetName,rowIndex,values){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    console.error('Sheets: not logged in or spreadsheet not configured');
-    return false;
-  }
-  try{
-    var rangeA1 = sheetName + '!A' + rowIndex + ':Z' + rowIndex;
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      range:rangeA1,
-      valueInputOption:'RAW',
-      resource:{values:[values]}
-    });
-    return true;
-  }catch(e){
-    console.error('Sheets updateSheetRow error:',e);
-    return false;
-  }
-}
-
-// 5. Sheets メタデータ取得
-async function getSheetsMetadata(){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    console.error('Sheets: not logged in or spreadsheet not configured');
-    return null;
-  }
-  try{
-    var response = await gapi.client.sheets.spreadsheets.get({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      fields:'spreadsheetId,properties,sheets(properties(sheetId,title))'
-    });
-    return response.result;
-  }catch(e){
-    console.error('Sheets metadata error:',e);
-    return null;
-  }
-}
-
-// 6. Sheets データクリア（A2以降をクリア）
-async function clearSheetsData(sheetName){
-  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
-    return false;
-  }
-  try{
-    await gapi.client.sheets.spreadsheets.values.clear({
-      spreadsheetId:SHEETS_SPREADSHEET_ID,
-      range:sheetName+'!A2:Z'
-    });
-    return true;
-  }catch(e){
-    console.error('Sheets clear error:',e);
-    return false;
-  }
-}
-
-// 7. 全ローカルデータを Sheets に一括同期（Google Apps Script 版）
-async function syncAllDataToSheets(){
-  if(!DB.workouts || DB.workouts.length === 0){
-    alert('同期するワークアウトデータがありません');
-    return false;
-  }
-
-  googleAuthState.syncStatus='syncing';
-  updateSyncStatus();
-
-  try{
-    // 1. データを構築
-    var workoutRows=[];
-    DB.workouts.forEach(function(workout){
-      workoutRows.push([
-        workout.id||'',
-        workout.date||'',
-        workout.exercise||'',
-        workout.setIndex||'',
-        workout.weight||'',
-        workout.reps||'',
-        workout.memo||'',
-        workout.createdAt||'',
-        workout.updatedAt||''
-      ]);
-    });
-
-    var bodyLogRows=[];
-    if(DB.bodyLogs && DB.bodyLogs.length>0){
-      DB.bodyLogs.forEach(function(log){
-        bodyLogRows.push([
-          log.id||'',
-          log.date||'',
-          log.weight||'',
-          log.createdAt||'',
-          log.updatedAt||''
-        ]);
-      });
-    }
-
-    var userRows=[[
-      'user-001',
-      DB.user.nick||'',
-      DB.user.goal||'',
-      new Date().toISOString(),
-      new Date().toISOString()
-    ]];
-
-    // 2. Google Apps Script に POST リクエスト
-    var payload={
-      workouts:workoutRows,
-      bodyLogs:bodyLogRows,
-      users:userRows
-    };
-
-    var response=await fetch(APPS_SCRIPT_URL+'?token='+encodeURIComponent(APPS_SCRIPT_TOKEN),{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-
-    var result=await response.json();
-
-    if(result.error){
-      throw new Error(result.error);
-    }
-
-    googleAuthState.syncStatus='success';
-    updateSyncStatus();
-    alert('✅ Google Sheets に '+(workoutRows.length)+'件のワークアウトを同期しました！');
-    console.log('syncAllDataToSheets success');
-    return true;
-
-  }catch(e){
-    console.error('syncAllDataToSheets error:',e);
-    googleAuthState.syncStatus='error';
-    updateSyncStatus();
-    alert('❌ Sheets への同期に失敗しました。\nエラー: '+e.message);
-    return false;
-  }
-}
-
 // ===================== Service Worker 登録 =====================
 if('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function(){});
 }
 
-// ===================== Google Drive 同期関数 =====================
-
-// 1. Google ログイン初期化
-function initGoogleAuth(){
-  var container = document.getElementById('google-auth-container');
-  if(!container) return;
-
-  console.log('Initializing Google OAuth');
-
-  // 両方のライブラリを読み込む
-  // 1. Google Identity Services for UI (ID token)
-  // 2. gapi.auth2 for Drive API access (access token)
-
-  try {
-    // Google Identity Services 初期化
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleSignIn
-    });
-
-    // ボタンをレンダリング
-    google.accounts.id.renderButton(container, {
-      theme: 'outline',
-      size: 'large',
-      text: 'signin'
-    });
-
-    // コンテナの幅を全体に広げる
-    var buttonDiv = container.querySelector('[role="button"]');
-    if(buttonDiv) {
-      buttonDiv.style.width = '100%';
-      buttonDiv.parentElement.style.width = '100%';
-    }
-
-    console.log('Google Identity Services button rendered');
-
-  } catch(e){
-    console.error('Error initializing Google Identity Services:', e);
-  }
-
-  // Drive API の読み込み
-  gapi.load('client:auth2', function(){
-    gapi.client.init({
-      clientId: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/spreadsheets'
-    }).then(function(){
-      console.log('gapi.auth2 and Drive API initialized');
-
-      // ユーザーが既にログインしているか確認
-      var auth2 = gapi.auth2.getAuthInstance();
-      if(auth2 && auth2.isSignedIn.get()){
-        console.log('Already signed in');
-        googleAuthState.isLoggedIn = true;
-        updateGoogleAuthUI();
-        setTimeout(() => loadFromDrive(), 500);
-      }
-    }).catch(function(err){
-      // gapi.client.init() will fail if already initialized, which is OK
-      console.log('gapi.auth2 init note:', err.error || 'init error');
-    });
-  });
-}
-
-// Google Identity Services コールバック
-function handleGoogleSignIn(response){
-  console.log('Google Sign-In callback received');
-
-  if(response && response.credential){
-    // JWT をデコードしてメール を取得
-    try {
-      var base64Url = response.credential.split('.')[1];
-      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      var payload = JSON.parse(jsonPayload);
-
-      googleAuthState.userEmail = payload.email;
-      googleAuthState.isLoggedIn = true;
-      googleAuthState.idToken = response.credential;
-
-      console.log('Logged in as:', payload.email);
-
-      // gapi.auth2 でも Drive API スコープをリクエスト
-      try {
-        var auth2 = gapi.auth2.getAuthInstance();
-        if(auth2){
-          auth2.signIn().then(function(){
-            console.log('gapi.auth2 also signed in');
-            updateGoogleAuthUI();
-            setTimeout(() => loadFromDrive(), 500);
-          }).catch(function(err){
-            console.log('gapi.auth2 sign-in note:', err.error || 'sign-in error');
-            // ID token で一度ログインしているので、Drive 読み込みを試みる
-            updateGoogleAuthUI();
-            setTimeout(() => loadFromDrive(), 500);
-          });
-        } else {
-          console.log('gapi.auth2 not yet ready');
-          updateGoogleAuthUI();
-          setTimeout(() => loadFromDrive(), 500);
-        }
-      } catch(e){
-        console.log('Error with gapi.auth2:', e);
-        updateGoogleAuthUI();
-        setTimeout(() => loadFromDrive(), 500);
-      }
-    } catch(e){
-      console.error('Error decoding JWT:', e);
-    }
-  }
-}
-
-// 2. Google ログイン成功時（古いAPI用、互換性のため保持）
-function onGoogleSuccess(googleUser){
-  try{
-    var profile = googleUser.getBasicProfile();
-    googleAuthState.userEmail = profile.getEmail();
-    googleAuthState.isLoggedIn = true;
-
-    // アクセストークンを取得
-    var authResponse = googleUser.getAuthResponse(true);
-    googleAuthState.accessToken = authResponse.id_token;
-
-    // ローカルストレージに保存
-    localStorage.setItem('google_auth', JSON.stringify({
-      email: profile.getEmail(),
-      expiry: authResponse.expires_in
-    }));
-
-    updateGoogleAuthUI();
-
-    // ログイン直後に Drive データを読み込み
-    setTimeout(() => loadFromDrive(), 500);
-  } catch(err){
-    console.error('Login error:', err);
-    alert('ログイン処理に失敗しました。ページを再度読み込んでください。');
-  }
-}
-
-// Google ログイン失敗時
-function onGoogleFailure(error){
-  console.error('Google Sign-In failed:', error);
-}
-
-// 3. 保存されたトークンを確認
-function checkGoogleAuthState(){
-  var saved = localStorage.getItem('google_auth');
-  if(saved){
-    try{
-      var data = JSON.parse(saved);
-      googleAuthState.userEmail = data.email;
-      googleAuthState.accessToken = data.token;
-      googleAuthState.isLoggedIn = true;
-      updateGoogleAuthUI();
-    } catch(e){
-      console.log('Saved auth data invalid');
-    }
-  }
-}
-
-// 4. ログアウト
-function signOutGoogle(){
-  try{
-    var auth2 = gapi.auth2.getAuthInstance();
-    if(auth2){
-      auth2.signOut();
-    }
-  } catch(e){
-    console.log('Error signing out:', e);
-  }
-
-  googleAuthState.isLoggedIn = false;
-  googleAuthState.accessToken = '';
-  googleAuthState.userEmail = '';
-  localStorage.removeItem('google_auth');
-  updateGoogleAuthUI();
-}
-
-// 5. UI 更新
-function updateGoogleAuthUI(){
-  var statusEl = document.getElementById('google-status');
-  var authContainer = document.getElementById('google-auth-container');
-  var logoutBtn = document.getElementById('google-logout-btn');
-  var syncBtn = document.getElementById('manual-sync-btn');
-
-  if(googleAuthState.isLoggedIn){
-    statusEl.textContent = '✅ ログイン済み: ' + googleAuthState.userEmail;
-    authContainer.style.display = 'none';
-    logoutBtn.style.display = 'block';
-    syncBtn.style.display = 'block';
-    document.getElementById('restore-from-drive-btn').style.display = 'block';
-  } else {
-    statusEl.textContent = '未ログイン - Google ドライブにバックアップすると便利です';
-    authContainer.style.display = 'block';
-    logoutBtn.style.display = 'none';
-    syncBtn.style.display = 'none';
-    document.getElementById('restore-from-drive-btn').style.display = 'none';
-  }
-
-  updateSyncStatus();
-}
-
-// 6. Drive に保存（gapi.client 使用）
-function saveToDrive(){
-  if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
-
-  googleAuthState.syncStatus = 'syncing';
-  updateSyncStatus();
-
-  var syncData = getSyncData();
-  var timeout = setTimeout(function(){
-    googleAuthState.syncStatus = 'error';
-    console.error('Drive sync timeout (30s)');
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  }, 30000);
-
-  // appDataFolder 内のファイルを検索
-  gapi.client.drive.files.list({
-    spaces: 'appData',
-    fields: 'files(id)',
-    q: 'name="' + SYNC_FILE_NAME + '"',
-    pageSize: 1
-  }).then(function(response){
-    clearTimeout(timeout);
-    var files = response.result.files;
-    if(files && files.length > 0){
-      // 既存ファイル更新
-      return updateDriveFile(files[0].id, syncData);
-    } else {
-      // 新規作成
-      return createDriveFile(syncData);
-    }
-  }).then(function(){
-    googleAuthState.syncStatus = 'success';
-    googleAuthState.lastSyncTime = new Date().toISOString();
-    console.log('Drive sync success');
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  }).catch(function(err){
-    clearTimeout(timeout);
-    console.error('Drive sync error:', err);
-    googleAuthState.syncStatus = 'error';
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  });
-}
-
-// 7. Drive から読み込み（gapi.client 使用）
-function loadFromDrive(){
-  if(!googleAuthState.isLoggedIn || !navigator.onLine) return;
-
-  googleAuthState.syncStatus = 'syncing';
-  updateSyncStatus();
-
-  var timeout = setTimeout(function(){
-    googleAuthState.syncStatus = 'error';
-    console.error('Drive load timeout (30s)');
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  }, 30000);
-
-  gapi.client.drive.files.list({
-    spaces: 'appData',
-    fields: 'files(id)',
-    q: 'name="' + SYNC_FILE_NAME + '"',
-    pageSize: 1
-  }).then(function(response){
-    clearTimeout(timeout);
-    var files = response.result.files;
-    if(files && files.length > 0){
-      return getDriveFileContent(files[0].id);
-    }
-    return null;
-  }).then(function(cloudData){
-    if(cloudData){
-      mergeCloudData(cloudData);
-      googleAuthState.syncStatus = 'success';
-      console.log('Drive load success');
-      if(document.getElementById('today-log-body')){
-        renderTodayLog();
-      }
-    }
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  }).catch(function(err){
-    clearTimeout(timeout);
-    console.error('Drive load error:', err);
-    googleAuthState.syncStatus = 'error';
-    updateSyncStatus();
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 3000);
-  });
-}
-
-// 8. Drive ファイル新規作成（gapi.client 使用）
-function createDriveFile(data){
-  var metadata = {
-    name: SYNC_FILE_NAME,
-    parents: ['appDataFolder']
-  };
-
-  return gapi.client.drive.files.create({
-    resource: metadata,
-    media: { body: JSON.stringify(data), mimeType: 'application/json' },
-    fields: 'id'
-  });
-}
-
-// 9. Drive ファイル更新（gapi.client 使用）
-function updateDriveFile(fileId, data){
-  return gapi.client.drive.files.update({
-    fileId: fileId,
-    media: { body: JSON.stringify(data), mimeType: 'application/json' }
-  });
-}
-
-// 10. Drive ファイルコンテンツ取得（gapi.client 使用）
-function getDriveFileContent(fileId){
-  return gapi.client.drive.files.get({
-    fileId: fileId,
-    alt: 'media'
-  }).then(function(response){
-    return response.result;
-  });
-}
-
-// 11. 同期対象データを集約
-function getSyncData(){
-  return {
-    schemaVersion: SYNC_SCHEMA_VERSION,
-    updatedAt: new Date().toISOString(),
-    workouts: DB.workouts,
-    dailyNotes: DB.dailyNotes,
-    favorites: DB.favorites,
-    routines: DB.routines || [],
-    settings: { theme: 'light', unit: 'kg' }
-  };
-}
-
-// 12. Cloud データとマージ（Last-Write-Wins）
-function mergeCloudData(cloudData){
-  if(!cloudData) return;
-
-  // 簡易版：Cloud データを優先
-  DB.workouts = cloudData.workouts || DB.workouts;
-  DB.dailyNotes = cloudData.dailyNotes || DB.dailyNotes;
-  DB.favorites = cloudData.favorites || DB.favorites;
-  save();
-}
-
-// 13. 同期ステータス更新
-function updateSyncStatus(){
-  var el = document.getElementById('sync-status');
-  var status = googleAuthState.syncStatus;
-
-  if(status === 'syncing'){
-    el.textContent = '🔄 同期中...';
-  } else if(status === 'success'){
-    var time = googleAuthState.lastSyncTime ? new Date(googleAuthState.lastSyncTime).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
-    el.textContent = '✓ 同期済み (' + time + ')';
-  } else if(status === 'error'){
-    el.textContent = '✗ 同期失敗';
-  } else {
-    el.textContent = '準備完了';
-  }
-}
-
-// 14. 手動同期
-function manualSync(){
-  if(!googleAuthState.isLoggedIn){
-    alert('先にログインしてください');
-    return;
-  }
-
-  if(!navigator.onLine){
-    alert('インターネット接続がありません');
-    return;
-  }
-
-  saveToDrive();
-}
-
-// 15. Drive から復元（バックグラウンド処理）
-function restoreFromDrive(){
-  if(!googleAuthState.isLoggedIn){
-    alert('先にログインしてください');
-    return;
-  }
-
-  if(!navigator.onLine){
-    alert('インターネット接続がありません');
-    return;
-  }
-
-  // 確認ダイアログ
-  if(!confirm('⚠️ 現在のローカルデータを Google Drive のデータで上書きします。よろしいですか？\n\n（ローカルデータは失われます。一度上書きすると戻せません）')){
-    return;
-  }
-
-  // バックグラウンドで復元を実行
-  alert('✅ Drive から復元を開始しました。バックグラウンドで処理中です...');
-  setTimeout(() => performRestoreInBackground(), 100);
-}
-
-function performRestoreInBackground(){
-  googleAuthState.syncStatus = 'syncing';
-  updateSyncStatus();
-
-  // タイムアウト: 120秒（大量データ対応）
-  var timeout = setTimeout(function(){
-    googleAuthState.syncStatus = 'error';
-    console.error('Drive restore timeout (120s)');
-    updateSyncStatus();
-    alert('❌ 復元がタイムアウトしました。インターネット接続を確認してください。');
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
-  }, 120000);
-
-  // Drive からファイルを検索
-  gapi.client.drive.files.list({
-    spaces: 'appData',
-    fields: 'files(id)',
-    q: 'name="' + SYNC_FILE_NAME + '"',
-    pageSize: 1
-  }).then(function(response){
-    clearTimeout(timeout);
-    var files = response.result.files;
-    if(!files || files.length === 0){
-      console.error('No backup in Drive');
-      googleAuthState.syncStatus = 'error';
-      updateSyncStatus();
-      setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
-      throw new Error('No file in Drive');
-    }
-
-    return getDriveFileContent(files[0].id);
-  }).then(function(cloudData){
-    if(!cloudData){
-      throw new Error('Invalid data');
-    }
-
-    // Drive データでローカルを上書き
-    DB.workouts = cloudData.workouts || [];
-    DB.dailyNotes = cloudData.dailyNotes || {};
-    DB.favorites = cloudData.favorites || {};
-    DB.routines = cloudData.routines || [];
-    DB.exCategories = cloudData.exCategories || DB.exCategories;
-
-    save();
-
-    // UI を再描画
-    updateExerciseLists();
-    renderTodayLog();
-    renderBody();
-
-    googleAuthState.syncStatus = 'success';
-    updateSyncStatus();
-
-    console.log('Restore success! Reloading...');
-    alert('✅ Drive からデータを復元しました！ページをリロードします...');
-    setTimeout(function(){
-      location.reload();  // ページ全体をリロード
-    }, 2000);
-  }).catch(function(err){
-    clearTimeout(timeout);
-    console.error('Restore error:', err);
-    googleAuthState.syncStatus = 'error';
-    updateSyncStatus();
-    alert('❌ 復元に失敗しました。もう一度お試しください。\nエラー: ' + err.message);
-    setTimeout(() => { googleAuthState.syncStatus = 'idle'; updateSyncStatus(); }, 1000);
-  });
-}
-
 // ===================== 起動 =====================
 load();
-
-// 起動時：全種目のカテゴリをFitNotesマップで再分類
-(function recategorizeAll(){
-  var updated=0;
-  DB.workouts.forEach(function(w){
-    var ex=w.exercise;
-    if(!ex)return;
-    var correct=categorizeExerciseByName(ex);
-    if(DB.exCategories[ex]!==correct){
-      DB.exCategories[ex]=correct;
-      updated++;
-    }
-  });
-  if(updated>0)save();
-})();
-
 addSet();addSet();addSet();
 renderBody();
-
-// 初回訪問時の自動復元（ローカルが空 && ログイン済み → Drive から復元）
-function autoRestoreIfEmpty(){
-  if(DB.workouts.length === 0 && googleAuthState.isLoggedIn && navigator.onLine){
-    console.log('Local data is empty and user is logged in. Auto-restoring from Drive...');
-    loadFromDrive();
-  }
-}
-
-// Google 認証初期化
-setTimeout(() => {
-  initGoogleAuth();
-  initSheetsAPI();  // Google Sheets API も初期化
-  // 認証完了後、初回復元をチェック
-  setTimeout(() => autoRestoreIfEmpty(), 2000);
-}, 1000);
-
-// 保存時に自動 Drive 同期（一時無効化：大量データ同期時のハング問題対応）
-// TODO: 差分同期を実装してから有効化
-var originalSave = save;
-save = function(){
-  originalSave();
-  // if(googleAuthState.isLoggedIn && navigator.onLine){
-  //   saveToDrive();
-  // }
-};
 </script>
 
-<!-- Discord インポートモーダル -->
-<div id="discord-modal" onclick="if(event.target===this)closeDiscordModal()">
-  <div id="discord-inner">
-    <div class="dc-header">
-      <h2>💬 Discord トレーニングサマリー</h2>
-      <button onclick="closeDiscordModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text2);line-height:1">×</button>
-    </div>
-    <div class="dc-body" id="discord-modal-body">
-      <!-- Step 1: API Key -->
-      <div id="dc-step-apikey">
-        <div class="dc-step">Step 1 — Claude API キー</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Anthropic の Claude API キーを入力してください。キーはこのブラウザにのみ保存されます。</p>
-        <input type="password" id="dc-apikey-input" placeholder="sk-ant-..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:monospace;margin-bottom:8px">
-        <div style="font-size:11px;color:var(--text2)">※ <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#5865F2">console.anthropic.com</a> でAPIキーを取得できます。キーは端末に保存されます（サーバー送信なし）。</div>
-      </div>
-
-      <div style="height:16px"></div>
-
-      <!-- Step 2: Discord Messages -->
-      <div id="dc-step-messages">
-        <div class="dc-step">Step 2 — Discordのメッセージを貼り付け</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Discordのトレーニングチャンネルのメッセージをコピー＆ペーストするか、<br>Discordデータエクスポート（messages.jsonの中身）を貼り付けてください。</p>
-        <textarea class="dc-textarea" id="dc-messages-input" placeholder="例：
-トレーナー: 今日はベンチプレス3セット、スクワット4セットやりましょう
-あなた: ベンチ 80kg x 10rep x 3set完了！
-トレーナー: いい感じ！次はスクワット 70kg x 12rep
-あなた: スクワット完了 70kg x 12 x 4set"></textarea>
-
-        <div style="margin-top:10px">
-          <div class="dc-step">または JSON ファイルをアップロード</div>
-          <label class="import-drop" style="margin-top:6px" for="dc-json-file">
-            <input type="file" id="dc-json-file" accept=".json,.csv,.txt" onchange="loadDiscordFile(this)">
-            <div style="font-size:24px;margin-bottom:4px">📂</div>
-            <div style="font-size:13px;font-weight:500">Discordエクスポート JSON / テキスト</div>
-            <div style="font-size:11px;color:var(--text2)">messages.json, channel.json, .txt など</div>
-          </label>
-        </div>
-      </div>
-
-      <div style="height:16px"></div>
-
-      <!-- Step 3: Results (hidden initially) -->
-      <div id="dc-step-results" style="display:none">
-        <div class="dc-step">サマリー結果</div>
-        <div id="dc-results-body"></div>
-      </div>
-    </div>
-
-    <div class="dc-footer">
-      <button class="btn" onclick="closeDiscordModal()" style="flex:1">キャンセル</button>
-      <button class="btn btn-discord" id="dc-analyze-btn" onclick="analyzeDiscordMessages()" style="flex:2;font-weight:600">🤖 AIでサマリーを生成</button>
-      <button class="btn btn-green" id="dc-import-btn" onclick="importDiscordWorkouts()" style="flex:2;font-weight:600;display:none">✅ ワークアウトを取り込む</button>
-    </div>
-  </div>
-</div>
-
-<!-- FitNotes データ埋め込み -->
-<script src="fitnotes_embed.js"></script>
-
+<!-- FitNotes データ埋め込み （一時無効化） -->
+<!-- <script src="fitnotes_embed.js"></script> -->
 <script>
-// ============================================================
-// Discord トレーニングサマリー機能
-// ============================================================
+// FitNotes データのダミー定義（fitnotes_embed.js の読み込み失敗対策）
+var FITNOTES_DATA = { workouts: [], dailyNotes: {}, exCategories: {}, favorites: {} };
 
-var dcExtractedSessions = []; // Claude から抽出したセッション
-
-function openDiscordModal() {
-  var modal = document.getElementById('discord-modal');
-  modal.classList.add('show');
-  // 保存済みAPIキーをセット
-  var savedKey = localStorage.getItem('claude_api_key') || '';
-  document.getElementById('dc-apikey-input').value = savedKey;
-  document.getElementById('dc-step-results').style.display = 'none';
-  document.getElementById('dc-import-btn').style.display = 'none';
-  document.getElementById('dc-analyze-btn').style.display = '';
-  dcExtractedSessions = [];
-}
-
-function closeDiscordModal() {
-  document.getElementById('discord-modal').classList.remove('show');
-}
-
-function loadDiscordFile(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var content = e.target.result;
-    var text = '';
-    try {
-      var json = JSON.parse(content);
-      // Discord公式エクスポート形式: messages配列
-      if (Array.isArray(json)) {
-        // messages.csvをJSONとして扱う場合
-        text = json.map(function(m) {
-          return (m.Timestamp || m.timestamp || '') + ' ' +
-                 (m.Author || m.author || '') + ': ' +
-                 (m.Contents || m.content || '');
-        }).join('\n');
-      } else if (json.messages && Array.isArray(json.messages)) {
-        // DiscordChatExporter形式
-        text = json.messages.map(function(m) {
-          var ts = m.timestamp ? m.timestamp.substring(0, 10) : '';
-          var author = m.author ? (m.author.nickname || m.author.name || '') : '';
-          return ts + ' ' + author + ': ' + (m.content || '');
-        }).filter(function(l) { return l.trim().length > 5; }).join('\n');
-      } else {
-        text = JSON.stringify(json, null, 2);
-      }
-    } catch(ex) {
-      // テキストファイルとして扱う
-      text = content;
-    }
-    document.getElementById('dc-messages-input').value = text;
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-function analyzeDiscordMessages() {
-  var apiKey = document.getElementById('dc-apikey-input').value.trim();
-  var messages = document.getElementById('dc-messages-input').value.trim();
-
-  if (!apiKey) {
-    showDcError('Claude APIキーを入力してください。');
-    return;
-  }
-  if (!messages) {
-    showDcError('Discordのメッセージを貼り付けてください。');
-    return;
-  }
-  if (!apiKey.startsWith('sk-ant-')) {
-    showDcError('APIキーの形式が正しくありません（sk-ant-... で始まるキーを入力してください）。');
-    return;
-  }
-
-  // APIキーを保存
-  localStorage.setItem('claude_api_key', apiKey);
-
-  // ローディング表示
-  document.getElementById('dc-step-results').style.display = 'block';
-  document.getElementById('dc-results-body').innerHTML =
-    '<div class="dc-loading"><div class="dc-spinner"></div><br>Claudeがトレーニング内容を解析中...</div>';
-  document.getElementById('dc-analyze-btn').disabled = true;
-  document.getElementById('dc-import-btn').style.display = 'none';
-
-  var prompt = 'あなたはフィットネストラッカーのアシスタントです。\n' +
-    '以下はDiscordのパーソナルトレーニングに関するチャットログです。\n' +
-    'このログを分析し、以下のJSON形式で回答してください。\n\n' +
-    '**重要**: 必ずJSONのみを返してください（前後の説明文は不要）。\n\n' +
-    '出力JSON形式:\n' +
-    '{\n' +
-    '  "summary": "全体のトレーニングサマリー（日本語・200文字以内）",\n' +
-    '  "sessions": [\n' +
-    '    {\n' +
-    '      "date": "YYYY-MM-DD（推定日付、不明なら今日の日付）",\n' +
-    '      "summary": "このセッションの概要",\n' +
-    '      "exercises": [\n' +
-    '        {\n' +
-    '          "name": "種目名（日本語）",\n' +
-    '          "sets": [\n' +
-    '            {"w": "重量(kg、なければ空文字)", "r": "レップ数（なければ空文字）", "comment": "メモ"}\n' +
-    '          ]\n' +
-    '        }\n' +
-    '      ]\n' +
-    '    }\n' +
-    '  ]\n' +
-    '}\n\n' +
-    'ルール:\n' +
-    '- 種目名が英語の場合は日本語に変換（例: Bench Press → ベンチプレス）\n' +
-    '- 重量・レップ数が不明なセットは w="" r="" で記録\n' +
-    '- 日付が明示されていない場合は会話の文脈から推定するか、今日の日付 (' + todayStr() + ') を使用\n' +
-    '- トレーニング内容が含まれないメッセージは無視してよい\n\n' +
-    'チャットログ:\n' +
-    '---\n' +
-    messages.substring(0, 12000) + // APIコスト削減のため12000文字まで
-    '\n---';
-
-  fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  })
-  .then(function(res) {
-    if (!res.ok) {
-      return res.json().then(function(err) {
-        throw new Error(err.error ? err.error.message : 'API error ' + res.status);
-      });
-    }
-    return res.json();
-  })
-  .then(function(data) {
-    var text = data.content && data.content[0] ? data.content[0].text : '';
-    // JSONを抽出（```json ... ``` ブロックにも対応）
-    var jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    var jsonStr = jsonMatch ? jsonMatch[1] : text;
-    // 最初の { から最後の } まで抽出
-    var start = jsonStr.indexOf('{');
-    var end = jsonStr.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('JSONが見つかりませんでした');
-    jsonStr = jsonStr.substring(start, end + 1);
-    var result = JSON.parse(jsonStr);
-    dcExtractedSessions = result.sessions || [];
-    renderDiscordResults(result);
-  })
-  .catch(function(err) {
-    showDcError('エラー: ' + err.message);
-  })
-  .finally(function() {
-    document.getElementById('dc-analyze-btn').disabled = false;
-  });
-}
-
-function todayStr() {
-  return new Date().toISOString().substring(0, 10);
-}
-
-function showDcError(msg) {
-  document.getElementById('dc-step-results').style.display = 'block';
-  document.getElementById('dc-results-body').innerHTML = '<div class="dc-err">' + escHtml(msg) + '</div>';
-}
-
-function renderDiscordResults(result) {
-  var sessions = result.sessions || [];
-  var html = '';
-
-  // 全体サマリー
-  if (result.summary) {
-    html += '<div class="dc-result-card">' +
-      '<h3>📊 トレーニングサマリー</h3>' +
-      '<div class="dc-summary-text">' + escHtml(result.summary) + '</div>' +
-      '</div>';
-  }
-
-  if (sessions.length === 0) {
-    html += '<div class="dc-err">トレーニングデータが見つかりませんでした。メッセージ内容を確認してください。</div>';
-    document.getElementById('dc-results-body').innerHTML = html;
-    return;
-  }
-
-  // セッション一覧（インポート選択チェックボックス付き）
-  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px">インポートするセッションを選択:</div>';
-
-  sessions.forEach(function(session, si) {
-    var exHtml = '';
-    (session.exercises || []).forEach(function(ex) {
-      var setChips = (ex.sets || []).map(function(s) {
-        var label = '';
-        if (s.w) label += s.w + 'kg';
-        if (s.w && s.r) label += ' × ';
-        if (s.r) label += s.r + 'rep';
-        if (!label) label = 'セット';
-        return '<span class="dc-set-chip">' + escHtml(label) + '</span>';
-      }).join('');
-      exHtml += '<div class="dc-ex-row">' +
-        '<div class="dc-ex-name">' + escHtml(ex.name || '') + '</div>' +
-        '<div class="dc-set-chips">' + setChips + '</div>' +
-        '</div>';
-    });
-
-    html += '<div class="dc-import-check">' +
-      '<input type="checkbox" id="dc-chk-' + si + '" checked>' +
-      '<label for="dc-chk-' + si + '" style="cursor:pointer;font-weight:600">' +
-        escHtml(session.date || '') + ' — ' + escHtml(session.summary || '') +
-      '</label>' +
-      '</div>' +
-      '<div class="dc-session-card" style="margin-bottom:12px">' +
-        exHtml +
-      '</div>';
-  });
-
-  document.getElementById('dc-results-body').innerHTML = html;
-  document.getElementById('dc-import-btn').style.display = '';
-  document.getElementById('dc-step-results').style.display = 'block';
-}
-
-function importDiscordWorkouts() {
-  var imported = 0;
-  var skipped = 0;
-
-  dcExtractedSessions.forEach(function(session, si) {
-    var chk = document.getElementById('dc-chk-' + si);
-    if (!chk || !chk.checked) return;
-
-    var date = session.date || todayStr();
-    (session.exercises || []).forEach(function(ex) {
-      if (!ex.name) return;
-      var sets = (ex.sets || []).map(function(s) {
-        return { w: s.w || '', r: s.r || '', dist: '', distUnit: 'km', time: '', comment: s.comment || '' };
-      });
-      if (sets.length === 0) sets = [{ w: '', r: '', dist: '', distUnit: 'km', time: '', comment: '' }];
-
-      // 重複チェック
-      var exists = DB.workouts.some(function(w) { return w.date === date && w.exercise === ex.name; });
-      if (exists) { skipped++; return; }
-
-      DB.workouts.push({ date: date, exercise: ex.name, sets: sets, memo: session.summary || '' });
-      // カテゴリ自動分類
-      if (!DB.exCategories[ex.name]) {
-        DB.exCategories[ex.name] = categorizeExerciseByName(ex.name);
-      }
-      imported++;
-    });
-  });
-
-  save();
-  updateImportStats();
-
-  var msg = imported + '件のエクササイズをインポートしました。';
-  if (skipped) msg += '（重複 ' + skipped + ' 件はスキップ）';
-  document.getElementById('dc-results-body').innerHTML =
-    '<div class="dc-ok">✅ ' + escHtml(msg) + '</div>' +
-    document.getElementById('dc-results-body').innerHTML;
-
-  var lastEl = document.getElementById('dc-last-import');
-  if (lastEl) {
-    lastEl.style.display = '';
-    lastEl.textContent = '最終取り込み: ' + new Date().toLocaleDateString('ja-JP') + '（' + imported + '件）';
-  }
-
-  document.getElementById('dc-import-btn').style.display = 'none';
-}
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ============================================================
 // importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
 function importFitNotesJSON(){
   var data = FITNOTES_DATA;
