@@ -3848,10 +3848,12 @@ setInterval(function() {
 }, sheetsAutoSyncState.syncInterval);
 </script>
 
-<!-- FitNotes データ埋め込み -->
-<script src="fitnotes_embed.js"></script>
-
+<!-- FitNotes データ埋め込み （一時無効化） -->
+<!-- <script src="fitnotes_embed.js"></script> -->
 <script>
+// FitNotes データのダミー定義（fitnotes_embed.js の読み込み失敗対策）
+var FITNOTES_DATA = { workouts: [], dailyNotes: {}, exCategories: {}, favorites: {} };
+</script>
 // importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
 function importFitNotesJSON(){
   var data = FITNOTES_DATA;
