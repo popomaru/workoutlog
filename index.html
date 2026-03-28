@@ -1481,11 +1481,22 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
     block.draggable=true;
     block.dataset.idx=idx;
 
-    // ドラッグハンドル
+    // ドラッグハンドル + メニューボタン
+    var handleWrap=document.createElement('div');
+    handleWrap.style.cssText='flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px';
+
     var handle=document.createElement('div');
-    handle.style.cssText='flex-shrink:0;cursor:grab;font-size:20px;color:var(--text2);user-select:none;padding-top:4px';
+    handle.style.cssText='cursor:grab;font-size:20px;color:var(--text2);user-select:none';
     handle.textContent='☰';
-    block.appendChild(handle);
+    handleWrap.appendChild(handle);
+
+    var menuBtn=document.createElement('button');
+    menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1';
+    menuBtn.textContent='⋮';
+    menuBtn.onclick=function(e){e.stopPropagation();showWorkoutMenu(idx,w,date);};
+    handleWrap.appendChild(menuBtn);
+
+    block.appendChild(handleWrap);
 
     // コンテンツ
     var content=document.createElement('div');
@@ -1591,6 +1602,164 @@ function renderTodayLogWithDrag(workouts,bodyEl,date){
     }
   });
   save();
+}
+
+// ===================== ワークアウトメニュー =====================
+var currentEditIdx=-1;
+var currentEditWorkout=null;
+
+function showWorkoutMenu(idx,w,date){
+  var menu=document.createElement('div');
+  menu.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:flex;align-items:flex-end;z-index:9999';
+  menu.onclick=function(){menu.remove();};
+
+  var content=document.createElement('div');
+  content.style.cssText='background:#fff;border-radius:12px 12px 0 0;padding:16px;width:100%;max-height:70vh;overflow-y:auto';
+  content.onclick=function(e){e.stopPropagation();};
+
+  // タイトル
+  var title=document.createElement('div');
+  title.style.cssText='font-size:16px;font-weight:600;margin-bottom:16px';
+  title.textContent=w.exercise;
+  content.appendChild(title);
+
+  // 編集ボタン
+  var editBtn=document.createElement('button');
+  editBtn.style.cssText='width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  editBtn.textContent='✏️ 編集';
+  editBtn.onclick=function(){
+    menu.remove();
+    startEditWorkout(idx,w,date);
+  };
+  content.appendChild(editBtn);
+
+  // 削除ボタン
+  var delBtn=document.createElement('button');
+  delBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;color:#d32f2f;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  delBtn.textContent='🗑️ 削除';
+  delBtn.onclick=function(){
+    menu.remove();
+    deleteWorkout(idx,date);
+  };
+  content.appendChild(delBtn);
+
+  // キャンセル
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;border:none;border-radius:8px;font-size:14px;cursor:pointer';
+  cancelBtn.textContent='キャンセル';
+  cancelBtn.onclick=function(){menu.remove();};
+  content.appendChild(cancelBtn);
+
+  menu.appendChild(content);
+  document.body.appendChild(menu);
+}
+
+function startEditWorkout(idx,w,date){
+  currentEditIdx=idx;
+  currentEditWorkout=w;
+
+  // フォームに値を設定
+  document.getElementById('r-ex').value=w.exercise;
+  document.getElementById('ex-picker-label').textContent=w.exercise;
+  document.getElementById('r-memo').value=w.memo||'';
+
+  // セット情報を設定
+  currentSets=JSON.parse(JSON.stringify(w.sets));
+  renderSets();
+
+  // フォームを開く
+  document.getElementById('rec-input-form').style.display='';
+  document.getElementById('add-ex-btn').textContent='✏️ 種目を追加';
+
+  // 保存ボタンの処理を変更
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  saveBtn.onclick=function(){updateW();};
+  saveBtn.textContent='更新する';
+
+  // キャンセルボタンを表示
+  if(!document.getElementById('cancel-edit-btn')){
+    var cancelBtn=document.createElement('button');
+    cancelBtn.id='cancel-edit-btn';
+    cancelBtn.className='btn';
+    cancelBtn.style.cssText='';
+    cancelBtn.textContent='キャンセル';
+    cancelBtn.onclick=function(){cancelEditWorkout();};
+    saveBtn.parentNode.insertBefore(cancelBtn,saveBtn);
+  } else {
+    document.getElementById('cancel-edit-btn').style.display='';
+  }
+
+  // ページトップにスクロール
+  document.getElementById('rec-input-form').scrollIntoView({behavior:'smooth'});
+}
+
+function updateW(){
+  var sets=currentSets.filter(function(s){return s.w!==''&&s.r!=='';});
+  if(!sets.length)return;
+
+  // 既存のワークアウトを更新
+  if(currentEditIdx>=0&&currentEditWorkout){
+    DB.workouts[currentEditIdx].sets=sets;
+    DB.workouts[currentEditIdx].memo=document.getElementById('r-memo').value;
+    save();
+
+    // リセット
+    currentEditIdx=-1;
+    currentEditWorkout=null;
+    currentSets=[];
+    addSet();addSet();addSet();
+    document.getElementById('r-memo').value='';
+    resetTimer();
+    document.getElementById('rec-input-form').style.display='none';
+    document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+    if(document.getElementById('cancel-edit-btn')){
+      document.getElementById('cancel-edit-btn').style.display='none';
+    }
+
+    // 再描画
+    var date_val=document.getElementById('r-date').value;
+    renderTodayLog();
+    renderTodayProgressBar();
+    showAlert('アップデートしました！');
+  }
+}
+
+function cancelEditWorkout(){
+  currentEditIdx=-1;
+  currentEditWorkout=null;
+  currentSets=[];
+  addSet();addSet();addSet();
+  document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
+  resetTimer();
+  document.getElementById('rec-input-form').style.display='none';
+  document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+  if(document.getElementById('cancel-edit-btn')){
+    document.getElementById('cancel-edit-btn').style.display='none';
+  }
+  renderSets();
+}
+
+function deleteWorkout(idx,date){
+  if(!confirm('この種目の記録を削除しますか？')){return;}
+  DB.workouts.splice(idx,1);
+  save();
+  renderTodayLog();
+  renderTodayProgressBar();
+}
+
+function showAlert(msg){
+  var alertEl=document.getElementById('al-save');
+  if(!alertEl){
+    alertEl=document.createElement('div');
+    alertEl.className='alert alert-ok';
+    alertEl.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;padding:16px 24px;border-radius:12px';
+    document.body.appendChild(alertEl);
+  }
+  alertEl.textContent=msg;
+  alertEl.style.display='block';
+  setTimeout(function(){alertEl.style.display='none';},2000);
 }
 
 // ===================== 前回の記録表示 =====================
@@ -2025,12 +2194,29 @@ function renderHistoryItem(w){
   var maxW=Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
   var setsDetail=w.sets.map(function(s){return s.w+'kg×'+s.r;}).join(', ');
   var d=document.createElement('div');d.className='hist-item';
-  d.innerHTML='<div style="flex:1;min-width:0">'+
-    '<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+w.exercise+'</div>'+
+  d.style.cssText='padding:9px 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:flex-start';
+
+  var contentDiv=document.createElement('div');
+  contentDiv.style.cssText='flex:1;min-width:0';
+  contentDiv.innerHTML='<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+w.exercise+'</div>'+
     '<div style="font-size:12px;color:#999;margin-top:2px">'+w.sets.length+'セット &nbsp;最大 '+maxW+'kg &nbsp;総量 '+Math.round(vol)+'kg</div>'+
     '<div style="font-size:11px;color:#bbb;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+setsDetail+'</div>'+
-    (w.memo?'<div style="font-size:11px;color:#999;margin-top:2px">'+w.memo+'</div>':'')+
-    '</div>';
+    (w.memo?'<div style="font-size:11px;color:#999;margin-top:2px">'+w.memo+'</div>':'');
+  d.appendChild(contentDiv);
+
+  // メニューボタン
+  var menuBtn=document.createElement('button');
+  menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1;flex-shrink:0;margin-left:8px';
+  menuBtn.textContent='⋮';
+  menuBtn.onclick=function(e){
+    e.stopPropagation();
+    var idx=DB.workouts.indexOf(w);
+    if(idx>=0){
+      showWorkoutMenu(idx,w,w.date);
+    }
+  };
+  d.appendChild(menuBtn);
+
   return d;
 }
 function renderHistory(){
