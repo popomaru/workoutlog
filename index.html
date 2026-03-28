@@ -526,6 +526,7 @@ textarea{min-height:56px;resize:vertical}
   <div class="card" id="import-stats" style="display:none">
     <div class="sec">インポート済みデータ</div>
     <div id="import-stat-body"></div>
+    <button class="btn btn-blue" onclick="recategorizeExercises()" style="width:100%;margin-top:12px">🏷️ カテゴリを再分類</button>
   </div>
 
   <div class="card">
@@ -640,37 +641,38 @@ var CAT_LEGACY_TO_EN={
   'Olympic':'Weightlifting','Full Body':'Weightlifting','Other':'Weightlifting',''  :'Weightlifting'
 };
 
-// 種目名からカテゴリを判定する関数
+// 種目名からカテゴリを判定する関数（より詳細な判定）
 function categorizeExerciseByName(exerciseName){
   if(!exerciseName) return 'Weightlifting';
   var name=exerciseName.toLowerCase();
 
   // Abs
-  if(/crunch|ab\s*wheel|decline\s*crunch|dragon\s*flag|sit\s*up|hanging\s*leg/.test(name)) return 'Abs';
+  if(/crunch|ab\s*wheel|decline\s*crunch|dragon\s*flag|sit\s*up|hanging\s*leg|cable\s*crunch|machine\s*crunch/.test(name)) return 'Abs';
 
   // Biceps
-  if(/curl|preacher/.test(name) && !/tricep|press\s*down|overhead|extension/.test(name)) return 'Biceps';
+  if(/curl|preacher|barbell\s*curl|dumbbell\s*curl|machine\s*curl|cable\s*curl|ez\s*bar/.test(name) && !/tricep|press\s*down|overhead|extension|lat\s*pull/.test(name)) return 'Biceps';
 
   // Triceps
-  if(/tricep|press\s*down|dip|french\s*press|overhead\s*extension/.test(name)) return 'Triceps';
+  if(/tricep|press\s*down|dip|french\s*press|overhead\s*extension|pushdown|v\s*bar|rope/.test(name)) return 'Triceps';
 
   // Chest
-  if(/bench|chest|press|pec/.test(name) && !/decline|row/.test(name)) return 'Chest';
+  if(/bench|chest|press|pec|push\s*up|flye|fly/.test(name) && !/decline|row|lat\s*pull|pullover|pull\s*over/.test(name)) return 'Chest';
 
   // Cardio
-  if(/cycling|bike|treadmill|rowing|cardio|run/.test(name)) return 'Cardio';
+  if(/cycling|bike|treadmill|rowing|cardio|run|elliptical|stair|climber/.test(name)) return 'Cardio';
 
   // Shoulders
-  if(/shoulder|raise|upright\s*row|shrug|arnold|lateral|military|ohp|face\s*pull/.test(name)) return 'Shoulders';
+  if(/shoulder|raise|upright\s*row|shrug|arnold|lateral|military|ohp|face\s*pull|machine\s*shoulder/.test(name)) return 'Shoulders';
+
+  // Back/Weightlifting (Deadlifts, Rows, Pulldowns, etc)
+  if(/deadlift|sumo\s*deadlift|rdl|reverse\s*hyper|row|t\s*bar|pendulum|seal|seal\s*row/.test(name)) return 'Weightlifting';
+  if(/lat\s*pulldown|lat\s*pull|pulldown|pull\s*down|pull\s*up|chin\s*up|pullover|pull\s*over|hex\s*bar/.test(name)) return 'Weightlifting';
 
   // Neck
   if(/neck|4\s*way\s*neck/.test(name)) return 'Neck';
 
   // Legs
-  if(/squat|leg\s*press|leg\s*curl|leg\s*extension|hack|lunge|calf|hamstring|quad|leg\s*raise/.test(name)) return 'Legs';
-
-  // Weightlifting (Deadlift, Rows, Lat Pulldown, Pull Over等)
-  if(/deadlift|lat\s*pulldown|row|pullover|pull\s*over|hex\s*bar/.test(name)) return 'Weightlifting';
+  if(/squat|leg\s*press|leg\s*curl|leg\s*extension|hack|lunge|calf|hamstring|quad|leg\s*raise|smith\s*machine\s*squat|leg\s*kick/.test(name)) return 'Legs';
 
   return 'Weightlifting';
 }
@@ -2983,7 +2985,13 @@ function importFitNotesJSON(){
   Object.keys(exCat).forEach(function(exercise){
     var oldCat = exCat[exercise];
     // 古いカテゴリを新しいカテゴリに変換
-    exCat[exercise] = catEn(oldCat) || 'Weightlifting';
+    var mappedCat = catEn(oldCat);
+    // Weightliftingのみの場合は、種目名から自動判定を試みる
+    if(!oldCat || mappedCat === 'Weightlifting'){
+      exCat[exercise] = categorizeExerciseByName(exercise);
+    } else {
+      exCat[exercise] = mappedCat;
+    }
   });
 
   // DB をリセット
@@ -3055,6 +3063,36 @@ function handleFile(file){
     document.getElementById('csv-file').value='';
   };
   reader.readAsText(file,'UTF-8');
+}
+
+// カテゴリを種目名から再分類
+function recategorizeExercises(){
+  if(!DB.workouts.length){
+    alert('ワークアウトデータがありません');
+    return;
+  }
+
+  var changed=0;
+  var uniqueEx={};
+
+  // すべての種目を走査
+  DB.workouts.forEach(function(w){
+    if(uniqueEx[w.exercise])return;
+    uniqueEx[w.exercise]=true;
+
+    var oldCat=DB.exCategories[w.exercise];
+    var newCat=categorizeExerciseByName(w.exercise);
+
+    if(oldCat!==newCat){
+      DB.exCategories[w.exercise]=newCat;
+      changed++;
+    }
+  });
+
+  save();
+  updateExerciseLists();
+  renderTodayLog();
+  alert('✅ カテゴリを再分類しました\n\n更新: '+changed+'種目\n全種目: '+Object.keys(uniqueEx).length);
 }
 
 function refreshImportStats(){
