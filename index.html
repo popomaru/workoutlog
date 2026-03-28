@@ -2992,16 +2992,30 @@ function initSheetsAPI(){
     return false;
   }
 
-  // gapi.client が準備できるまで待機
-  if(typeof gapi !== 'undefined' && gapi.client){
-    gapi.client.load('sheets', 'v4', function(){
-      console.log('Sheets API v4 loaded successfully');
-    });
-  } else {
-    console.warn('gapi.client not ready yet');
-    // 1秒後に再試行
-    setTimeout(initSheetsAPI, 1000);
+  // gapi.client.sheets が存在するかチェック
+  if(typeof gapi !== 'undefined' && gapi.client && gapi.client.sheets){
+    console.log('✓ Sheets API already loaded');
+    return true;
   }
+
+  // Sheets API をロード
+  if(typeof gapi === 'undefined' || !gapi.client){
+    console.warn('gapi not ready yet, retry in 1s');
+    setTimeout(initSheetsAPI, 1000);
+    return false;
+  }
+
+  // gapi.client.load でシートAPIをロード（コールバック関数を指定）
+  gapi.client.load('sheets', 'v4', function(err) {
+    if(err){
+      console.error('Failed to load Sheets API:', err);
+      return;
+    }
+    console.log('✓ Sheets API v4 loaded successfully');
+    // グローバルフラグを設定
+    window.SHEETS_API_READY = true;
+  });
+
   return true;
 }
 
@@ -3722,9 +3736,9 @@ function syncToSheets() {
     return Promise.resolve();
   }
 
-  // gapi が定義されているか確認
-  if(typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
-    console.warn('Sheets API not ready');
+  // Sheets API が準備できているかチェック
+  if(!window.SHEETS_API_READY || typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
+    console.warn('⏳ Sheets API not ready yet');
     return Promise.resolve();
   }
 
@@ -3742,23 +3756,29 @@ function syncToSheets() {
       return [w.date || '', w.exercise || '', w.sets ? w.sets.length : 0, setsStr, w.memo || '', new Date().toLocaleString('ja-JP'), '', '', ''];
     });
 
-    return gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SHEETS_SPREADSHEET_ID,
-      range: 'Workouts!A2:I' + (rows.length + 1),
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: rows }
-    })
-    .then(res => {
-      sheetsAutoSyncState.lastSyncTime = Date.now();
-      console.log('✓ Sheets sync success:', res.result);
+    try {
+      return gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SHEETS_SPREADSHEET_ID,
+        range: 'Workouts!A2:I' + (rows.length + 1),
+        valueInputOption: 'USER_ENTERED',
+        resource: { values: rows }
+      })
+      .then(res => {
+        sheetsAutoSyncState.lastSyncTime = Date.now();
+        console.log('✓ Sheets sync success:', res.result);
+        sheetsAutoSyncState.isSyncing = false;
+        return res.result;
+      })
+      .catch(err => {
+        console.error('✗ Sheets sync error:', err);
+        sheetsAutoSyncState.isSyncing = false;
+        return null;
+      });
+    } catch(e) {
+      console.error('✗ Sheets sync exception:', e);
       sheetsAutoSyncState.isSyncing = false;
-      return res.result;
-    })
-    .catch(err => {
-      console.error('✗ Sheets sync error:', err);
-      sheetsAutoSyncState.isSyncing = false;
-      return null;
-    });
+      return Promise.resolve(null);
+    }
   }
 
   sheetsAutoSyncState.isSyncing = false;
@@ -3771,50 +3791,55 @@ function loadFromSheets() {
     return Promise.resolve(null);
   }
 
-  // gapi が定義されているか確認
-  if(typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
-    console.warn('Sheets API not ready for loading');
+  // Sheets API が準備できているかチェック
+  if(!window.SHEETS_API_READY || typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
+    console.warn('⏳ Sheets API not ready for loading');
     return Promise.resolve(null);
   }
 
-  return gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId: SHEETS_SPREADSHEET_ID,
-    range: 'Workouts!A2:I1000'
-  })
-  .then(res => {
-    var values = res.result.values || [];
-    console.log('✓ Loaded from Sheets:', values.length + ' rows');
+  try {
+    return gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SHEETS_SPREADSHEET_ID,
+      range: 'Workouts!A2:I1000'
+    })
+    .then(res => {
+      var values = res.result.values || [];
+      console.log('✓ Loaded from Sheets:', values.length + ' rows');
 
-    if(values.length > 0) {
-      // Sheets から workouts を再構築
-      var sheetWorkouts = values.map(function(row) {
-        return {
-          date: row[0] || '',
-          exercise: row[1] || '',
-          sets: [], // セット詳細は復元不可のため空
-          memo: row[4] || ''
-        };
-      });
+      if(values.length > 0) {
+        // Sheets から workouts を再構築
+        var sheetWorkouts = values.map(function(row) {
+          return {
+            date: row[0] || '',
+            exercise: row[1] || '',
+            sets: [], // セット詳細は復元不可のため空
+            memo: row[4] || ''
+          };
+        });
 
-      // タイムスタンプベースのマージ：新しい方を優先
-      if(sheetWorkouts.length > 0) {
-        var sheetTime = Date.now();
-        var localTime = DB.syncTime || 0;
+        // タイムスタンプベースのマージ：新しい方を優先
+        if(sheetWorkouts.length > 0) {
+          var sheetTime = Date.now();
+          var localTime = DB.syncTime || 0;
 
-        if(sheetTime > localTime || DB.workouts.length === 0) {
-          DB.workouts = sheetWorkouts;
-          DB.syncTime = sheetTime;
-          save();
-          return {merged: true, source: 'sheets'};
+          if(sheetTime > localTime || DB.workouts.length === 0) {
+            DB.workouts = sheetWorkouts;
+            DB.syncTime = sheetTime;
+            save();
+            return {merged: true, source: 'sheets'};
+          }
         }
       }
-    }
-    return {merged: false};
-  })
-  .catch(err => {
-    console.error('✗ Load from Sheets error:', err);
-    return null;
-  });
+      return {merged: false};
+    })
+    .catch(err => {
+      console.error('✗ Load from Sheets error:', err);
+      return null;
+    });
+  } catch(e) {
+    console.error('✗ Load from Sheets exception:', e);
+    return Promise.resolve(null);
+  }
 }
 
 // 保存時に自動 Sheets 同期
@@ -3862,7 +3887,7 @@ setInterval(function() {
 <script>
 // FitNotes データのダミー定義（fitnotes_embed.js の読み込み失敗対策）
 var FITNOTES_DATA = { workouts: [], dailyNotes: {}, exCategories: {}, favorites: {} };
-</script>
+
 // importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
 function importFitNotesJSON(){
   var data = FITNOTES_DATA;
