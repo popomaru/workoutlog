@@ -2982,10 +2982,17 @@ function initSheetsAPI(){
     console.warn('Sheets Spreadsheet ID not configured');
     return false;
   }
-  // gapi.client.sheets をロード
-  gapi.client.load('sheets','v4',function(){
-    console.log('Sheets API loaded');
-  });
+
+  // gapi.client が準備できるまで待機
+  if(typeof gapi !== 'undefined' && gapi.client){
+    gapi.client.load('sheets', 'v4', function(){
+      console.log('Sheets API v4 loaded successfully');
+    });
+  } else {
+    console.warn('gapi.client not ready yet');
+    // 1秒後に再試行
+    setTimeout(initSheetsAPI, 1000);
+  }
   return true;
 }
 
@@ -3706,6 +3713,12 @@ function syncToSheets() {
     return Promise.resolve();
   }
 
+  // gapi が定義されているか確認
+  if(typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
+    console.warn('Sheets API not ready');
+    return Promise.resolve();
+  }
+
   sheetsAutoSyncState.isSyncing = true;
 
   // Workouts シートに追記
@@ -3728,12 +3741,12 @@ function syncToSheets() {
     })
     .then(res => {
       sheetsAutoSyncState.lastSyncTime = Date.now();
-      console.log('Sheets sync success:', res.result);
+      console.log('✓ Sheets sync success:', res.result);
       sheetsAutoSyncState.isSyncing = false;
       return res.result;
     })
     .catch(err => {
-      console.error('Sheets sync error:', err);
+      console.error('✗ Sheets sync error:', err);
       sheetsAutoSyncState.isSyncing = false;
       return null;
     });
@@ -3749,13 +3762,19 @@ function loadFromSheets() {
     return Promise.resolve(null);
   }
 
+  // gapi が定義されているか確認
+  if(typeof gapi === 'undefined' || !gapi.client || !gapi.client.sheets) {
+    console.warn('Sheets API not ready for loading');
+    return Promise.resolve(null);
+  }
+
   return gapi.client.sheets.spreadsheets.values.get({
     spreadsheetId: SHEETS_SPREADSHEET_ID,
     range: 'Workouts!A2:I1000'
   })
   .then(res => {
     var values = res.result.values || [];
-    console.log('Loaded from Sheets:', values.length + ' rows');
+    console.log('✓ Loaded from Sheets:', values.length + ' rows');
 
     if(values.length > 0) {
       // Sheets から workouts を再構築
@@ -3784,7 +3803,7 @@ function loadFromSheets() {
     return {merged: false};
   })
   .catch(err => {
-    console.error('Load from Sheets error:', err);
+    console.error('✗ Load from Sheets error:', err);
     return null;
   });
 }
