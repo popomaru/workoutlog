@@ -250,6 +250,23 @@ textarea{min-height:56px;resize:vertical}
       </button>
       <input type="hidden" id="r-ex" value="">
     </div>
+    <div>
+      <label>部位（カテゴリー）</label>
+      <select id="r-cat" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:14px">
+        <option value="">自動判定</option>
+        <option value="Abs">腹筋</option>
+        <option value="Back">背中</option>
+        <option value="Biceps">二頭筋</option>
+        <option value="Triceps">三頭筋</option>
+        <option value="Cardio">有酸素</option>
+        <option value="Chest">胸</option>
+        <option value="Conditioning">コンディショニング</option>
+        <option value="Legs">脚</option>
+        <option value="Neck">首</option>
+        <option value="Shoulders">肩</option>
+        <option value="Weightlifting">ウェイトリフティング</option>
+      </select>
+    </div>
     <!-- 草稿バナー -->
     <div id="draft-banner" style="display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-top:10px;align-items:center;justify-content:space-between">
       <span>⚡ 前回の入力途中データがあります</span>
@@ -955,6 +972,11 @@ function renderExPicker(query,cat){
 function selectExercise(ex){
   document.getElementById('r-ex').value=ex;
   document.getElementById('ex-picker-label').textContent=ex;
+
+  // カテゴリーを自動判定
+  var category=DB.exCategories[ex]||categorizeExerciseByName(ex);
+  document.getElementById('r-cat').value=category||'';
+
   closeExPicker();
   showPrevSession();
   saveDraft();
@@ -989,6 +1011,7 @@ function saveDraft(){
   var draft={
     date:document.getElementById('r-date').value,
     exercise:document.getElementById('r-ex').value,
+    category:document.getElementById('r-cat').value,
     sets:currentSets,
     memo:document.getElementById('r-memo').value
   };
@@ -1003,6 +1026,9 @@ function loadDraft(){
     if(draft.exercise){
       document.getElementById('r-ex').value=draft.exercise;
       document.getElementById('ex-picker-label').textContent=draft.exercise;
+    }
+    if(draft.category){
+      document.getElementById('r-cat').value=draft.category;
     }
     if(draft.sets&&draft.sets.some(function(s){return s.w||s.r;})){
       currentSets=draft.sets;
@@ -1592,6 +1618,8 @@ function startEditWorkout(idx,w,date){
   // フォームに値を設定
   document.getElementById('r-ex').value=w.exercise;
   document.getElementById('ex-picker-label').textContent=w.exercise;
+  var category=DB.exCategories[w.exercise]||categorizeExerciseByName(w.exercise);
+  document.getElementById('r-cat').value=category||'';
   document.getElementById('r-memo').value=w.memo||'';
 
   // セット情報を設定（ディープコピー）
@@ -1633,6 +1661,11 @@ function updateW(){
 
   // 既存のワークアウトを更新
   if(currentEditIdx>=0&&currentEditWorkout){
+    var ex=DB.workouts[currentEditIdx].exercise;
+    var category=document.getElementById('r-cat').value;
+    if(category){
+      DB.exCategories[ex]=category;
+    }
     DB.workouts[currentEditIdx].sets=sets;
     DB.workouts[currentEditIdx].memo=document.getElementById('r-memo').value;
     save();
@@ -1665,6 +1698,7 @@ function cancelEditWorkout(){
   addSet();addSet();addSet();
   document.getElementById('r-memo').value='';
   document.getElementById('r-ex').value='';
+  document.getElementById('r-cat').value='';
   document.getElementById('ex-picker-label').textContent='種目を選ぶ';
   resetTimer();
 
@@ -1959,6 +1993,12 @@ function saveW(){
   if(!sets.length)return;
   var ex=document.getElementById('r-ex').value;
   var date=document.getElementById('r-date').value;
+  var category=document.getElementById('r-cat').value;
+
+  // カテゴリーをDB に保存
+  if(category){
+    DB.exCategories[ex]=category;
+  }
 
   // PR検出（保存前の旧ベスト）
   var prevBestRM=myBestRM(ex);
@@ -1987,6 +2027,7 @@ function saveW(){
   currentSets=[];addSet();addSet();addSet();
   document.getElementById('r-memo').value='';
   document.getElementById('r-ex').value='';
+  document.getElementById('r-cat').value='';
   document.getElementById('ex-picker-label').textContent='種目を選ぶ';
   resetTimer();
 
