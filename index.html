@@ -3700,80 +3700,91 @@ var sheetsAutoSyncState = {
   syncInterval: 2 * 60 * 1000  // 2分ごと
 };
 
-// Sheets にデータを送信（差分のみ）
+// Sheets にデータを送信（Google Sheets API 直接）
 function syncToSheets() {
   if(!navigator.onLine || !googleAuthState.isLoggedIn || sheetsAutoSyncState.isSyncing) {
     return Promise.resolve();
   }
 
   sheetsAutoSyncState.isSyncing = true;
-  var payload = {
-    action: 'syncWorkouts',
-    data: {
-      workouts: DB.workouts,
-      dailyNotes: DB.dailyNotes,
-      favorites: DB.favorites,
-      updatedAt: new Date().toISOString()
-    }
-  };
 
-  return fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: {'Content-Type': 'application/json'}
-  })
-  .then(res => res.json())
-  .then(data => {
-    sheetsAutoSyncState.lastSyncTime = Date.now();
-    console.log('Sheets sync success:', data);
-    return data;
-  })
-  .catch(err => {
-    console.warn('Sheets sync error:', err);
-    return null;
-  })
-  .finally(() => {
-    sheetsAutoSyncState.isSyncing = false;
-  });
+  // Workouts シートに追記
+  if(DB.workouts && DB.workouts.length > 0) {
+    var rows = DB.workouts.map(function(w) {
+      var setsStr = '';
+      if(w.sets && w.sets.length > 0) {
+        setsStr = w.sets.map(function(s, idx) {
+          return (s.w || '-') + 'kg x ' + (s.r || '-');
+        }).join(' / ');
+      }
+      return [w.date || '', w.exercise || '', w.sets ? w.sets.length : 0, setsStr, w.memo || '', new Date().toLocaleString('ja-JP'), '', '', ''];
+    });
+
+    return gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: SHEETS_SPREADSHEET_ID,
+      range: 'Workouts!A2:I' + (rows.length + 1),
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: rows }
+    })
+    .then(res => {
+      sheetsAutoSyncState.lastSyncTime = Date.now();
+      console.log('Sheets sync success:', res.result);
+      sheetsAutoSyncState.isSyncing = false;
+      return res.result;
+    })
+    .catch(err => {
+      console.error('Sheets sync error:', err);
+      sheetsAutoSyncState.isSyncing = false;
+      return null;
+    });
+  }
+
+  sheetsAutoSyncState.isSyncing = false;
+  return Promise.resolve();
 }
 
-// Sheets からデータを取得（タイムスタンプベースのマージ）
+// Sheets からデータを取得（Google Sheets API 直接）
 function loadFromSheets() {
   if(!navigator.onLine || !googleAuthState.isLoggedIn) {
     return Promise.resolve(null);
   }
 
-  return fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({action: 'getLatestData'}),
-    headers: {'Content-Type': 'application/json'}
+  return gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SHEETS_SPREADSHEET_ID,
+    range: 'Workouts!A2:I1000'
   })
-  .then(res => res.json())
-  .then(data => {
-    if(!data || !data.data) return null;
+  .then(res => {
+    var values = res.result.values || [];
+    console.log('Loaded from Sheets:', values.length + ' rows');
 
-    var sheetData = data.data;
-    console.log('Loaded from Sheets:', sheetData);
+    if(values.length > 0) {
+      // Sheets から workouts を再構築
+      var sheetWorkouts = values.map(function(row) {
+        return {
+          date: row[0] || '',
+          exercise: row[1] || '',
+          sets: [], // セット詳細は復元不可のため空
+          memo: row[4] || ''
+        };
+      });
 
-    // タイムスタンプベースのマージ：新しい方を優先
-    if(sheetData.updatedAt && DB.syncTime) {
-      var sheetTime = new Date(sheetData.updatedAt).getTime();
-      var localTime = DB.syncTime;
+      // タイムスタンプベースのマージ：新しい方を優先
+      if(sheetWorkouts.length > 0) {
+        var sheetTime = Date.now();
+        var localTime = DB.syncTime || 0;
 
-      if(sheetTime > localTime) {
-        // Sheets の方が新しい → 上書き
-        DB.workouts = sheetData.workouts || DB.workouts;
-        DB.dailyNotes = sheetData.dailyNotes || DB.dailyNotes;
-        DB.favorites = sheetData.favorites || DB.favorites;
-        DB.syncTime = sheetTime;
-        save();
-        return {merged: true, source: 'sheets'};
+        if(sheetTime > localTime || DB.workouts.length === 0) {
+          DB.workouts = sheetWorkouts;
+          DB.syncTime = sheetTime;
+          save();
+          return {merged: true, source: 'sheets'};
+        }
       }
     }
     return {merged: false};
   })
   .catch(err => {
-    console.warn('Load from Sheets error:', err);
+    console.error('Load from Sheets error:', err);
     return null;
   });
 }
