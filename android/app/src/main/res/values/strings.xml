@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">筋トレトラッカー</string>
+    <string name="title_activity_main">筋トレトラッカー</string>
+    <string name="package_name">com.popomaru.workoutlog</string>
+    <string name="custom_url_scheme">com.popomaru.workoutlog</string>
+</resources>

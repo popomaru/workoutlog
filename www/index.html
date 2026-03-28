@@ -1,0 +1,3355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#E24B4A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="筋トレ">
+<title>筋トレトラッカー</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:14px}
+:root{--accent:#E24B4A;--accent2:#378ADD;--accent3:#1D9E75;--bg:#f5f5f0;--card:#fff;--border:#e0deda;--text2:#666}
+.app{max-width:720px;margin:0 auto;padding:1rem;padding-bottom:5rem}
+.header{text-align:center;margin-bottom:1.5rem}
+.header h1{font-size:20px;font-weight:600;color:var(--accent)}
+.header p{font-size:12px;color:var(--text2);margin-top:4px}
+.tabs{display:flex;margin-bottom:1.5rem;border-bottom:1px solid var(--border);background:var(--card);border-radius:10px 10px 0 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:10px 10px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;white-space:nowrap;flex:1;min-width:44px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500;background:#fff8f8}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;background:#fff;color:#1a1a1a}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border);font-family:inherit;font-size:13px;cursor:pointer;background:#fff;color:#1a1a1a;transition:opacity .15s}
+.btn:hover{background:#f5f5f0}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.88}
+.btn-blue{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+.btn-blue:hover{opacity:.88}
+.btn-green{background:var(--accent3);color:#fff;border-color:var(--accent3)}
+.btn-green:hover{opacity:.88}
+.btn-danger{background:#fff;color:#A32D2D;border-color:#F7C1C1}
+.btn-danger:hover{background:#FCEBEB}
+.btn-sm{padding:5px 12px;font-size:12px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sec{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.alert{padding:9px 14px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none}
+.alert-ok{background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97}
+.alert-err{background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1}
+.set-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f0ede8}
+.set-num{width:24px;height:24px;border-radius:50%;background:#f5f5f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text2);flex-shrink:0}
+.metric{background:#f8f7f3;border-radius:8px;padding:10px 8px;text-align:center}
+.metric-val{font-size:20px;font-weight:600}
+.metric-lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.rank-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f0ede8}
+.rank-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.rank-bar-bg{width:80px;background:#f0ede8;border-radius:4px;height:5px;flex-shrink:0}
+.rank-bar{height:5px;border-radius:4px}
+.hist-item{padding:9px 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:flex-start}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-blue{background:#E6F1FB;color:#185FA5}
+.chart-wrap{position:relative;height:150px;margin:8px 0}
+.bw-row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:13px}
+.bw-date{color:var(--text2);font-size:12px;min-width:70px}
+.share-box{background:#f5f5f0;border-radius:8px;padding:10px;font-size:11px;font-family:monospace;word-break:break-all;color:var(--text2);margin:8px 0}
+.empty{text-align:center;padding:1.5rem;color:var(--text2);font-size:14px}
+textarea{min-height:56px;resize:vertical}
+
+/* 前回の記録 */
+.prev-card{background:#f8f7f3;border:1px solid #e8e5de;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.prev-set-chip{background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;display:inline-block;margin:2px}
+
+/* レストタイマー（画面下固定） */
+#timer-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,0.08);max-width:720px;margin:0 auto}
+#timer-bar.hidden{display:none}
+#tm-display{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;min-width:72px;letter-spacing:1px}
+.tm-presets{display:flex;gap:4px;flex-wrap:wrap}
+.tm-preset{padding:4px 10px;border-radius:6px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:#fff;font-family:inherit}
+.tm-preset.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+#tm-progress{height:3px;background:#f0ede8;border-radius:2px;margin-top:4px;overflow:hidden}
+#tm-progress-bar{height:100%;border-radius:2px;background:var(--accent2);transition:width .5s linear}
+
+/* カレンダーヒートマップ */
+.cal-wrap{overflow-x:auto;padding-bottom:4px}
+.cal-grid{display:flex;gap:2px}
+.cal-col{display:flex;flex-direction:column;gap:2px}
+.cal-cell{width:14px;height:14px;border-radius:3px;cursor:pointer;transition:transform .1s}
+.cal-cell:active{transform:scale(1.3)}
+.cal-cell.cal-selected{outline:2px solid var(--accent);outline-offset:1px}
+.next-chip{padding:10px 14px;border-radius:20px;background:#f5f5f0;border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.next-chip:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.today-prog-bar{display:none;background:#f0faf5;border:1px solid #b3e4cc;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px;align-items:center;gap:6px}
+.cal-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text2)}
+
+/* 部位色分け（英語ベース） */
+.cat-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:6px;color:#fff}
+.cat-badge.abs,.cat-badge.Abs{background:#D4A574}
+.cat-badge.back,.cat-badge.Back{background:#A0826D}
+.cat-badge.biceps,.cat-badge.Biceps{background:#B8A5D1}
+.cat-badge.triceps,.cat-badge.Triceps{background:#7FA5D1}
+.cat-badge.cardio,.cat-badge.Cardio{background:#E88B7D}
+.cat-badge.chest,.cat-badge.Chest{background:#E8957C}
+.cat-badge.conditioning,.cat-badge.Conditioning{background:#95C7D4}
+.cat-badge.leg,.cat-badge.Leg,.cat-badge.legs,.cat-badge.Legs{background:#90D695}
+.cat-badge.neck,.cat-badge.Neck{background:#C985E0}
+.cat-badge.shoulder,.cat-badge.Shoulder,.cat-badge.shoulders,.cat-badge.Shoulders{background:#E8B856}
+.cat-badge.weightlifting,.cat-badge.Weightlifting{background:#8B9E6D}
+
+/* お気に入りマーク */
+.fav-btn{border:none;background:none;cursor:pointer;font-size:18px;padding:0 4px;margin:0 4px 0 0;line-height:1;opacity:0.4;transition:opacity .2s}
+.fav-btn.active{opacity:1}
+.ex-item-container{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f0ede8;cursor:pointer}
+.ex-item-container:active{background:#f5f5f0}
+.ex-item-left{display:flex;align-items:center;flex:1;min-width:0}
+.ex-item-labels{display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex:1}
+
+/* インポート */
+.import-drop{display:block;border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:4px}
+.import-drop:hover,.import-drop.drag{border-color:var(--accent2);background:#F0F7FF}
+.import-drop input[type=file]{display:none}
+.mgmt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0ede8}
+.mgmt-row:last-child{border-bottom:none}
+
+/* 種目ピッカー */
+.ex-picker-btn{width:100%;padding:14px 16px;font-size:16px;font-weight:500;text-align:left;background:#f8f7f3;border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:inherit;color:#1a1a1a}
+.ex-picker-btn:active{background:#f0ede8}
+#ex-picker-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center}
+#ex-picker-modal.show{display:flex}
+#ex-picker-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;animation:slideUp .22s ease}
+.ep-search-wrap{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ep-search-wrap input{border-radius:20px;background:#f5f5f0;border:1px solid transparent;padding:9px 14px;font-size:15px}
+.ep-search-wrap input:focus{border-color:var(--accent);background:#fff}
+.cat-tabs{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;background:#fff;white-space:nowrap;font-family:inherit;color:var(--text2)}
+.cat-tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.recent-section{padding:8px 14px 4px;flex-shrink:0}
+.recent-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.recent-chip{padding:9px 14px;border-radius:20px;background:#f5f5f0;border:1px solid var(--border);font-size:13px;cursor:pointer;font-family:inherit;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-chip:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ep-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.ep-item{padding:15px 16px;border-bottom:1px solid #f0ede8;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.ep-item:active{background:#f5f5f0}
+.ep-item.selected{color:var(--accent);font-weight:600}
+.ep-item.selected::after{content:'✓';margin-left:auto;color:var(--accent)}
+.ep-cat-header{padding:8px 16px 4px;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;background:#f8f7f3;text-transform:uppercase}
+.ep-add-row{padding:14px 16px;color:var(--accent2);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border)}
+.ep-add-row:active{background:#f0f7ff}
+.p-nrm-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* 月次カレンダー */
+.month-cal-header{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.month-cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--text2);padding:4px 0}
+.month-cal-dow:first-child{color:#E24B4A}
+.month-cal-dow:last-child{color:#378ADD}
+.month-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-cell{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:50%;font-size:13px;cursor:pointer;position:relative;transition:transform .1s}
+.cal-day-cell:active{transform:scale(.9)}
+.cal-day-cell.other-month{color:#ccc}
+.cal-day-cell.other-month.has-workout{background:#f5c5c5;color:#E24B4A}
+.cal-day-cell.has-workout{background:var(--accent);color:#fff;font-weight:700}
+.cal-day-cell.is-today{background:var(--accent2);color:#fff;font-weight:700}
+.cal-day-cell.is-today.has-workout{background:var(--accent)}
+.cal-day-cell.selected{outline:3px solid var(--accent2);outline-offset:1px}
+.cal-day-cell.has-workout.selected{outline-color:#fff}
+.cat-filter-tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0 6px}
+.cat-filter-tabs::-webkit-scrollbar{display:none}
+.cat-filter-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;background:#fff;white-space:nowrap;font-family:inherit;color:var(--text2);flex-shrink:0}
+.cat-filter-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* 種目別セッション履歴 */
+.session-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.session-card-header{background:var(--accent);color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.session-card-date{font-size:15px;font-weight:700}
+.session-card-stats{font-size:11px;opacity:.9;text-align:right}
+.session-set-row{display:grid;grid-template-columns:36px 1fr 1fr 80px;align-items:center;padding:8px 14px;border-bottom:1px solid #f5f5f0;font-size:13px}
+.session-set-row:last-child{border-bottom:none}
+.session-set-hdr{display:grid;grid-template-columns:36px 1fr 1fr 80px;padding:5px 14px;font-size:11px;font-weight:600;color:var(--text2);background:#f8f7f3;border-bottom:1px solid var(--border)}
+
+/* 完了サマリーモーダル */
+#summary-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:flex-end;justify-content:center}
+#summary-modal.show{display:flex}
+#summary-inner{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;padding:1.5rem 1.25rem 2rem;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.summary-pr{background:#FFF8E6;border:1px solid #F5C842;border-radius:10px;padding:12px 14px;margin:10px 0;text-align:center}
+.summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+
+/* 草稿バナー */
+#draft-banner{display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <h1>💪 筋トレトラッカー</h1>
+  <p>記録・進捗・ランキング</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="ST('record')">記録</button>
+  <button class="tab" onclick="ST('history')">履歴</button>
+  <button class="tab" onclick="ST('progress')">進捗</button>
+  <button class="tab" onclick="ST('ranking')">ランキング</button>
+  <button class="tab" onclick="ST('import')">取込</button>
+</div>
+
+<!-- ========== 記録 ========== -->
+<div id="tab-record" class="panel active">
+
+  <!-- 日付ナビ（FitNotesスタイル） -->
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:12px">
+    <button class="btn" onclick="shiftRecordDate(-1)" style="padding:8px 18px;font-size:18px;line-height:1">◀</button>
+    <div style="text-align:center;flex:1">
+      <div id="rec-date-label" style="font-size:18px;font-weight:800;color:var(--accent);letter-spacing:.02em">TODAY</div>
+      <div id="rec-date-sub" style="font-size:11px;color:var(--text2);margin-top:1px"></div>
+    </div>
+    <button class="btn" onclick="shiftRecordDate(1)" style="padding:8px 18px;font-size:18px;line-height:1">▶</button>
+  </div>
+  <input type="hidden" id="r-date">
+
+  <!-- トレーニング一覧（プライマリビュー） -->
+  <div class="card" id="today-log-card" style="padding:1rem 1rem 0.75rem">
+    <!-- 本日の感想（常時表示） -->
+    <div id="daily-note-section" style="margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px;border-left:3px solid var(--accent3)">
+      <label style="font-size:12px;color:var(--text2);margin-bottom:4px;display:block;font-weight:600">📝 本日の感想・メモ</label>
+      <textarea id="daily-note-input" placeholder="💡 例：睡眠不足 / 肩の入りが悪かった / ベンチ好調 / 調子いい" style="font-size:13px;min-height:70px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical;background:#fff"></textarea>
+      <div id="daily-note-save-hint" style="font-size:10px;color:var(--text2);margin-top:4px;text-align:right">✓ 自動保存</div>
+    </div>
+    <div id="today-log-body"><div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div></div>
+    <div id="al-save" class="alert alert-ok" style="margin-top:8px">保存しました！</div>
+    <!-- 一言サマリー -->
+    <div id="daily-summary" style="display:none;margin-top:8px;padding:12px;background:#f0f7ff;border-left:3px solid var(--accent2);border-radius:6px;font-size:13px;color:var(--text1);line-height:1.6"></div>
+    <button id="add-ex-btn" onclick="toggleAddForm()" class="btn btn-primary" style="width:100%;margin-top:12px;padding:13px;font-size:15px;font-weight:600">＋ 種目を追加</button>
+  </div>
+
+  <!-- 入力フォーム（折りたたみ） -->
+  <div class="card" id="rec-input-form" style="display:none">
+    <!-- 今日の進捗バー -->
+    <div id="today-prog-bar" class="today-prog-bar">
+      <span id="tpb-count" style="background:var(--accent3);color:#fff;border-radius:20px;padding:2px 8px;font-weight:600;flex-shrink:0"></span>
+      <span id="tpb-names" style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></span>
+      <span id="tpb-vol" style="color:var(--accent3);font-weight:600;flex-shrink:0"></span>
+    </div>
+    <div>
+      <label>種目</label>
+      <button class="ex-picker-btn" id="ex-picker-btn-display" onclick="openExPicker()">
+        <span id="ex-picker-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">種目を選ぶ</span>
+        <span style="color:var(--text2);font-size:12px;margin-left:8px;flex-shrink:0">▾</span>
+      </button>
+      <input type="hidden" id="r-ex" value="">
+    </div>
+    <!-- 草稿バナー -->
+    <div id="draft-banner" style="display:none;background:#E6F1FB;border:1px solid #B3D4F5;border-radius:8px;padding:8px 12px;font-size:12px;color:#185FA5;margin-top:10px;align-items:center;justify-content:space-between">
+      <span>⚡ 前回の入力途中データがあります</span>
+      <button onclick="discardDraft()" style="border:none;background:none;color:#185FA5;cursor:pointer;font-size:12px;text-decoration:underline">破棄</button>
+    </div>
+    <!-- 前回の記録 -->
+    <div id="prev-session" style="display:none;margin-top:10px;margin-bottom:0"></div>
+    <div class="sec" style="margin-top:12px">セット入力</div>
+    <div id="sets-wrap"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn" onclick="addSet()">＋ セット追加</button>
+      <button class="btn" onclick="copyPrevSets()" id="copy-prev-btn" style="display:none">前回コピー</button>
+      <button class="btn btn-primary" onclick="saveW()">保存する</button>
+    </div>
+    <!-- 次の種目サジェスト -->
+    <div id="next-ex-suggest" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px">次の種目（最近 / 今日未実施）</div>
+      <div id="next-ex-chips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div class="sec" style="margin-top:12px">メモ</div>
+    <textarea id="r-memo" placeholder="調子・感想など..."></textarea>
+  </div>
+
+  <!-- レストタイマー -->
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:6px">
+      <div class="sec" style="margin:0">レストタイマー</div>
+      <div class="tm-presets">
+        <button class="tm-preset" data-sec="60" onclick="setTimerDuration(60)">1分</button>
+        <button class="tm-preset active" data-sec="90" onclick="setTimerDuration(90)">90秒</button>
+        <button class="tm-preset" data-sec="120" onclick="setTimerDuration(120)">2分</button>
+        <button class="tm-preset" data-sec="180" onclick="setTimerDuration(180)">3分</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div id="tm-display" style="font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px;min-width:90px">1:30</div>
+      <div style="flex:1">
+        <div id="tm-progress" style="height:6px;background:#f0ede8;border-radius:3px;overflow:hidden;margin-bottom:8px">
+          <div id="tm-progress-bar" style="height:100%;border-radius:3px;background:var(--accent2);width:0%;transition:width .5s linear"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-blue btn-sm" id="tm-btn" onclick="startTimer()" style="flex:1">スタート</button>
+          <button class="btn btn-sm" onclick="resetTimer()">リセット</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 体重・カロリー ========== -->
+<div id="tab-body" class="panel">
+  <div class="card">
+    <div id="al-body" class="alert alert-ok">記録しました！</div>
+    <div class="sec">今日の記録</div>
+    <div class="g3">
+      <div><label>体重 (kg)</label><input type="number" id="b-weight" placeholder="70.0" step="0.1"></div>
+      <div><label>体脂肪率 (%)</label><input type="number" id="b-fat" placeholder="18.0" step="0.1"></div>
+      <div><label>摂取カロリー (kcal)</label><input type="number" id="b-kcal" placeholder="2000"></div>
+    </div>
+    <div class="g3">
+      <div><label>タンパク質 (g)</label><input type="number" id="b-prot" placeholder="150"></div>
+      <div><label>炭水化物 (g)</label><input type="number" id="b-carb" placeholder="250"></div>
+      <div><label>脂質 (g)</label><input type="number" id="b-fat2" placeholder="60"></div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-green" onclick="saveBody()">記録する</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sec">最近の体重</div>
+    <div class="g4" id="body-metrics">
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">現在体重</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">先週比</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">体脂肪率</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">平均kcal</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="body-chart"></canvas></div>
+    <div class="sec" style="margin-top:12px">記録一覧</div>
+    <div id="body-list"></div>
+  </div>
+</div>
+
+<!-- ========== 履歴 ========== -->
+<div id="tab-history" class="panel">
+  <select id="h-ex" style="display:none"><option value="">すべて</option></select>
+  <select id="h-period" style="display:none"><option value="9999">すべて</option></select>
+
+  <!-- カテゴリフィルター -->
+  <div class="cat-filter-tabs" id="hist-cat-tabs"></div>
+
+  <!-- 月次カレンダー -->
+  <div class="card">
+    <!-- 月ナビ -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <button class="btn" onclick="shiftCalMonth(-1)" style="padding:6px 16px;font-size:16px">◀</button>
+      <div style="font-size:16px;font-weight:700;color:var(--accent)" id="cal-month-label"></div>
+      <button class="btn" onclick="shiftCalMonth(1)" style="padding:6px 16px;font-size:16px">▶</button>
+    </div>
+    <!-- 曜日ヘッダー -->
+    <div class="month-cal-header">
+      <div class="month-cal-dow">日</div><div class="month-cal-dow">月</div>
+      <div class="month-cal-dow">火</div><div class="month-cal-dow">水</div>
+      <div class="month-cal-dow">木</div><div class="month-cal-dow">金</div>
+      <div class="month-cal-dow" style="color:#378ADD">土</div>
+    </div>
+    <!-- 日グリッド -->
+    <div class="month-cal-grid" id="month-cal-grid"></div>
+  </div>
+
+  <!-- 選択日のワークアウト -->
+  <div class="card" id="hist-day-journal" style="padding:1rem 1rem 0.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div id="hist-selected-date" style="font-size:15px;font-weight:700"></div>
+        <div id="hist-selected-sub" style="font-size:11px;color:var(--text2)"></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="histShiftDay(-1)">◀</button>
+        <button class="btn btn-sm" onclick="histShiftDay(1)">▶</button>
+      </div>
+    </div>
+    <!-- 履歴タブの本日の感想（常時表示） -->
+    <div id="hist-daily-note-section" style="margin-bottom:12px;padding:10px;background:#f8f7f3;border-radius:8px;border-left:3px solid var(--accent3)">
+      <label style="font-size:12px;color:var(--text2);margin-bottom:4px;display:block;font-weight:600">📝 この日の感想・メモ</label>
+      <textarea id="hist-daily-note-input" placeholder="💡 例：睡眠不足 / 肩の入りが悪かった / ベンチ好調 / 調子いい" style="font-size:13px;min-height:70px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;width:100%;resize:vertical;background:#fff"></textarea>
+      <div id="hist-daily-note-save-hint" style="font-size:10px;color:var(--text2);margin-top:4px;text-align:right">✓ 自動保存</div>
+    </div>
+    <div id="hist-day-body"><div class="empty">日付を選んでください</div></div>
+  </div>
+</div>
+
+<!-- ========== 進捗 ========== -->
+<div id="tab-progress" class="panel">
+  <!-- 部位セレクタ -->
+  <div class="card">
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px;letter-spacing:.05em">部位を選ぶ</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px" id="p-cat-buttons">
+      <!-- ボタンがここに自動生成される -->
+    </div>
+  </div>
+
+  <!-- 部位統計 -->
+  <div class="card" id="p-cat-stats" style="display:none">
+    <div id="p-cat-stats-content"></div>
+  </div>
+
+  <!-- グラフ設定 -->
+  <div class="card">
+    <div class="g2" style="margin-bottom:8px">
+      <div><label>種目</label><select id="p-ex" onchange="renderProgress()"></select></div>
+      <div><label>グラフ種別</label>
+        <select id="p-mode" onchange="onProgressModeChange()">
+          <option value="maxw">最高重量</option>
+          <option value="rm">推定1RM</option>
+          <option value="vol">総ボリューム</option>
+          <option value="reps">総レップ数</option>
+          <option value="nrm">Nレップ最大重量</option>
+        </select>
+      </div>
+    </div>
+    <!-- グラフ期間フィルタ -->
+    <div style="margin-bottom:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-sm p-period-btn active" data-months="0" onclick="setGraphPeriod(0)">オール</button>
+      <button class="btn btn-sm p-period-btn" data-months="12" onclick="setGraphPeriod(12)">1年</button>
+      <button class="btn btn-sm p-period-btn" data-months="6" onclick="setGraphPeriod(6)">半年</button>
+      <button class="btn btn-sm p-period-btn" data-months="3" onclick="setGraphPeriod(3)">3ヶ月</button>
+      <button class="btn btn-sm p-period-btn" data-months="1" onclick="setGraphPeriod(1)">1ヶ月</button>
+      <button class="btn btn-sm p-period-btn" data-months="60" onclick="setGraphPeriod(60)">5年</button>
+    </div>
+    <div id="p-nrm-wrap" style="display:none;margin-top:4px">
+      <label style="margin-bottom:6px">対象レップ数</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm p-nrm-btn" data-n="1" onclick="setNRM(1)">1RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="3" onclick="setNRM(3)">3RM</button>
+        <button class="btn btn-sm p-nrm-btn active" data-n="5" onclick="setNRM(5)">5RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="8" onclick="setNRM(8)">8RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="10" onclick="setNRM(10)">10RM</button>
+        <button class="btn btn-sm p-nrm-btn" data-n="12" onclick="setNRM(12)">12RM</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px" id="p-metrics">
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">最高重量</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">推定1RM</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">総レップ数</div></div>
+      <div class="metric"><div class="metric-val">-</div><div class="metric-lbl">記録回数</div></div>
+    </div>
+    <!-- 3. 日別ボリューム推移 -->
+    <div id="daily-volume-wrap" style="display:none;margin-bottom:12px">
+      <div class="sec" style="margin-bottom:8px">日別ボリューム推移</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="daily-volume-chart"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="height:200px"><canvas id="prog-chart"></canvas></div>
+    <div id="p-period-compare" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 部位別ボリューム -->
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:10px">
+      <div class="sec" style="margin:0">部位別ボリューム</div>
+      <select id="cat-period" onchange="renderCatChart()" style="width:auto;font-size:12px;padding:4px 8px">
+        <option value="30">直近30日</option>
+        <option value="90">直近90日</option>
+        <option value="180">直近180日</option>
+        <option value="9999">すべて</option>
+      </select>
+    </div>
+    <div class="chart-wrap" style="height:200px"><canvas id="cat-chart"></canvas></div>
+    <div id="cat-compare" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 種目別セッション履歴 -->
+  <div id="ex-session-history" style="display:none">
+    <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;margin-bottom:8px" id="ex-session-title"></div>
+    <div id="ex-session-list"></div>
+  </div>
+</div>
+
+<!-- ========== ランキング ========== -->
+<div id="tab-ranking" class="panel">
+  <div class="card">
+    <div class="flex-between">
+      <div class="sec" style="margin:0">あなたのプロフィール</div>
+      <button class="btn btn-blue btn-sm" onclick="genShare()">共有コード生成</button>
+    </div>
+    <div class="g3">
+      <div><label>ニックネーム</label><input type="text" id="u-nick" placeholder="例: 鉄人タロウ"></div>
+      <div><label>体重 (kg)</label><input type="number" id="u-weight" placeholder="75"></div>
+      <div><label>目標</label>
+        <select id="u-goal">
+          <option>筋肥大</option><option>筋力向上</option><option>ダイエット</option><option>維持</option>
+        </select>
+      </div>
+    </div>
+    <div id="share-area" style="display:none">
+      <div class="sec" style="margin-top:8px">共有コード（友達に送ってください）</div>
+      <div class="share-box" id="share-code"></div>
+      <button class="btn btn-sm" onclick="copyShare()">コピー</button>
+    </div>
+    <div style="margin-top:10px">
+      <div class="sec">友達コードを追加</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="rival-code" placeholder="共有コードを貼り付け" style="font-family:monospace;font-size:12px">
+        <button class="btn btn-primary btn-sm" onclick="addRival()" style="white-space:nowrap">追加</button>
+      </div>
+      <div id="al-rival" class="alert alert-ok" style="margin-top:6px">追加しました！</div>
+      <div id="al-rival-err" class="alert alert-err" style="margin-top:6px">コードが正しくありません</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex-between">
+      <div class="sec" style="margin:0">ランキング</div>
+      <select id="rank-ex" onchange="renderRanking()" style="width:auto;font-size:13px;padding:5px 8px"></select>
+    </div>
+    <div id="rank-list" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- ========== 取込 ========== -->
+<div id="tab-import" class="panel">
+  <!-- FitNotes JSONインポート -->
+  <div class="card">
+    <div class="sec">📂 FitNotes データインポート</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">FitNotes の JSON または CSV ファイルをドラッグ＆ドロップで読み込みます。日別コメントも含まれます。</p>
+    <label class="import-drop" id="import-drop" for="csv-file">
+      <input type="file" id="csv-file" accept=".csv,.json">
+      <div style="font-size:36px;margin-bottom:8px">📂</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">ファイルを選択</div>
+      <div style="font-size:12px;color:var(--text2)">JSON または CSV をドラッグ＆ドロップ</div>
+    </label>
+    <div id="al-import" class="alert" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" id="import-stats" style="display:none">
+    <div class="sec">インポート済みデータ</div>
+    <div id="import-stat-body"></div>
+    <button class="btn btn-blue" onclick="recategorizeExercises()" style="width:100%;margin-top:12px">🏷️ カテゴリを再分類</button>
+  </div>
+
+  <div class="card">
+    <div class="sec">データ管理</div>
+    <div class="mgmt-row">
+      <div>
+        <div style="font-size:13px;font-weight:500">バックアップ（エクスポート）</div>
+        <div style="font-size:12px;color:var(--text2)">全データをJSONとして保存</div>
+      </div>
+      <button class="btn btn-blue btn-sm" onclick="exportData()">ダウンロード</button>
+    </div>
+    <div class="mgmt-row">
+      <div>
+        <div style="font-size:13px;font-weight:500">バックアップから復元</div>
+        <div style="font-size:12px;color:var(--text2)">JSONファイルを読み込んでデータを復元</div>
+      </div>
+      <label class="btn btn-green btn-sm" style="cursor:pointer">
+        読み込む<input type="file" accept=".json" style="display:none" onchange="importBackup(this)">
+      </label>
+    </div>
+    <div class="mgmt-row">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:#A32D2D">全データ削除</div>
+        <div style="font-size:12px;color:var(--text2)">トレーニング記録をすべて消去</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="clearData()">削除</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- 種目ピッカーモーダル -->
+<div id="ex-picker-modal">
+  <div id="ex-picker-inner">
+    <div class="ep-search-wrap">
+      <input type="text" id="ep-search" placeholder="🔍  種目を検索..." oninput="epFilter(this.value)" autocomplete="off">
+    </div>
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <!-- お気に入り種目 -->
+    <div class="recent-section" id="favorite-section" style="display:none;background:#f8f7f3;padding:8px 14px 10px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em">♥ お気に入り</div>
+      <div class="recent-chips" id="favorite-chips"></div>
+    </div>
+    <!-- 最近使った -->
+    <div class="recent-section" id="recent-section" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.05em">⏱ 最近使った</div>
+      <div class="recent-chips" id="recent-chips"></div>
+    </div>
+    <div class="ep-list" id="ep-list"></div>
+  </div>
+</div>
+
+<!-- 完了サマリーモーダル -->
+<div id="summary-modal">
+  <div id="summary-inner">
+    <div id="summary-content"></div>
+    <button class="btn btn-primary" onclick="closeSummary()" style="width:100%;margin-top:12px">閉じる</button>
+  </div>
+</div>
+
+<script>
+// ===================== ユーティリティ関数 =====================
+function escHtml(str) {
+  if(!str) return '';
+  return str.replace(/[&<>"']/g, function(match) {
+    var escapeMap = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+    return escapeMap[match];
+  });
+}
+
+// ===================== データ =====================
+var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{},syncTime:0};
+var currentSets=[];
+var progChart=null,bodyChart=null,catChart=null,dailyVolChart=null;
+var pNRM=5;
+var progressCategory='All';  // 進捗タブで選択中の部位
+var histSelectedDate='';
+var graphPeriodMonths=0;  // グラフ期間フィルタ: 0=オール、N=N ヶ月前から今日まで
+var dailyNoteSaveTimer=null;  // メモ自動保存タイマー
+
+var DEFAULT_EXERCISES=['ベンチプレス','スクワット','デッドリフト','懸垂','ショルダープレス','バーベルカール','ラットプルダウン','ディップス','レッグプレス','その他'];
+var prevSessionData=null;
+
+// ===== カテゴリ統一（英語 ↔ 日本語） =====
+var CATEGORY_COLORS={
+  'Abs':'#D4A574','Back':'#A0826D','Biceps':'#B8A5D1','Triceps':'#7FA5D1','Cardio':'#E88B7D',
+  'Chest':'#E8957C','Conditioning':'#95C7D4','Legs':'#90D695','Neck':'#C985E0',
+  'Shoulders':'#E8B856','Weightlifting':'#8B9E6D'
+};
+
+var CAT_EN_TO_JA={
+  'Abs':'腹筋','Back':'背中','Biceps':'二頭筋','Triceps':'三頭筋','Cardio':'有酸素',
+  'Chest':'胸','Conditioning':'コンディショニング','Legs':'脚','Neck':'首',
+  'Shoulders':'肩','Weightlifting':'ウェイトリフティング'
+};
+
+var CAT_JA_TO_EN={
+  '腹筋':'Abs','背中':'Back','二頭筋':'Biceps','三頭筋':'Triceps','有酸素':'Cardio',
+  '胸':'Chest','コンディショニング':'Conditioning','脚':'Legs','首':'Neck',
+  '肩':'Shoulders','ウェイトリフティング':'Weightlifting'
+};
+
+// FitNotes 互換性: 古いカテゴリ名 → 新英語名
+var CAT_LEGACY_TO_EN={
+  'Chest':'Chest','Back':'Back','Legs':'Legs','Leg':'Legs',
+  'Shoulders':'Shoulders','Shoulder':'Shoulders',
+  'Arms':'Biceps','Arm':'Biceps',
+  'Core':'Abs','Cardio':'Cardio',
+  'Triceps':'Triceps','Biceps':'Biceps','Weightlifting':'Weightlifting','Abs':'Abs',
+  'Conditioning':'Conditioning','Neck':'Neck',
+  'Olympic':'Weightlifting','Full Body':'Weightlifting','Other':'Weightlifting',''  :'Weightlifting'
+};
+
+// 種目名からカテゴリを判定する関数（11カテゴリ対応）
+function categorizeExerciseByName(exerciseName){
+  if(!exerciseName) return 'Weightlifting';
+  var name=exerciseName.toLowerCase();
+
+  // Abs
+  if(/crunch|ab\s*wheel|decline\s*crunch|dragon\s*flag|sit\s*up|hanging\s*leg|cable\s*crunch|machine\s*crunch|ab\s*roll/.test(name)) return 'Abs';
+
+  // Biceps
+  if(/curl|preacher|barbell\s*curl|dumbbell\s*curl|machine\s*curl|cable\s*curl|ez\s*bar|incline\s*curl/.test(name) && !/tricep|press\s*down|overhead|extension|lat\s*pull/.test(name)) return 'Biceps';
+
+  // Triceps
+  if(/tricep|press\s*down|dip|french\s*press|overhead\s*extension|pushdown|v\s*bar|rope|skull\s*crusher/.test(name)) return 'Triceps';
+
+  // Chest
+  if(/bench|chest|press|pec|push\s*up|flye|fly|peck|incline\s*press/.test(name) && !/decline|row|lat\s*pull|pullover|pull\s*over/.test(name)) return 'Chest';
+
+  // Cardio
+  if(/cycling|bike|treadmill|rowing|cardio|run|elliptical|stair|climber|jump\s*rope/.test(name)) return 'Cardio';
+
+  // Shoulders
+  if(/shoulder|raise|upright\s*row|shrug|arnold|lateral|military|ohp|face\s*pull|machine\s*shoulder|front\s*raise/.test(name)) return 'Shoulders';
+
+  // Back（背中）- Rows, Pulldowns, Pull-ups, Pullovers
+  if(/lat\s*pulldown|lat\s*pull|pulldown|pull\s*down|pull\s*up|chin\s*up|pullover|pull\s*over/.test(name)) return 'Back';
+  if(/row|t\s*bar|pendulum|seal|seal\s*row|machine\s*row|cable\s*row|barbell\s*row|dumbbell\s*row|bent\s*over\s*row|yates\s*row|inverted\s*row/.test(name)) return 'Back';
+
+  // Neck
+  if(/neck|4\s*way\s*neck/.test(name)) return 'Neck';
+
+  // Legs
+  if(/squat|leg\s*press|leg\s*curl|leg\s*extension|hack|lunge|calf|hamstring|quad|leg\s*raise|smith\s*machine\s*squat|leg\s*kick|leg\s*abductor|leg\s*adductor|thigh/.test(name)) return 'Legs';
+
+  // Weightlifting (Deadlift, Hex Bar, Olympic lifts)
+  if(/deadlift|sumo\s*deadlift|rdl|reverse\s*hyper|hex\s*bar|clean|snatch|press/.test(name)) return 'Weightlifting';
+
+  return 'Weightlifting';
+}
+
+function catEn(c){
+  // 英語に統一
+  if(CAT_LEGACY_TO_EN[c])return CAT_LEGACY_TO_EN[c];
+  if(CAT_JA_TO_EN[c])return CAT_JA_TO_EN[c];
+  return 'Weightlifting';
+}
+
+function catJa(c){
+  // 日本語に変換
+  var en=catEn(c);
+  return CAT_EN_TO_JA[en]||'その他';
+}
+
+// カテゴリ別グループ配列を返す [{cat:'胸', exercises:[...]}, ...]
+function getExerciseGroups(filterQuery){
+  var q=(filterQuery||'').toLowerCase();
+  var catMap={};
+  var catOrder=[];
+
+  var addToGroup=function(cat,ex){
+    if(!catMap[cat]){catMap[cat]=[];catOrder.push(cat);}
+    if(catMap[cat].indexOf(ex)===-1)catMap[cat].push(ex);
+  };
+
+  if(!DB.workouts.length && !DB.customExercises.length){
+    DEFAULT_EXERCISES.forEach(function(e){addToGroup('その他',e);});
+  } else {
+    // 最近使った種目グループ（検索なし時のみ）
+    if(!q && DB.recentExercises && DB.recentExercises.length){
+      DB.recentExercises.slice(0,6).forEach(function(e){addToGroup('⏱ 最近',e);});
+    }
+    var seen={};
+    DB.workouts.forEach(function(w){
+      if(seen[w.exercise])return;
+      seen[w.exercise]=true;
+      var rawCat=DB.exCategories[w.exercise]||'';
+      var cat=catJa(rawCat);
+      addToGroup(cat,w.exercise);
+    });
+    // カスタム種目
+    (DB.customExercises||[]).forEach(function(e){
+      if(seen[e])return;
+      var rawCat=DB.exCategories[e]||'';
+      addToGroup(catJa(rawCat)||'その他',e);
+    });
+    // 各カテゴリ内をソート（「最近」はソートしない）
+    catOrder.forEach(function(c){
+      if(c!=='⏱ 最近')catMap[c].sort(function(a,b){return a.localeCompare(b,'ja');});
+    });
+  }
+
+  return catOrder.map(function(c){
+    var exes=q?catMap[c].filter(function(e){return e.toLowerCase().indexOf(q)>=0;}):catMap[c];
+    return{cat:c,exercises:exes};
+  }).filter(function(g){return g.exercises.length>0;});
+}
+
+// すべての種目をフラットに返す（ランキング等用）
+function getExercises(){
+  var groups=getExerciseGroups();
+  var all=[];
+  groups.forEach(function(g){g.exercises.forEach(function(e){all.push(e);});});
+  return all;
+}
+
+function fillSelect(el,groups,addAll,query){
+  var cur=el.value;
+  el.innerHTML='';
+  if(addAll){var o=document.createElement('option');o.value='';o.textContent='すべて';el.appendChild(o);}
+  groups.forEach(function(g){
+    var grp=document.createElement('optgroup');
+    grp.label='── '+g.cat+' ──';
+    g.exercises.forEach(function(e){
+      var o=document.createElement('option');o.value=e;o.textContent=e;grp.appendChild(o);
+    });
+    el.appendChild(grp);
+  });
+  if(cur) el.value=cur;
+}
+
+function updateExerciseLists(){
+  var groups=getExerciseGroups();
+  fillSelect(document.getElementById('r-ex'),groups,false);
+  fillSelect(document.getElementById('h-ex'),groups,true);
+  fillSelect(document.getElementById('p-ex'),groups,false);
+  fillSelect(document.getElementById('rank-ex'),groups,false);
+}
+
+// ===================== 初期化 =====================
+function load(){
+  try{var s=localStorage.getItem('wt2');if(s){var p=JSON.parse(s);DB.workouts=p.workouts||[];DB.bodyLogs=p.bodyLogs||[];DB.user=p.user||DB.user;DB.rivals=p.rivals||[];DB.exCategories=p.exCategories||{};DB.recentExercises=p.recentExercises||[];DB.customExercises=p.customExercises||[];DB.dailyNotes=p.dailyNotes||{};DB.favorites=p.favorites||{};}}catch(e){}
+  document.getElementById('u-nick').value=DB.user.nick;
+  document.getElementById('u-weight').value=DB.user.weight||'';
+  document.getElementById('u-goal').value=DB.user.goal||'筋肥大';
+  var d=new Date();
+  var todayStr=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  setRecordDate(todayStr);
+  updateExerciseLists();
+  if(DB.recentExercises&&DB.recentExercises.length){
+    var defEx=DB.recentExercises[0];
+    document.getElementById('r-ex').value=defEx;
+    document.getElementById('ex-picker-label').textContent=defEx;
+  }
+  loadDraft();
+  refreshImportStats();
+  updateTimerDisplay();
+  updateRecDateNav();
+  renderTodayLog();
+  renderTodayProgressBar();
+  initRecordSwipe();
+}
+function save(){localStorage.setItem('wt2',JSON.stringify(DB));}
+function pad(n){return String(n).padStart(2,'0');}
+
+// ===================== 種目ピッカー =====================
+var epCurrentCat='';
+var epCurrentQuery='';
+
+function openExPicker(){
+  epCurrentQuery='';
+  document.getElementById('ep-search').value='';
+  renderExPicker('','');
+  document.getElementById('ex-picker-modal').classList.add('show');
+  setTimeout(function(){document.getElementById('ep-search').focus();},200);
+}
+function closeExPicker(){
+  document.getElementById('ex-picker-modal').classList.remove('show');
+}
+document.getElementById('ex-picker-modal').addEventListener('click',function(e){
+  if(e.target===this)closeExPicker();
+});
+
+function epFilter(q){
+  epCurrentQuery=q;
+  epCurrentCat='';
+  renderExPicker(q,'');
+}
+
+function renderExPicker(query,cat){
+  epCurrentQuery=query;
+  epCurrentCat=cat;
+  var q=query.trim().toLowerCase();
+
+  // カテゴリタブ
+  var groups=getExerciseGroups();
+  var allCats=groups.map(function(g){return g.cat;}).filter(function(c){return c!=='⏱ 最近';});
+  var tabsEl=document.getElementById('cat-tabs');
+  tabsEl.innerHTML='';
+  var allBtn=document.createElement('button');
+  allBtn.className='cat-tab-btn'+(cat===''?' active':'');
+  allBtn.textContent='すべて';
+  allBtn.onclick=function(){renderExPicker(query,'');};
+  tabsEl.appendChild(allBtn);
+  allCats.forEach(function(c){
+    var b=document.createElement('button');
+    b.className='cat-tab-btn'+(cat===c?' active':'');
+    b.textContent=c;
+    b.onclick=function(){renderExPicker(query,c);};
+    tabsEl.appendChild(b);
+  });
+
+  // お気に入り（検索・カテゴリ絞り込みなし時のみ）
+  var favSec=document.getElementById('favorite-section');
+  var favEl=document.getElementById('favorite-chips');
+  var favorites=Object.keys(DB.favorites||{}).filter(function(ex){return DB.favorites[ex];});
+  if(!q&&!cat&&favorites.length){
+    favSec.style.display='block';
+    favEl.innerHTML='';
+    favorites.slice(0,8).forEach(function(ex){
+      var b=document.createElement('button');
+      b.className='recent-chip';
+      b.textContent='♥ '+ex;
+      b.onclick=function(){selectExercise(ex);};
+      favEl.appendChild(b);
+    });
+  } else {
+    favSec.style.display='none';
+  }
+
+  // 最近使った（検索・カテゴリ絞り込みなし時のみ）
+  var recentSec=document.getElementById('recent-section');
+  var recentEl=document.getElementById('recent-chips');
+  var recent=DB.recentExercises||[];
+  if(!q&&!cat&&recent.length){
+    recentSec.style.display='block';
+    recentEl.innerHTML='';
+    recent.slice(0,6).forEach(function(ex){
+      var b=document.createElement('button');
+      b.className='recent-chip';
+      b.textContent=ex;
+      b.onclick=function(){selectExercise(ex);};
+      recentEl.appendChild(b);
+    });
+  } else {
+    recentSec.style.display='none';
+  }
+
+  // 種目リスト
+  var listEl=document.getElementById('ep-list');
+  listEl.innerHTML='';
+  var cur=document.getElementById('r-ex').value;
+
+  var filtered=groups.filter(function(g){return g.cat!=='⏱ 最近';});
+  if(cat) filtered=filtered.filter(function(g){return g.cat===cat;});
+  if(q) filtered=filtered.map(function(g){
+    return{cat:g.cat,exercises:g.exercises.filter(function(e){return e.toLowerCase().indexOf(q)>=0;})};
+  }).filter(function(g){return g.exercises.length;});
+
+  filtered.forEach(function(g){
+    if(filtered.length>1||!cat){
+      var h=document.createElement('div');
+      h.className='ep-cat-header';
+      h.textContent=g.cat;
+      listEl.appendChild(h);
+    }
+    g.exercises.forEach(function(ex){
+      var container=document.createElement('div');
+      container.className='ex-item-container'+(ex===cur?' selected':'');
+
+      // 左側：お気に入りボタン + 部位ラベル + 種目名
+      var left=document.createElement('div');
+      left.className='ex-item-left';
+
+      // お気に入りボタン
+      var favBtn=document.createElement('button');
+      favBtn.className='fav-btn'+(DB.favorites[ex]?' active':'');
+      favBtn.textContent='♥';
+      favBtn.onclick=function(e){
+        e.stopPropagation();
+        DB.favorites[ex]=!DB.favorites[ex];
+        save();
+        renderExPicker(query,cat);
+      };
+      left.appendChild(favBtn);
+
+      // 部位ラベル + 種目名
+      var labels=document.createElement('div');
+      labels.className='ex-item-labels';
+
+      var rawCat=DB.exCategories[ex]||'';
+      var cat_en=catEn(rawCat);
+      var cat_ja=catJa(rawCat);
+
+      if(cat_en&&cat_en!=='Other'){
+        var badge=document.createElement('span');
+        badge.className='cat-badge '+cat_en;
+        badge.textContent=cat_ja;
+        labels.appendChild(badge);
+      }
+
+      var exName=document.createElement('span');
+      exName.textContent=ex;
+      exName.style.cssText='flex:1';
+      labels.appendChild(exName);
+
+      left.appendChild(labels);
+      container.appendChild(left);
+
+      container.onclick=function(){selectExercise(ex);};
+      listEl.appendChild(container);
+    });
+  });
+
+  // 新しい種目を追加
+  var addRow=document.createElement('div');
+  addRow.className='ep-add-row';
+  addRow.innerHTML='<span style="font-size:18px">＋</span> 新しい種目を追加';
+  addRow.onclick=function(){showAddExercise(q);};
+  listEl.appendChild(addRow);
+}
+
+function selectExercise(ex){
+  document.getElementById('r-ex').value=ex;
+  document.getElementById('ex-picker-label').textContent=ex;
+  closeExPicker();
+  showPrevSession();
+  saveDraft();
+}
+
+function showAddExercise(prefill){
+  var name=prompt('種目名を入力してください:',prefill||'');
+  if(!name||!name.trim())return;
+  name=name.trim();
+  var catChoices=['腹筋(Abs)','二頭筋(Biceps)','三頭筋(Triceps)','有酸素(Cardio)','胸(Chest)','コンディショニング(Conditioning)','脚(Legs)','首(Neck)','肩(Shoulders)','ウェイトリフティング(Weightlifting)'];
+  var catStr=prompt('部位を番号で選んでください:\n'+catChoices.map(function(c,i){return (i+1)+'. '+c;}).join('\n'),'');
+  var catKeys=['Abs','Biceps','Triceps','Cardio','Chest','Conditioning','Legs','Neck','Shoulders','Weightlifting'];
+  var catVal=catKeys[(parseInt(catStr)||10)-1]||'Weightlifting';
+  if(!DB.customExercises)DB.customExercises=[];
+  if(DB.customExercises.indexOf(name)===-1)DB.customExercises.push(name);
+  DB.exCategories[name]=catVal;
+  save();
+  updateExerciseLists();
+  selectExercise(name);
+}
+
+// updateExerciseListsはh-ex/p-ex/rank-exのみ（r-exはピッカー管理）
+function updateExerciseLists(){
+  var groups=getExerciseGroups();
+  fillSelect(document.getElementById('h-ex'),groups,true);
+  fillSelect(document.getElementById('p-ex'),groups,false);
+  fillSelect(document.getElementById('rank-ex'),groups,false);
+}
+
+// ===================== 草稿保存・復元 =====================
+function saveDraft(){
+  var draft={
+    date:document.getElementById('r-date').value,
+    exercise:document.getElementById('r-ex').value,
+    sets:currentSets,
+    memo:document.getElementById('r-memo').value
+  };
+  var hasSets=currentSets.some(function(s){return s.w||s.r;});
+  if(hasSets) localStorage.setItem('wt2_draft',JSON.stringify(draft));
+}
+function loadDraft(){
+  try{
+    var d=localStorage.getItem('wt2_draft');
+    if(!d)return;
+    var draft=JSON.parse(d);
+    if(draft.exercise){
+      document.getElementById('r-ex').value=draft.exercise;
+      document.getElementById('ex-picker-label').textContent=draft.exercise;
+    }
+    if(draft.sets&&draft.sets.some(function(s){return s.w||s.r;})){
+      currentSets=draft.sets;
+      renderSets();
+      document.getElementById('draft-banner').style.display='flex';
+    }
+    if(draft.memo) document.getElementById('r-memo').value=draft.memo;
+    showPrevSession();
+  }catch(e){}
+}
+function discardDraft(){
+  localStorage.removeItem('wt2_draft');
+  document.getElementById('draft-banner').style.display='none';
+  currentSets=[];addSet();addSet();addSet();
+}
+
+// ===================== カスタム種目追加（ピッカー内から呼ばれる） =====================
+function addCustomExercise(){} // showAddExercise()に統合済み
+
+// ===================== 日付ナビ・スワイプ =====================
+function updateRecDateNav(){
+  var date=document.getElementById('r-date').value;
+  if(!date)return;
+  var today=new Date();
+  var todayStr=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  var d=new Date(date+'T00:00:00');
+  var days=['日','月','火','水','木','金','土'];
+  var dow=days[d.getDay()];
+  var lbl=document.getElementById('rec-date-label');
+  var sub=document.getElementById('rec-date-sub');
+  if(date===todayStr){
+    lbl.textContent='TODAY';
+    sub.textContent=date+' ('+dow+')';
+  } else {
+    lbl.textContent=date+' ('+dow+')';
+    sub.textContent='';
+  }
+}
+
+function setRecordDate(ds){
+  document.getElementById('r-date').value=ds;
+  updateRecDateNav();
+  showPrevSession();
+  renderTodayLog();
+  renderTodayProgressBar();
+}
+
+function shiftRecordDate(delta){
+  var d=new Date(document.getElementById('r-date').value+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  setRecordDate(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()));
+}
+
+function toggleAddForm(){
+  var form=document.getElementById('rec-input-form');
+  var btn=document.getElementById('add-ex-btn');
+  var open=form.style.display!=='none';
+  form.style.display=open?'none':'block';
+  btn.textContent=open?'＋ 種目を追加':'✕ 閉じる';
+  if(!open)setTimeout(function(){form.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+}
+
+function initRecordSwipe(){
+  var el=document.getElementById('tab-record');
+  var sx=0,sy=0;
+  el.addEventListener('touchstart',function(e){
+    sx=e.touches[0].clientX;
+    sy=e.touches[0].clientY;
+  },{passive:true});
+  el.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-sx;
+    var dy=e.changedTouches[0].clientY-sy;
+    // 横スワイプのみ（縦スクロールと区別）
+    if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8){
+      shiftRecordDate(dx<0?1:-1);
+    }
+  },{passive:true});
+}
+
+// ===================== 今日の進捗バー =====================
+function renderTodayProgressBar(){
+  var date=document.getElementById('r-date').value;
+  var done=DB.workouts.filter(function(w){return w.date===date;});
+  var bar=document.getElementById('today-prog-bar');
+  if(!done.length){bar.style.display='none';return;}
+  bar.style.display='flex';
+  var totalVol=done.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  document.getElementById('tpb-count').textContent=done.length+'種目完了';
+  document.getElementById('tpb-names').textContent=done.map(function(w){return w.exercise;}).join('・');
+  document.getElementById('tpb-vol').textContent=Math.round(totalVol)+'kg';
+}
+
+// ===================== 次の種目サジェスト =====================
+function renderNextExSuggest(date){
+  var done=DB.workouts.filter(function(w){return w.date===date;}).map(function(w){return w.exercise;});
+  var suggest=(DB.recentExercises||[]).filter(function(ex){return done.indexOf(ex)===-1;}).slice(0,6);
+  var el=document.getElementById('next-ex-suggest');
+  if(!suggest.length){el.style.display='none';return;}
+  el.style.display='block';
+  var chips=document.getElementById('next-ex-chips');
+  chips.innerHTML='';
+  suggest.forEach(function(ex){
+    var b=document.createElement('button');
+    b.className='next-chip';
+    b.textContent=ex;
+    b.onclick=function(){selectExercise(ex);el.style.display='none';};
+    chips.appendChild(b);
+  });
+}
+
+// ===================== 履歴：日付選択・ジャーナル =====================
+// ===================== 月次カレンダー =====================
+var calYear=0,calMonth=0,calCatFilter='';
+
+function initMonthCal(){
+  var t=new Date();
+  calYear=t.getFullYear();
+  calMonth=t.getMonth(); // 0-based
+  renderCatFilterTabs();
+  renderMonthCalendar();
+}
+
+function renderCatFilterTabs(){
+  var tabs=document.getElementById('hist-cat-tabs');
+  if(!tabs)return;
+  // 存在するカテゴリを収集
+  var cats={};
+  DB.workouts.forEach(function(w){
+    var raw=DB.exCategories[w.exercise]||'';
+    var ja=catJa(raw);
+    if(ja&&ja!=='その他')cats[ja]=true;
+  });
+  var catList=Object.keys(cats).sort();
+  tabs.innerHTML='';
+  var allBtn=document.createElement('button');
+  allBtn.className='cat-filter-tab'+(calCatFilter===''?' active':'');
+  allBtn.textContent='ALL';
+  allBtn.onclick=function(){calCatFilter='';renderCatFilterTabs();renderMonthCalendar();};
+  tabs.appendChild(allBtn);
+  catList.forEach(function(c){
+    var b=document.createElement('button');
+    b.className='cat-filter-tab'+(calCatFilter===c?' active':'');
+    b.textContent=c;
+    b.onclick=function(){calCatFilter=c;renderCatFilterTabs();renderMonthCalendar();};
+    tabs.appendChild(b);
+  });
+}
+
+function shiftCalMonth(delta){
+  calMonth+=delta;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderMonthCalendar();
+}
+
+function renderMonthCalendar(){
+  var label=document.getElementById('cal-month-label');
+  if(label)label.textContent=calYear+'年'+pad(calMonth+1)+'月';
+
+  var today=new Date();
+  var todayStr=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+
+  // ワークアウト日セットを作成（カテゴリフィルター適用）
+  var workoutDays={};
+  DB.workouts.forEach(function(w){
+    if(calCatFilter){
+      var ja=catJa(DB.exCategories[w.exercise]||'');
+      if(ja!==calCatFilter)return;
+    }
+    workoutDays[w.date]=(workoutDays[w.date]||0)+1;
+  });
+
+  var grid=document.getElementById('month-cal-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+
+  // 月の最初の日の曜日（0=日）
+  var firstDay=new Date(calYear,calMonth,1).getDay();
+  // 月の最終日
+  var lastDate=new Date(calYear,calMonth+1,0).getDate();
+  // 前月の最終日
+  var prevLastDate=new Date(calYear,calMonth,0).getDate();
+
+  var totalCells=Math.ceil((firstDay+lastDate)/7)*7;
+
+  for(var i=0;i<totalCells;i++){
+    var cell=document.createElement('div');
+    var dayNum,dateStr,isOther=false;
+
+    if(i<firstDay){
+      // 前月
+      dayNum=prevLastDate-(firstDay-1-i);
+      var pm=calMonth===0?12:calMonth;
+      var py=calMonth===0?calYear-1:calYear;
+      dateStr=py+'-'+pad(pm)+'-'+pad(dayNum);
+      isOther=true;
+    } else if(i>=firstDay+lastDate){
+      // 翌月
+      dayNum=i-firstDay-lastDate+1;
+      var nm=calMonth===11?1:calMonth+2;
+      var ny=calMonth===11?calYear+1:calYear;
+      dateStr=ny+'-'+pad(nm)+'-'+pad(dayNum);
+      isOther=true;
+    } else {
+      dayNum=i-firstDay+1;
+      dateStr=calYear+'-'+pad(calMonth+1)+'-'+pad(dayNum);
+    }
+
+    var cls='cal-day-cell';
+    if(isOther)cls+=' other-month';
+    if(workoutDays[dateStr])cls+=' has-workout';
+    if(dateStr===todayStr)cls+=' is-today';
+    if(dateStr===histSelectedDate)cls+=' selected';
+
+    cell.className=cls;
+
+    // 4. カレンダーメモ点：メモがあれば小さなアイコンを表示
+    var cellContent=dayNum;
+    if(DB.dailyNotes[dateStr]&&DB.dailyNotes[dateStr].memo){
+      cellContent+=' <span style="position:absolute;bottom:0;right:2px;font-size:9px;opacity:0.7;line-height:1">📝</span>';
+    }
+
+    cell.innerHTML=cellContent;
+
+    // 日曜=赤、土曜=青（テキスト色は has-workout なければ）
+    if(!workoutDays[dateStr]&&dateStr!==todayStr){
+      var dow=i%7;
+      if(dow===0)cell.style.color='#E24B4A';
+      else if(dow===6)cell.style.color='#378ADD';
+    }
+
+    (function(ds){cell.onclick=function(){selectHistDate(ds);};})(dateStr);
+    grid.appendChild(cell);
+  }
+}
+
+function selectHistDate(date){
+  histSelectedDate=date;
+  // 選択した日が現在表示月でなければ月を移動
+  var d=new Date(date+'T00:00:00');
+  calYear=d.getFullYear();
+  calMonth=d.getMonth();
+  renderMonthCalendar();
+  renderDayJournal(date);
+  // ジャーナルカードまでスクロール
+  setTimeout(function(){
+    var j=document.getElementById('hist-day-journal');
+    if(j)j.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },100);
+}
+
+function histShiftDay(delta){
+  var base=histSelectedDate||(function(){var t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());})();
+  var d=new Date(base+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  selectHistDate(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()));
+}
+
+function renderDayJournal(date){
+  var bodyEl=document.getElementById('hist-day-body');
+  var todayStr=(function(){var t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());})();
+  var dateEl=document.getElementById('hist-selected-date');
+  var subEl=document.getElementById('hist-selected-sub');
+  var days=['日','月','火','水','木','金','土'];
+  var d=new Date(date+'T00:00:00');
+  var dow=days[d.getDay()];
+  var dowColor=d.getDay()===0?'color:#E24B4A':d.getDay()===6?'color:#378ADD':'';
+  dateEl.innerHTML=(date===todayStr?'<span style="color:var(--accent2)">TODAY</span> ':'')+'<span style="'+dowColor+'">'+date+' ('+dow+')</span>';
+
+  // 履歴タブ用のメモをロード
+  loadHistDailyNote(date);
+
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  if(!workouts.length){
+    subEl.textContent='';
+    bodyEl.innerHTML='<div class="empty" style="padding:2rem">この日のトレーニングはありません</div>';
+    return;
+  }
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  subEl.textContent=workouts.length+'種目 / '+totalSets+'セット / 総量'+Math.round(totalVol)+'kg';
+  renderWorkoutsInto(workouts,bodyEl);
+}
+
+// ===================== 今日のトレーニング一覧 =====================
+// FitNotesスタイル：ワークアウト一覧をコンテナに描画
+function renderWorkoutsInto(workouts,bodyEl){
+  bodyEl.innerHTML='';
+  if(!workouts.length){
+    bodyEl.innerHTML='<div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div>';
+    return;
+  }
+
+  workouts.forEach(function(w){
+    var block=document.createElement('div');
+    block.style.cssText='margin-bottom:18px';
+
+    // 種目名（部位ラベル+♥付き）
+    var exNameRow=document.createElement('div');
+    exNameRow.style.cssText='font-size:16px;font-weight:600;padding:8px 4px 7px;border-bottom:2px solid var(--accent);margin-bottom:0;display:flex;align-items:center;gap:6px;justify-content:space-between';
+
+    var exNameLeft=document.createElement('div');
+    exNameLeft.style.cssText='display:flex;align-items:center;gap:6px;flex:1';
+
+    // ♥ マーク
+    var favMark=document.createElement('span');
+    favMark.textContent=DB.favorites[w.exercise]?'♥':'';
+    favMark.style.cssText='color:#E24B4A;opacity:'+(DB.favorites[w.exercise]?'1':'0');
+    exNameLeft.appendChild(favMark);
+
+    // 部位ラベル
+    var rawCat=DB.exCategories[w.exercise]||'';
+    var cat_en=catEn(rawCat);
+    var cat_ja=catJa(rawCat);
+    if(cat_en&&cat_en!=='Other'){
+      var badge=document.createElement('span');
+      badge.className='cat-badge '+cat_en;
+      badge.textContent=cat_ja;
+      badge.style.cssText='padding:2px 8px;font-size:10px;margin:0';
+      exNameLeft.appendChild(badge);
+    }
+
+    // 種目名
+    var exNameText=document.createElement('span');
+    exNameText.textContent=w.exercise;
+    exNameLeft.appendChild(exNameText);
+
+    exNameRow.appendChild(exNameLeft);
+    block.appendChild(exNameRow);
+
+    // 各セット（FitNotesスタイル：重量右寄り・回数右端）
+    var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+    w.sets.forEach(function(s){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:flex-end;align-items:baseline;padding:9px 4px;border-bottom:1px solid #f0ede8;gap:0';
+
+      if(isCardio){
+        row.innerHTML=
+          '<span style="font-size:17px;font-weight:600;min-width:100px;text-align:right">'+(s.dist||'－')+'</span>'+
+          '<span style="font-size:12px;color:var(--text2);margin:0 24px 0 4px">'+(s.distUnit||'km')+'</span>'+
+          '<span style="font-size:17px;font-weight:600;min-width:80px;text-align:right">'+(s.time||'－')+'</span>';
+      } else {
+        var ww=parseFloat(s.w)||0;
+        var r=parseInt(s.r)||0;
+        row.innerHTML=
+          '<span style="font-size:17px;font-weight:600;min-width:80px;text-align:right">'+(ww?ww.toFixed(1):'－')+'</span>'+
+          '<span style="font-size:12px;color:var(--text2);margin:0 24px 0 4px">kgs</span>'+
+          '<span style="font-size:17px;font-weight:600;min-width:50px;text-align:right">'+(r||'－')+'</span>'+
+          '<span style="font-size:12px;color:var(--text2);margin-left:4px">reps</span>';
+      }
+      block.appendChild(row);
+
+      if(s.comment&&s.comment.trim()){
+        var cmt=document.createElement('div');
+        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 4px;font-style:italic';
+        cmt.textContent='💬 '+s.comment;
+        block.appendChild(cmt);
+      }
+    });
+
+    if(w.memo&&w.memo.trim()){
+      var memo=document.createElement('div');
+      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 4px 0;font-style:italic';
+      memo.textContent='📝 '+w.memo;
+      block.appendChild(memo);
+    }
+
+    bodyEl.appendChild(block);
+  });
+
+  // フッター合計
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  if(workouts.length>1||totalSets>0){
+    var foot=document.createElement('div');
+    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+    bodyEl.appendChild(foot);
+  }
+}
+
+function renderTodayLog(){
+  var date=document.getElementById('r-date').value;
+  var body=document.getElementById('today-log-body');
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+
+  // ドラッグ対応版で描画
+  renderTodayLogWithDrag(workouts,body,date);
+
+  // 本日のメモをロード・表示
+  loadDailyNote(date);
+}
+
+// 記録タブ用：ドラッグ対応版
+function renderTodayLogWithDrag(workouts,bodyEl,date){
+  bodyEl.innerHTML='';
+  if(!workouts.length){
+    bodyEl.innerHTML='<div class="empty" style="padding:1.5rem 0">まだ記録がありません<br><span style="font-size:12px">下の「＋ 種目を追加」から記録しよう</span></div>';
+    return;
+  }
+
+  var draggedIdx=null;
+
+  workouts.forEach(function(w,idx){
+    var block=document.createElement('div');
+    block.style.cssText='margin-bottom:18px;border:1px solid var(--border);border-radius:8px;padding:8px;background:#fff;display:flex;gap:8px;align-items:flex-start';
+    block.draggable=true;
+    block.dataset.idx=idx;
+
+    // ドラッグハンドル + メニューボタン
+    var handleWrap=document.createElement('div');
+    handleWrap.style.cssText='flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px';
+
+    var handle=document.createElement('div');
+    handle.style.cssText='cursor:grab;font-size:20px;color:var(--text2);user-select:none';
+    handle.textContent='☰';
+    handleWrap.appendChild(handle);
+
+    var menuBtn=document.createElement('button');
+    menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1';
+    menuBtn.textContent='⋮';
+    menuBtn.onclick=function(e){e.stopPropagation();showWorkoutMenu(idx,w,date);};
+    handleWrap.appendChild(menuBtn);
+
+    block.appendChild(handleWrap);
+
+    // コンテンツ
+    var content=document.createElement('div');
+    content.style.cssText='flex:1;min-width:0';
+
+    // 種目名
+    var exName=document.createElement('div');
+    exName.style.cssText='font-size:16px;font-weight:600;padding:4px 0;border-bottom:2px solid var(--accent);margin-bottom:8px';
+    exName.textContent=w.exercise;
+    content.appendChild(exName);
+
+    // 2. 種目別次回目標を表示
+    var nextTarget=suggestNextTarget(w.exercise);
+    var lastSet=getLastWorkoutForExercise(w.exercise);
+    if(lastSet&&nextTarget){
+      var targetDiv=document.createElement('div');
+      targetDiv.style.cssText='padding:6px 8px;background:#f0f7ff;border-left:3px solid var(--accent2);margin-bottom:8px;font-size:12px;border-radius:4px';
+      var targetHtml='前回 <b>'+lastSet.w.toFixed(1)+'kg × '+lastSet.r+'</b> → ';
+      var targetPrimary=nextTarget[0];
+      targetHtml+='<b style="color:var(--accent2)">'+targetPrimary.w.toFixed(1)+'kg × '+targetPrimary.r+'</b> ('+targetPrimary.label+')';
+      targetDiv.innerHTML=targetHtml;
+      content.appendChild(targetDiv);
+    }
+
+    // セット情報
+    var isCardio=w.sets.length>0&&w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+    w.sets.forEach(function(s){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;justify-content:flex-end;padding:6px 0;border-bottom:1px solid #f0ede8;font-size:14px';
+
+      if(isCardio){
+        row.innerHTML='<span style="font-weight:600">'+(s.dist||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">'+(s.distUnit||'km')+'</span> '+
+          '<span style="font-weight:600">'+(s.time||'－')+'</span>';
+      } else {
+        var ww=parseFloat(s.w)||0;
+        var r=parseInt(s.r)||0;
+        row.innerHTML='<span style="font-weight:600">'+(ww?ww.toFixed(1):'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin:0 8px">kg</span> '+
+          '<span style="font-weight:600">'+(r||'－')+'</span> '+
+          '<span style="font-size:11px;color:var(--text2);margin-left:4px">reps</span>';
+      }
+      content.appendChild(row);
+
+      if(s.comment&&s.comment.trim()){
+        var cmt=document.createElement('div');
+        cmt.style.cssText='font-size:11px;color:var(--text2);padding:3px 0;font-style:italic';
+        cmt.textContent='💬 '+s.comment;
+        content.appendChild(cmt);
+      }
+    });
+
+    if(w.memo&&w.memo.trim()){
+      var memo=document.createElement('div');
+      memo.style.cssText='font-size:12px;color:var(--text2);padding:6px 0 0;font-style:italic;margin-top:4px';
+      memo.textContent='📝 '+w.memo;
+      content.appendChild(memo);
+    }
+
+    block.appendChild(content);
+
+    // ドラッグイベント
+    block.addEventListener('dragstart',function(e){
+      draggedIdx=idx;
+      e.dataTransfer.effectAllowed='move';
+      block.style.opacity='0.5';
+    });
+
+    block.addEventListener('dragend',function(e){
+      block.style.opacity='1';
+    });
+
+    block.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      if(draggedIdx!==null&&draggedIdx!==idx){
+        var temp=workouts[draggedIdx];
+        workouts[draggedIdx]=workouts[idx];
+        workouts[idx]=temp;
+        draggedIdx=idx;
+        renderTodayLogWithDrag(workouts,bodyEl,date);
+      }
+    });
+
+    bodyEl.appendChild(block);
+  });
+
+  // フッター合計
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  if(workouts.length>1||totalSets>0){
+    var foot=document.createElement('div');
+    foot.style.cssText='display:flex;justify-content:space-between;padding:10px 4px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--text2)';
+    foot.innerHTML='<span>'+workouts.length+'種目 / '+totalSets+'セット</span>'+(totalVol>0?'<span>総量 <b style="color:#1a1a1a">'+Math.round(totalVol)+'kg</b></span>':'');
+    bodyEl.appendChild(foot);
+  }
+
+  // 並び順を DB に反映
+  var date_val=document.getElementById('r-date').value;
+  DB.workouts.forEach(function(w){
+    if(w.date===date_val){
+      w.order=DB.workouts.filter(function(x){return x.date===date_val;}).indexOf(w);
+    }
+  });
+  save();
+}
+
+// ===================== ワークアウトメニュー =====================
+var currentEditIdx=-1;
+var currentEditWorkout=null;
+
+function showWorkoutMenu(idx,w,date){
+  var menu=document.createElement('div');
+  menu.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);display:flex;align-items:flex-end;z-index:9999';
+  menu.onclick=function(){menu.remove();};
+
+  var content=document.createElement('div');
+  content.style.cssText='background:#fff;border-radius:12px 12px 0 0;padding:16px;width:100%;max-height:70vh;overflow-y:auto';
+  content.onclick=function(e){e.stopPropagation();};
+
+  // タイトル
+  var title=document.createElement('div');
+  title.style.cssText='font-size:16px;font-weight:600;margin-bottom:16px';
+  title.textContent=w.exercise;
+  content.appendChild(title);
+
+  // 編集ボタン
+  var editBtn=document.createElement('button');
+  editBtn.style.cssText='width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  editBtn.textContent='✏️ 編集';
+  editBtn.onclick=function(){
+    menu.remove();
+    startEditWorkout(idx,w,date);
+  };
+  content.appendChild(editBtn);
+
+  // 削除ボタン
+  var delBtn=document.createElement('button');
+  delBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;color:#d32f2f;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px';
+  delBtn.textContent='🗑️ 削除';
+  delBtn.onclick=function(){
+    menu.remove();
+    deleteWorkout(idx,date);
+  };
+  content.appendChild(delBtn);
+
+  // キャンセル
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='width:100%;padding:12px;background:#f5f5f5;border:none;border-radius:8px;font-size:14px;cursor:pointer';
+  cancelBtn.textContent='キャンセル';
+  cancelBtn.onclick=function(){menu.remove();};
+  content.appendChild(cancelBtn);
+
+  menu.appendChild(content);
+  document.body.appendChild(menu);
+}
+
+function startEditWorkout(idx,w,date){
+  currentEditIdx=idx;
+  currentEditWorkout=w;
+
+  // フォームに値を設定
+  document.getElementById('r-ex').value=w.exercise;
+  document.getElementById('ex-picker-label').textContent=w.exercise;
+  document.getElementById('r-memo').value=w.memo||'';
+
+  // セット情報を設定（ディープコピー）
+  currentSets=JSON.parse(JSON.stringify(w.sets));
+  renderSets();
+
+  // フォームを開く
+  document.getElementById('rec-input-form').style.display='';
+
+  // 保存ボタンの処理を変更
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.setAttribute('data-edit-mode','true');
+    saveBtn.textContent='更新する';
+    saveBtn.onclick=function(e){e.preventDefault();updateW();};
+  }
+
+  // キャンセルボタンを表示
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(!cancelBtn){
+    cancelBtn=document.createElement('button');
+    cancelBtn.id='cancel-edit-btn';
+    cancelBtn.className='btn';
+    cancelBtn.textContent='キャンセル';
+    cancelBtn.onclick=function(){cancelEditWorkout();};
+    if(saveBtn&&saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(cancelBtn,saveBtn);
+    }
+  }
+  cancelBtn.style.display='';
+
+  // ページトップにスクロール
+  document.getElementById('rec-input-form').scrollIntoView({behavior:'smooth'});
+}
+
+function updateW(){
+  var sets=currentSets.filter(function(s){return s.w!==''&&s.r!=='';});
+  if(!sets.length)return;
+
+  // 既存のワークアウトを更新
+  if(currentEditIdx>=0&&currentEditWorkout){
+    DB.workouts[currentEditIdx].sets=sets;
+    DB.workouts[currentEditIdx].memo=document.getElementById('r-memo').value;
+    save();
+
+    // リセット
+    currentEditIdx=-1;
+    currentEditWorkout=null;
+    currentSets=[];
+    addSet();addSet();addSet();
+    document.getElementById('r-memo').value='';
+    resetTimer();
+    document.getElementById('rec-input-form').style.display='none';
+    document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+    if(document.getElementById('cancel-edit-btn')){
+      document.getElementById('cancel-edit-btn').style.display='none';
+    }
+
+    // 再描画
+    var date_val=document.getElementById('r-date').value;
+    renderTodayLog();
+    renderTodayProgressBar();
+    showAlert('アップデートしました！');
+  }
+}
+
+function cancelEditWorkout(){
+  currentEditIdx=-1;
+  currentEditWorkout=null;
+  currentSets=[];
+  addSet();addSet();addSet();
+  document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
+  resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
+  // フォームを閉じる
+  document.getElementById('rec-input-form').style.display='none';
+  document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+  renderSets();
+}
+
+function deleteWorkout(idx,date){
+  if(!confirm('この種目の記録を削除しますか？')){return;}
+  DB.workouts.splice(idx,1);
+  save();
+  renderTodayLog();
+  renderTodayProgressBar();
+}
+
+function showAlert(msg){
+  var alertEl=document.getElementById('al-save');
+  if(!alertEl){
+    alertEl=document.createElement('div');
+    alertEl.className='alert alert-ok';
+    alertEl.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;padding:16px 24px;border-radius:12px';
+    document.body.appendChild(alertEl);
+  }
+  alertEl.textContent=msg;
+  alertEl.style.display='block';
+  setTimeout(function(){alertEl.style.display='none';},2000);
+}
+
+// ===================== 前回の記録表示 =====================
+function showPrevSession(){
+  var ex=document.getElementById('r-ex').value;
+  var today=document.getElementById('r-date').value;
+  if(!ex){prevSessionData=null;document.getElementById('prev-session').style.display='none';document.getElementById('copy-prev-btn').style.display='none';return;}
+  var prev=null;
+  for(var i=DB.workouts.length-1;i>=0;i--){
+    if(DB.workouts[i].exercise===ex&&DB.workouts[i].date<today){prev=DB.workouts[i];break;}
+  }
+  prevSessionData=prev;
+  var el=document.getElementById('prev-session');
+  var cpBtn=document.getElementById('copy-prev-btn');
+  if(!prev){el.style.display='none';cpBtn.style.display='none';return;}
+  cpBtn.style.display='';
+  var vol=prev.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+  var html='<div class="prev-card">'+
+    '<div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px">前回 '+prev.date+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+  prev.sets.forEach(function(s,i){
+    var rm=(s.w&&s.r&&parseInt(s.r)>0)?Math.round(parseFloat(s.w)*(1+parseInt(s.r)/30))+'kg':'';
+    html+='<div class="prev-set-chip">S'+(i+1)+' <b>'+s.w+'kg</b>×'+s.r+'回'+(rm?' <span style="color:#E24B4A;font-size:11px">1RM:'+rm+'</span>':'')+'</div>';
+  });
+  html+='</div>';
+  if(vol>0) html+='<div style="font-size:11px;color:var(--text2);margin-top:6px">総量: '+Math.round(vol)+'kg</div>';
+  html+='</div>';
+  el.innerHTML=html;
+  el.style.display='block';
+}
+
+function copyPrevSets(){
+  if(!prevSessionData)return;
+  currentSets=prevSessionData.sets.map(function(s){return{w:s.w,r:s.r};});
+  renderSets();
+}
+
+// ===================== 日々のメモ機能 =====================
+function loadDailyNote(date){
+  var section=document.getElementById('daily-note-section');
+  var input=document.getElementById('daily-note-input');
+  var memo=DB.dailyNotes[date]?DB.dailyNotes[date].memo:'';
+
+  // 常時表示（ユーザー要望）
+  section.style.display='block';
+  input.value=memo;
+
+  // 自動拡大を設定
+  setupAutoExpandTextarea('daily-note-input');
+
+  // 入力イベント：オン
+  input.oninput=function(){
+    if(!this.value.trim()){
+      delete DB.dailyNotes[date];
+      save();
+    } else {
+      debouncedSaveDailyNote(date);
+    }
+  };
+}
+
+// テキストエリアの自動拡大
+function autoExpandTextarea(el){
+  el.style.height='auto';
+  el.style.height=Math.max(70, el.scrollHeight)+'px';
+}
+
+function setupAutoExpandTextarea(elId){
+  var el=document.getElementById(elId);
+  if(el){
+    autoExpandTextarea(el);
+    el.addEventListener('input',function(){autoExpandTextarea(this);});
+    el.addEventListener('change',function(){autoExpandTextarea(this);});
+  }
+}
+
+function debouncedSaveDailyNote(date){
+  clearTimeout(dailyNoteSaveTimer);
+  dailyNoteSaveTimer=setTimeout(function(){
+    var input=document.getElementById('daily-note-input');
+    saveDailyNote(date,input.value);
+    autoExpandTextarea(input);
+  },1000);
+}
+
+function saveDailyNote(date,memo){
+  if(!memo.trim()){
+    if(DB.dailyNotes[date]) delete DB.dailyNotes[date];
+  } else {
+    DB.dailyNotes[date]={memo:memo,updatedAt:new Date().toISOString()};
+  }
+  save();
+}
+
+// 履歴タブ用のメモロード（常時表示）
+function loadHistDailyNote(date){
+  var section=document.getElementById('hist-daily-note-section');
+  var input=document.getElementById('hist-daily-note-input');
+  var memo=DB.dailyNotes[date]?DB.dailyNotes[date].memo:'';
+
+  // 常に表示
+  section.style.display='block';
+  input.value=memo;
+
+  // 入力イベント：オン
+  input.oninput=function(){
+    if(!this.value.trim()){
+      delete DB.dailyNotes[date];
+      input.value='';
+      save();
+    } else {
+      debouncedSaveDailyNote(date);
+    }
+  };
+}
+
+// ===================== 記録タブ =====================
+function addSet(){
+  currentSets.push({w:'',r:'',comment:''});
+  renderSets();
+  saveDraft();
+}
+
+function duplicateSet(i){
+  if(i<0||i>=currentSets.length)return;
+  var s=currentSets[i];
+  currentSets.push({w:s.w,r:s.r,comment:''});
+  renderSets();
+  saveDraft();
+}
+
+function stepWeight(i,delta){
+  if(i<0||i>=currentSets.length)return;
+  var current=parseFloat(currentSets[i].w)||0;
+  currentSets[i].w=String(Math.max(0,current+delta).toFixed(1));
+  renderSets();
+  saveDraft();
+}
+
+function stepReps(i,delta){
+  if(i<0||i>=currentSets.length)return;
+  var current=parseInt(currentSets[i].r)||0;
+  currentSets[i].r=String(Math.max(0,current+delta));
+  renderSets();
+  saveDraft();
+}
+
+function renderSets(){
+  var c=document.getElementById('sets-wrap');c.innerHTML='';
+  currentSets.forEach(function(s,i){
+    var rm='-';
+    if(s.w&&s.r&&parseInt(s.r)>0){rm=Math.round(parseFloat(s.w)*(1+parseInt(s.r)/30))+'kg';}
+
+    // セット行コンテナ
+    var d=document.createElement('div');
+    d.style.cssText='border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;background:#fff';
+
+    // セット番号＋削除ボタン
+    var header=document.createElement('div');
+    header.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+    header.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text2)">セット '+(i+1)+'</div>'+
+      '<button onclick="currentSets.splice('+i+',1);renderSets();saveDraft()" style="border:none;background:none;color:#999;cursor:pointer;font-size:20px;padding:0;line-height:1">×</button>';
+    d.appendChild(header);
+
+    // 重量入力＋ステッパー
+    var weightRow=document.createElement('div');
+    weightRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:8px';
+    weightRow.innerHTML='<div style="flex:1"><label style="font-size:11px;color:var(--text2)">重量(kg)</label>'+
+      '<input type="number" placeholder="60" value="'+s.w+'" oninput="US('+i+',\'w\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px"></div>'+
+      '<button class="btn btn-sm" onclick="stepWeight('+i+',-2.5)" style="padding:6px 8px">−2.5</button>'+
+      '<button class="btn btn-sm" onclick="stepWeight('+i+',2.5)" style="padding:6px 8px">+2.5</button>';
+    d.appendChild(weightRow);
+
+    // 回数入力＋ステッパー
+    var repsRow=document.createElement('div');
+    repsRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:8px';
+    repsRow.innerHTML='<div style="flex:1"><label style="font-size:11px;color:var(--text2)">回数</label>'+
+      '<input type="number" placeholder="10" value="'+s.r+'" oninput="US('+i+',\'r\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px"></div>'+
+      '<button class="btn btn-sm" onclick="stepReps('+i+',-1)" style="padding:6px 8px">−1</button>'+
+      '<button class="btn btn-sm" onclick="stepReps('+i+',1)" style="padding:6px 8px">+1</button>';
+    d.appendChild(repsRow);
+
+    // メモ入力
+    var commentRow=document.createElement('div');
+    commentRow.style.cssText='margin-bottom:8px';
+    commentRow.innerHTML='<label style="font-size:11px;color:var(--text2)">メモ（任意）</label>'+
+      '<input type="text" placeholder="セットのメモ..." value="'+(s.comment||'')+'" oninput="US('+i+',\'comment\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border);border-radius:4px">';
+    d.appendChild(commentRow);
+
+    // 推定1RM＋複製ボタン
+    var footer=document.createElement('div');
+    footer.style.cssText='display:flex;justify-content:space-between;align-items:center';
+    footer.innerHTML='<div style="font-size:12px"><span style="color:var(--text2)">推定1RM:</span> <span style="color:#E24B4A;font-weight:600">'+rm+'</span></div>'+
+      '<button class="btn btn-sm" onclick="duplicateSet('+i+')" style="padding:6px 12px;background:#f0f0f0">複製</button>';
+    d.appendChild(footer);
+
+    c.appendChild(d);
+  });
+}
+
+function US(i,f,v){currentSets[i][f]=v;renderSets();saveDraft();}
+// ===== 一言サマリー生成（保存後） =====
+function generateDailySummary(){
+  var date=document.getElementById('r-date').value;
+  var workouts=DB.workouts.filter(function(w){return w.date===date;});
+  var summaryEl=document.getElementById('daily-summary');
+
+  if(!workouts.length){
+    summaryEl.style.display='none';
+    return;
+  }
+
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+
+  // カテゴリ別集計
+  var catStats={};
+  workouts.forEach(function(w){
+    var cat_en=catEn(DB.exCategories[w.exercise]||'');
+    if(!catStats[cat_en])catStats[cat_en]={count:0,vol:0};
+    catStats[cat_en].count++;
+    catStats[cat_en].vol+=w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+  });
+
+  // メイン部位を特定
+  var mainCat=Object.keys(catStats).sort(function(a,b){return catStats[b].count-catStats[a].count;})[0];
+  var mainCatJa=CAT_EN_TO_JA[mainCat]||mainCat;
+
+  // サマリー文を生成
+  var summary='💪 '+mainCatJa+'メインで'+workouts.length+'種目、計'+totalSets+'セット';
+
+  // ボーナス情報
+  if(totalVol>0)summary+=', 総量 '+Math.round(totalVol)+'kg';
+
+  // 日別メモがあれば追加
+  if(DB.dailyNotes[date]&&DB.dailyNotes[date].memo){
+    var memo=DB.dailyNotes[date].memo.split('\\n')[0].slice(0,30);
+    if(memo)summary+=' | 📝 '+memo;
+  }
+
+  summaryEl.textContent=summary;
+  summaryEl.style.display='block';
+
+  // 5秒後に自動消去
+  setTimeout(function(){
+    summaryEl.style.display='none';
+  },5000);
+}
+
+function saveW(){
+  var sets=currentSets.filter(function(s){return s.w!==''&&s.r!=='';});
+  if(!sets.length)return;
+  var ex=document.getElementById('r-ex').value;
+  var date=document.getElementById('r-date').value;
+
+  // PR検出（保存前の旧ベスト）
+  var prevBestRM=myBestRM(ex);
+  var newBestRM=Math.round(Math.max.apply(null,sets.map(function(s){
+    var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+    return r>0?ww*(1+r/30):ww;
+  })));
+  var isPR=newBestRM>prevBestRM;
+
+  DB.workouts.push({date:date,exercise:ex,sets:sets,memo:document.getElementById('r-memo').value});
+  DB.workouts.sort(function(a,b){return a.date>b.date?1:-1;});
+
+  // 最近使った種目を更新
+  DB.recentExercises=DB.recentExercises.filter(function(e){return e!==ex;});
+  DB.recentExercises.unshift(ex);
+  DB.recentExercises=DB.recentExercises.slice(0,8);
+
+  save();
+  localStorage.removeItem('wt2_draft');
+  document.getElementById('draft-banner').style.display='none';
+
+  // 一言サマリーを生成して表示
+  generateDailySummary();
+  renderTodayLog();  // ログ一覧を再描画
+
+  currentSets=[];addSet();addSet();addSet();
+  document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
+  resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
+  // 入力フォームを閉じてログ一覧に戻る
+  document.getElementById('rec-input-form').style.display='none';
+  document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
+  showPrevSession();
+  renderTodayLog();
+  renderTodayProgressBar();
+  renderNextExSuggest(date);
+  showSummary(ex,date,sets,isPR,newBestRM,prevBestRM);
+}
+
+// ===================== 完了サマリー =====================
+function showSummary(ex,date,sets,isPR,newRM,prevRM){
+  var vol=sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+  var maxW=Math.max.apply(null,sets.map(function(s){return parseFloat(s.w)||0;}));
+  var totalReps=sets.reduce(function(a,s){return a+(parseInt(s.r)||0);},0);
+  var html='<div style="text-align:center;margin-bottom:12px">'+
+    '<div style="font-size:18px;font-weight:600">✅ 保存しました</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-top:2px">'+ex+'</div>'+
+    '</div>';
+  if(isPR){
+    html+='<div class="summary-pr">'+
+      '<div style="font-size:20px">🎉</div>'+
+      '<div style="font-weight:600;font-size:15px;margin:4px 0">新記録！推定1RM: '+newRM+'kg</div>'+
+      (prevRM?'<div style="font-size:12px;color:#886600">前回: '+prevRM+'kg → <b>+'+( newRM-prevRM)+'kg</b></div>':'')+
+      '</div>';
+  }
+  html+='<div class="summary-stats">'+
+    '<div class="metric"><div class="metric-val">'+sets.length+'</div><div class="metric-lbl">セット</div></div>'+
+    '<div class="metric"><div class="metric-val">'+maxW+'kg</div><div class="metric-lbl">最大重量</div></div>'+
+    '<div class="metric"><div class="metric-val">'+Math.round(vol)+'kg</div><div class="metric-lbl">総ボリューム</div></div>'+
+    '</div>';
+  document.getElementById('summary-content').innerHTML=html;
+  document.getElementById('summary-modal').classList.add('show');
+}
+function closeSummary(){
+  document.getElementById('summary-modal').classList.remove('show');
+}
+document.getElementById('summary-modal').addEventListener('click',function(e){
+  if(e.target===this)closeSummary();
+});
+
+// ===================== レストタイマー =====================
+var timerSec=0,timerTotal=90,timerInterval=null;
+
+function startTimer(){
+  if(timerInterval)return;
+  var btn=document.getElementById('tm-btn');
+  btn.textContent='一時停止';
+  btn.onclick=pauseTimer;
+  timerInterval=setInterval(function(){
+    timerSec++;
+    updateTimerDisplay();
+    if(timerSec>=timerTotal){
+      clearInterval(timerInterval);timerInterval=null;
+      beep();
+      btn.textContent='スタート';
+      btn.onclick=startTimer;
+    }
+  },1000);
+}
+function pauseTimer(){
+  clearInterval(timerInterval);timerInterval=null;
+  var btn=document.getElementById('tm-btn');
+  btn.textContent='再開';
+  btn.onclick=startTimer;
+}
+function resetTimer(){
+  clearInterval(timerInterval);timerInterval=null;
+  timerSec=0;
+  updateTimerDisplay();
+  var btn=document.getElementById('tm-btn');
+  btn.textContent='スタート';
+  btn.onclick=startTimer;
+}
+function setTimerDuration(sec){
+  resetTimer();
+  timerTotal=sec;
+  updateTimerDisplay();
+  document.querySelectorAll('.tm-preset').forEach(function(b){b.classList.toggle('active',parseInt(b.dataset.sec)===sec);});
+}
+function updateTimerDisplay(){
+  var rem=Math.max(0,timerTotal-timerSec);
+  var m=Math.floor(rem/60),s=rem%60;
+  var disp=document.getElementById('tm-display');
+  disp.textContent=pad(m)+':'+pad(s);
+  var pct=timerTotal>0?timerSec/timerTotal:0;
+  disp.style.color=pct>0.85?'#E24B4A':pct>0.6?'#F0802A':'#1a1a1a';
+  document.getElementById('tm-progress-bar').style.width=(pct*100)+'%';
+}
+function beep(){
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,0.25,0.5].forEach(function(t){
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=880;
+      g.gain.setValueAtTime(0.35,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.22);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.22);
+    });
+  }catch(e){}
+}
+
+// ===================== 体重タブ =====================
+function saveBody(){
+  var bw=document.getElementById('b-weight').value;
+  var fat=document.getElementById('b-fat').value;
+  var kcal=document.getElementById('b-kcal').value;
+  var prot=document.getElementById('b-prot').value;
+  var carb=document.getElementById('b-carb').value;
+  var fat2=document.getElementById('b-fat2').value;
+  var d=new Date();
+  var ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  if(!bw&&!kcal)return;
+  DB.bodyLogs.push({date:ds,weight:bw,fat:fat,kcal:kcal,prot:prot,carb:carb,fat2:fat2});
+  DB.bodyLogs.sort(function(a,b){return a.date>b.date?1:-1;});
+  save();
+  ['b-weight','b-fat','b-kcal','b-prot','b-carb','b-fat2'].forEach(function(id){document.getElementById(id).value='';});
+  flash('al-body');
+  renderBody();
+}
+function flash(id){var e=document.getElementById(id);e.style.display='block';setTimeout(function(){e.style.display='none';},2500);}
+
+// ===================== タブ切替 =====================
+function ST(t){
+  var tabs=['record','history','progress','ranking','import'];
+  tabs.forEach(function(x,i){
+    document.querySelectorAll('.tab')[i].classList.toggle('active',x===t);
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='history'){
+    var today=new Date();
+    histSelectedDate=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+    initMonthCal();
+    renderDayJournal(histSelectedDate);
+  }
+  if(t==='progress'){
+    renderProgressCategoryButtons();
+    renderProgress();
+  }
+  if(t==='ranking')renderRanking();
+}
+
+// ===================== カレンダーヒートマップ =====================
+function renderCalendar(){renderMonthCalendar();}
+
+// ===================== 履歴タブ =====================
+function renderHistoryItem(w){
+  var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+  var maxW=Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
+  var setsDetail=w.sets.map(function(s){return s.w+'kg×'+s.r;}).join(', ');
+  var d=document.createElement('div');d.className='hist-item';
+  d.style.cssText='padding:9px 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:flex-start';
+
+  var contentDiv=document.createElement('div');
+  contentDiv.style.cssText='flex:1;min-width:0';
+  contentDiv.innerHTML='<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+w.exercise+'</div>'+
+    '<div style="font-size:12px;color:#999;margin-top:2px">'+w.sets.length+'セット &nbsp;最大 '+maxW+'kg &nbsp;総量 '+Math.round(vol)+'kg</div>'+
+    '<div style="font-size:11px;color:#bbb;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+setsDetail+'</div>'+
+    (w.memo?'<div style="font-size:11px;color:#999;margin-top:2px">'+w.memo+'</div>':'');
+  d.appendChild(contentDiv);
+
+  // メニューボタン
+  var menuBtn=document.createElement('button');
+  menuBtn.style.cssText='background:none;border:none;cursor:pointer;padding:0;font-size:16px;color:var(--text2);line-height:1;flex-shrink:0;margin-left:8px';
+  menuBtn.textContent='⋮';
+  menuBtn.onclick=function(e){
+    e.stopPropagation();
+    var idx=DB.workouts.indexOf(w);
+    if(idx>=0){
+      showWorkoutMenu(idx,w,w.date);
+    }
+  };
+  d.appendChild(menuBtn);
+
+  return d;
+}
+function renderHistory(){
+  var fex=document.getElementById('h-ex').value;
+  var days=parseInt(document.getElementById('h-period').value);
+  var cut=new Date();cut.setDate(cut.getDate()-days);
+  var items=DB.workouts.filter(function(w){
+    return new Date(w.date)>=cut&&(!fex||w.exercise===fex);
+  }).slice().reverse();
+  var c=document.getElementById('hist-list');
+  if(!items.length){c.innerHTML='<div class="empty">記録がありません</div>';return;}
+  c.innerHTML='';
+
+  if(!fex){
+    // 日別グループ化
+    var dateMap={},dateOrder=[];
+    items.forEach(function(w){
+      if(!dateMap[w.date]){dateMap[w.date]=[];dateOrder.push(w.date);}
+      dateMap[w.date].push(w);
+    });
+    dateOrder.forEach(function(date){
+      var dayVol=dateMap[date].reduce(function(a,w){
+        return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+      },0);
+      var dayHeader=document.createElement('div');
+      dayHeader.style.cssText='font-size:13px;font-weight:600;color:var(--text2);padding:10px 0 4px;border-bottom:2px solid var(--border);margin-bottom:2px;display:flex;justify-content:space-between;align-items:center';
+      dayHeader.innerHTML='<span>'+date+'</span><span style="font-weight:400;font-size:12px">計 '+Math.round(dayVol)+'kg</span>';
+      c.appendChild(dayHeader);
+      dateMap[date].forEach(function(w){c.appendChild(renderHistoryItem(w));});
+    });
+  } else {
+    // 種目指定時は日付も表示
+    items.forEach(function(w){
+      var row=renderHistoryItem(w);
+      row.querySelector('.hist-item > div').insertAdjacentHTML('beforeend',
+        '<div style="font-size:11px;color:var(--text2);margin-top:2px">'+w.date+'</div>');
+      c.appendChild(row);
+    });
+  }
+}
+
+// ===================== グラフ期間フィルタ =====================
+function getWorkoutsInPeriod(exercise,months){
+  if(months===0) return DB.workouts.filter(function(w){return w.exercise===exercise;});
+  var cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-months);
+  var cutoffStr=cutoff.getFullYear()+'-'+ pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+  return DB.workouts.filter(function(w){return w.exercise===exercise&&w.date>=cutoffStr;});
+}
+
+function setGraphPeriod(months){
+  graphPeriodMonths=months;
+  document.querySelectorAll('.p-period-btn').forEach(function(b){
+    b.classList.toggle('active',parseInt(b.dataset.months)===months);
+  });
+  renderProgress();
+}
+
+// ===================== 進捗タブ =====================
+function myBestRM(ex){
+  var best=0;
+  DB.workouts.filter(function(w){return w.exercise===ex;}).forEach(function(w){
+    w.sets.forEach(function(s){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      var rm=r>0?ww*(1+r/30):ww;
+      if(rm>best)best=rm;
+    });
+  });
+  return Math.round(best);
+}
+function movingAvg(arr,n){
+  return arr.map(function(_,i){
+    var slice=arr.slice(Math.max(0,i-n+1),i+1).filter(function(v){return v!==null;});
+    return slice.length?Math.round(slice.reduce(function(a,b){return a+b;},0)/slice.length*10)/10:null;
+  });
+}
+
+// ===================== 新機能：部位偏り、次回目標、日別ボリューム、メモ点 =====================
+
+// 1. 部位別の最後の実施日を取得
+function getLastWorkoutDateForCategory(catEng){
+  var last='記録なし';
+  var ws=DB.workouts.filter(function(w){
+    var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+    return ex_cat_en===catEng;
+  }).sort(function(a,b){return a.date<b.date?1:-1;});
+  if(ws.length>0)last=ws[0].date;
+  return last;
+}
+
+// 2. 本日から何日空いているか計算
+function getDaysSinceCategory(catEng){
+  var lastStr=getLastWorkoutDateForCategory(catEng);
+  if(lastStr==='記録なし')return {daysAgo:null,hasData:false};
+  var lastDate=new Date(lastStr+'T00:00:00');
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var diff=Math.floor((today-lastDate)/(1000*60*60*24));
+  return {daysAgo:diff,hasData:true};
+}
+
+// 3. 色分けスタイルを返す（赤：7日以上、黄：3-6日、緑：0-2日）
+function getCategoryDelayColor(daysAgo){
+  if(daysAgo===null||daysAgo===undefined)return {bg:'#FFF3E0',text:'#E67E22'};
+  if(daysAgo>=7)return {bg:'#FCEBEB',text:'#A32D2D'};
+  if(daysAgo>=3)return {bg:'#FEF8E7',text:'#D68910'};
+  return {bg:'#EAF3DE',text:'#3B6D11'};
+}
+
+// 4. 種目の前回最大記録を取得
+function getLastWorkoutForExercise(ex){
+  var ws=DB.workouts.filter(function(w){return w.exercise===ex;})
+    .sort(function(a,b){return a.date<b.date?1:-1;});
+  if(!ws.length)return null;
+  var w=ws[0];
+  if(!w.sets.length)return null;
+  var maxSet={w:0,r:0};
+  w.sets.forEach(function(s){
+    var ww=parseFloat(s.w)||0;
+    var rr=parseInt(s.r)||0;
+    if(ww>maxSet.w||ww===maxSet.w&&rr>maxSet.r){maxSet.w=ww;maxSet.r=rr;}
+  });
+  return maxSet.w?maxSet:null;
+}
+
+// 5. 次回目標を提案（+2.5kg または +1rep）
+function suggestNextTarget(ex){
+  var last=getLastWorkoutForExercise(ex);
+  if(!last)return null;
+  var isCardio=!last.w;
+  if(isCardio)return null;
+  var w=last.w,r=last.r;
+  var targets=[];
+  // +2.5kg, 同じrep数
+  targets.push({w:w+2.5,r:r,label:'+2.5kg'});
+  // 同じweight, +1rep
+  targets.push({w:w,r:r+1,label:'+1rep'});
+  return targets;
+}
+
+// 6. 日別ボリューム推移を計算（選択部位フィルタ適用）
+function getDailyVolumeData(catEng,months){
+  var cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-months);
+  var cutoffStr=cutoff.getFullYear()+'-'+pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+
+  var dayVol={};
+  DB.workouts.forEach(function(w){
+    if(w.date<cutoffStr)return;
+    if(catEng&&catEng!=='All'){
+      var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+      if(ex_cat_en!==catEng)return;
+    }
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+    dayVol[w.date]=(dayVol[w.date]||0)+vol;
+  });
+
+  var dates=Object.keys(dayVol).sort();
+  var vals=dates.map(function(d){return dayVol[d];});
+  var maVals=movingAvg(vals,3);
+
+  return {dates:dates,values:vals,maValues:maVals};
+}
+
+// ===================== 進捗タブ：部位起点（英語統一） =====================
+function getCategories(){
+  // 英語の部位のみを返す
+  var cats=new Set(['All']);
+  Object.keys(CATEGORY_COLORS||{}).forEach(function(c){if(c)cats.add(c);});
+  return ['All'].concat(Array.from(cats).filter(function(c){return c!=='All';}).sort());
+}
+
+function renderProgressCategoryButtons(){
+  var buttonEl=document.getElementById('p-cat-buttons');
+  buttonEl.innerHTML='';
+  var cats=getCategories();
+  cats.forEach(function(cat){
+    var btn=document.createElement('button');
+    btn.className='btn btn-sm'+(progressCategory===cat?'btn-primary':'');
+    // 英語 → 日本語表示
+    var label=CAT_EN_TO_JA[cat]||cat;
+    btn.textContent=label;
+    btn.onclick=function(){setProgressCategory(cat);};
+    buttonEl.appendChild(btn);
+  });
+}
+
+function setProgressCategory(cat){
+  progressCategory=cat;
+  renderProgressCategoryButtons();
+  var exSel=document.getElementById('p-ex');
+  var groups=getExerciseGroups();
+  var filtered=groups;
+
+  if(cat!=='All'){
+    filtered=groups.map(function(g){
+      return{
+        cat:g.cat,
+        exercises:g.exercises.filter(function(e){
+          var ex_cat_en=catEn(DB.exCategories[e]||'');
+          return ex_cat_en===cat;
+        })
+      };
+    }).filter(function(g){return g.exercises.length;});
+  }
+
+  exSel.innerHTML='';
+  var opt=document.createElement('option');
+  opt.value='';
+  opt.textContent='選ぶ（オプション）';
+  exSel.appendChild(opt);
+
+  filtered.forEach(function(g){
+    g.exercises.forEach(function(e){
+      var o=document.createElement('option');
+      o.value=e;
+      o.textContent=e;
+      exSel.appendChild(o);
+    });
+  });
+
+  renderProgressCategoryStats(cat);
+  renderProgress();
+}
+
+function renderProgressCategoryStats(cat){
+  var el=document.getElementById('p-cat-stats');
+  var content=document.getElementById('p-cat-stats-content');
+
+  if(cat==='All'){
+    el.style.display='none';
+    return;
+  }
+
+  el.style.display='block';
+  var workouts=DB.workouts.filter(function(w){
+    var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+    return ex_cat_en===cat;
+  });
+
+  var totalSets=workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var totalVol=workouts.reduce(function(a,w){return a+w.sets.reduce(function(b,s){return b+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);},0);
+  var lastDate=workouts.length>0?workouts[workouts.length-1].date:'記録なし';
+  var uniqueEx=new Set(workouts.map(function(w){return w.exercise;})).size;
+
+  var html='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+
+    '<div class="metric"><div class="metric-val">'+totalSets+'</div><div class="metric-lbl">セット</div></div>'+
+    '<div class="metric"><div class="metric-val">'+Math.round(totalVol)+'</div><div class="metric-lbl">kg</div></div>'+
+    '<div class="metric"><div class="metric-val">'+uniqueEx+'</div><div class="metric-lbl">種目</div></div>'+
+    '<div class="metric"><div class="metric-val">'+lastDate+'</div><div class="metric-lbl">最終実施</div></div>'+
+    '</div>';
+
+  // 1. 部位偏り警告を表示（「All」でなく、特定部位選択時）
+  if(cat!=='All'){
+    var days=getDaysSinceCategory(cat);
+    if(days.hasData){
+      var color=getCategoryDelayColor(days.daysAgo);
+      var label=days.daysAgo===0?'今日':days.daysAgo+'日空き';
+      html+='<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:'+color.bg+';color:'+color.text+';font-size:13px;font-weight:500">'+
+        '⚠️ '+label+'</div>';
+    }
+  }
+
+  content.innerHTML=html;
+}
+
+function onProgressModeChange(){
+  var mode=document.getElementById('p-mode').value;
+  document.getElementById('p-nrm-wrap').style.display=mode==='nrm'?'block':'none';
+  renderProgress();
+}
+
+function setNRM(n){
+  pNRM=n;
+  document.querySelectorAll('.p-nrm-btn').forEach(function(b){
+    b.classList.toggle('active',parseInt(b.dataset.n)===n);
+    b.classList.toggle('btn-primary',parseInt(b.dataset.n)===n);
+  });
+  renderProgress();
+}
+
+function renderProgress(){
+  var ex=document.getElementById('p-ex').value;
+  var mode=document.getElementById('p-mode').value;
+
+  // 部位フィルタを適用（progressCategory が選択されている場合）
+  var allItems=getWorkoutsInPeriod(ex,graphPeriodMonths);
+  var items=allItems;
+  if(progressCategory&&progressCategory!=='All'){
+    items=allItems.filter(function(w){
+      var ex_cat_en=catEn(DB.exCategories[w.exercise]||'');
+      return ex_cat_en===progressCategory;
+    });
+  }
+
+  items=items.sort(function(a,b){return a.date>b.date?1:-1;});
+
+  var pm=document.getElementById('p-metrics');
+  if(!items.length){
+    var msg=ex?'この種目の記録がありません':'この部位の記録がありません';
+    pm.innerHTML='<div class="empty" style="grid-column:1/-1">'+msg+'</div>';
+    if(progChart){progChart.destroy();progChart=null;}
+    document.getElementById('p-period-compare').innerHTML='';
+    return;
+  }
+
+  // オールタイムメトリクス計算
+  var maxW=0,bestRM=0,totalReps=0;
+  items.forEach(function(w){
+    w.sets.forEach(function(s){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      if(ww>maxW)maxW=ww;
+      var rm=r>0?ww*(1+r/30):ww;
+      if(rm>bestRM)bestRM=rm;
+      totalReps+=r;
+    });
+  });
+  pm.innerHTML=
+    '<div class="metric"><div class="metric-val">'+maxW+'kg</div><div class="metric-lbl">最高重量</div></div>'+
+    '<div class="metric"><div class="metric-val">'+Math.round(bestRM)+'kg</div><div class="metric-lbl">推定1RM</div></div>'+
+    '<div class="metric"><div class="metric-val">'+totalReps+'</div><div class="metric-lbl">累計レップ</div></div>'+
+    '<div class="metric"><div class="metric-val">'+items.length+'</div><div class="metric-lbl">記録回数</div></div>';
+
+  // グラフデータ計算
+  var labels=items.map(function(w){return w.date.slice(5);});
+  var vals=items.map(function(w){
+    if(mode==='maxw') return Math.max.apply(null,w.sets.map(function(s){return parseFloat(s.w)||0;}));
+    if(mode==='vol')  return Math.round(w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0));
+    if(mode==='reps') return w.sets.reduce(function(a,s){return a+(parseInt(s.r)||0);},0);
+    if(mode==='nrm'){
+      // pNRM回以上こなしたセットの最大重量
+      var valid=w.sets.filter(function(s){return(parseInt(s.r)||0)>=pNRM;});
+      if(!valid.length)return null;
+      return Math.max.apply(null,valid.map(function(s){return parseFloat(s.w)||0;}));
+    }
+    // rm
+    return Math.round(Math.max.apply(null,w.sets.map(function(s){var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;return r>0?ww*(1+r/30):ww;})));
+  });
+
+  // 移動平均（3点）
+  var maVals=movingAvg(vals,3);
+
+  var ctx=document.getElementById('prog-chart').getContext('2d');
+  if(progChart)progChart.destroy();
+  var colors={maxw:'#E24B4A',vol:'#378ADD',rm:'#1D9E75',reps:'#9B59B6',nrm:'#E67E22'};
+  var col=colors[mode]||'#E24B4A';
+  var lblMap={maxw:'最高重量(kg)',vol:'総ボリューム(kg)',rm:'推定1RM(kg)',reps:'総レップ数',nrm:pNRM+'RM最大重量(kg)'};
+  var lbl=lblMap[mode]||'';
+  progChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:lbl,data:vals,borderColor:col,backgroundColor:col+'22',tension:.3,pointRadius:4,pointHoverRadius:6,order:1},
+      {label:'移動平均',data:maVals,borderColor:col+'99',borderDash:[5,3],borderWidth:1.5,pointRadius:0,tension:.4,fill:false,order:0}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{labels:{font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.raw!==null?ctx.raw:'データなし');}}}
+      },
+      scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}
+    }
+  });
+
+  // 3. 日別ボリューム推移グラフ（部位選択時のみ表示、volモード）
+  if(progressCategory&&progressCategory!=='All'&&mode==='vol'){
+    var volData=getDailyVolumeData(progressCategory,graphPeriodMonths);
+    if(volData.dates.length>0){
+      var volCtx=document.getElementById('daily-volume-chart').getContext('2d');
+      if(dailyVolChart)dailyVolChart.destroy();
+      document.getElementById('daily-volume-wrap').style.display='block';
+
+      dailyVolChart=new Chart(volCtx,{
+        type:'line',
+        data:{
+          labels:volData.dates,
+          datasets:[
+            {label:'日別ボリューム(kg)',data:volData.values,borderColor:'#378ADD',backgroundColor:'#378ADD22',tension:.3,pointRadius:3,pointHoverRadius:5,order:1},
+            {label:'3日移動平均',data:volData.maValues,borderColor:'#378ADD99',borderDash:[5,3],borderWidth:1.5,pointRadius:0,tension:.4,fill:false,order:0}
+          ]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          interaction:{mode:'index',intersect:false},
+          plugins:{
+            legend:{labels:{font:{size:11},boxWidth:12}},
+            tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.raw!==null?Math.round(ctx.raw):'データなし')+'kg';}}}
+          },
+          scales:{y:{ticks:{font:{size:10}},beginAtZero:false}}
+        }
+      });
+    } else {
+      document.getElementById('daily-volume-wrap').style.display='none';
+    }
+  } else {
+    document.getElementById('daily-volume-wrap').style.display='none';
+  }
+
+  // 前月比
+  renderPeriodCompare(items,mode);
+  renderCatChart();
+  renderExSessionHistory(ex);
+}
+
+function renderPeriodCompare(items,mode){
+  var el=document.getElementById('p-period-compare');
+  var now=new Date();
+  var thisMonth=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  var prevDate=new Date(now.getFullYear(),now.getMonth()-1,1);
+  var prevMonth=prevDate.getFullYear()+'-'+pad(prevDate.getMonth()+1);
+
+  function sumForMonth(m){
+    var ws=items.filter(function(w){return w.date.slice(0,7)===m;});
+    if(!ws.length)return null;
+    if(mode==='vol'||mode==='reps'){
+      return ws.reduce(function(a,w){
+        return a+w.sets.reduce(function(b,s){
+          return b+(mode==='vol'?(parseFloat(s.w)||0)*(parseInt(s.r)||0):(parseInt(s.r)||0));
+        },0);
+      },0);
+    }
+    // for maxw/rm: show sessions count
+    return ws.length;
+  }
+  var cur=sumForMonth(thisMonth);
+  var prev=sumForMonth(prevMonth);
+  if(cur===null&&prev===null){el.innerHTML='';return;}
+
+  var diff=cur!==null&&prev!==null?Math.round((cur-prev)/prev*100):null;
+  var diffStr=diff!==null?'<span style="color:'+(diff>=0?'#1D9E75':'#E24B4A')+';font-weight:600">'+(diff>=0?'▲':'▼')+Math.abs(diff)+'%</span>':'';
+  var unit=mode==='reps'?'回':mode==='vol'?'kg':mode==='maxw'||mode==='rm'||mode==='nrm'?'回':'';
+  el.innerHTML='<div style="display:flex;gap:8px;font-size:12px">'+
+    '<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+(cur!==null?Math.round(cur)+unit:'-')+'</div><div class="metric-lbl">今月</div></div>'+
+    '<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+(prev!==null?Math.round(prev)+unit:'-')+'</div><div class="metric-lbl">先月</div></div>'+
+    (diffStr?'<div class="metric" style="flex:1"><div class="metric-val" style="font-size:15px">'+diffStr+'</div><div class="metric-lbl">前月比</div></div>':'')+
+    '</div>';
+}
+
+function renderCatChart(){
+  var days=parseInt(document.getElementById('cat-period').value)||30;
+  var cutoff=new Date();
+  cutoff.setDate(cutoff.getDate()-days);
+  var cutStr=cutoff.getFullYear()+'-'+pad(cutoff.getMonth()+1)+'-'+pad(cutoff.getDate());
+
+  // 部位別ボリューム集計
+  var catVol={};
+  DB.workouts.forEach(function(w){
+    if(w.date<cutStr)return;
+    var rawCat=DB.exCategories[w.exercise]||'';
+    var cat=catJa(rawCat);
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+    catVol[cat]=(catVol[cat]||0)+vol;
+  });
+
+  var cats=Object.keys(catVol).sort(function(a,b){return catVol[b]-catVol[a];});
+  var ctx2=document.getElementById('cat-chart').getContext('2d');
+  if(catChart)catChart.destroy();
+
+  if(!cats.length){
+    document.getElementById('cat-compare').innerHTML='<div class="empty">この期間の記録がありません</div>';
+    return;
+  }
+
+  var palette=['#E24B4A','#378ADD','#1D9E75','#9B59B6','#E67E22','#F1C40F','#1ABC9C','#E91E8C'];
+  var total=cats.reduce(function(a,c){return a+catVol[c];},0);
+
+  catChart=new Chart(ctx2,{
+    type:'bar',
+    data:{
+      labels:cats,
+      datasets:[{
+        label:'ボリューム(kg)',
+        data:cats.map(function(c){return Math.round(catVol[c]);}),
+        backgroundColor:cats.map(function(_,i){return palette[i%palette.length]+'CC';}),
+        borderColor:cats.map(function(_,i){return palette[i%palette.length];}),
+        borderWidth:1,borderRadius:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){
+          var pct=Math.round(ctx.raw/total*100);
+          return ctx.raw+'kg ('+pct+'%)';
+        }}}
+      },
+      scales:{
+        x:{ticks:{font:{size:11}}},
+        y:{ticks:{font:{size:10}},beginAtZero:true}
+      }
+    }
+  });
+
+  // 部位比率サマリー
+  var html='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+  cats.forEach(function(c,i){
+    var pct=Math.round(catVol[c]/total*100);
+    html+='<div style="display:flex;align-items:center;gap:4px;font-size:12px">'+
+      '<div style="width:10px;height:10px;border-radius:2px;background:'+palette[i%palette.length]+';flex-shrink:0"></div>'+
+      '<span>'+c+' <b>'+pct+'%</b></span></div>';
+  });
+  html+='</div>';
+  document.getElementById('cat-compare').innerHTML=html;
+}
+
+// ===================== 種目別セッション履歴 =====================
+function renderExSessionHistory(ex){
+  var wrap=document.getElementById('ex-session-history');
+  var list=document.getElementById('ex-session-list');
+  var title=document.getElementById('ex-session-title');
+  if(!ex){wrap.style.display='none';return;}
+
+  var sessions=DB.workouts.filter(function(w){return w.exercise===ex;})
+    .slice().sort(function(a,b){return a.date<b.date?1:-1;}); // 新しい順
+
+  if(!sessions.length){wrap.style.display='none';return;}
+
+  wrap.style.display='block';
+  title.textContent=ex+' — セッション履歴（'+sessions.length+'回）';
+  list.innerHTML='';
+
+  sessions.forEach(function(w){
+    var vol=w.sets.reduce(function(a,s){return a+(parseFloat(s.w)||0)*(parseInt(s.r)||0);},0);
+    var maxRM=Math.max.apply(null,w.sets.map(function(s){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      return r>0?ww*(1+r/30):ww;
+    }));
+    var isCardio=w.sets.every(function(s){return !parseFloat(s.w||0)&&(s.dist||s.time);});
+
+    var card=document.createElement('div');
+    card.className='session-card';
+
+    // ヘッダー（赤帯）
+    var hdr=document.createElement('div');
+    hdr.className='session-card-header';
+    var d=new Date(w.date+'T00:00:00');
+    var days=['日','月','火','水','木','金','土'];
+    hdr.innerHTML=
+      '<div class="session-card-date">'+w.date.replace(/-/g,'/')+'（'+days[d.getDay()]+'）</div>'+
+      '<div class="session-card-stats">'+
+        (vol>0?'TOTAL: '+Math.round(vol)+'Kg':'')+
+        (!isCardio&&maxRM>0?' &nbsp; MAX 1RM: '+Math.round(maxRM)+'Kg':'')+
+      '</div>';
+    card.appendChild(hdr);
+
+    // 列ヘッダー
+    var colHdr=document.createElement('div');
+    colHdr.className='session-set-hdr';
+    colHdr.innerHTML=isCardio?
+      '<div>セット</div><div>距離</div><div>時間</div><div></div>':
+      '<div>セット</div><div>重さ</div><div>回数</div><div>RM</div>';
+    card.appendChild(colHdr);
+
+    // 各セット
+    var allRMs=w.sets.map(function(s){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      return r>0?ww*(1+r/30):0;
+    });
+    var maxRMval=Math.max.apply(null,allRMs);
+
+    w.sets.forEach(function(s,si){
+      var ww=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+      var rm=r>0?Math.round(ww*(1+r/30)):0;
+      var isTop=rm&&rm===Math.round(maxRMval);
+      var row=document.createElement('div');
+      row.className='session-set-row';
+      row.style.background=isTop?'#fff8f8':'';
+
+      var numEl=document.createElement('div');
+      numEl.style.cssText='width:24px;height:24px;border-radius:50%;background:'+(isTop?'var(--accent)':'#f0ede8')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:'+(isTop?'#fff':'var(--text2)');
+      numEl.textContent=si+1;
+
+      if(isCardio){
+        row.appendChild(numEl);
+        row.innerHTML+=
+          '<div style="font-weight:600">'+(s.dist||'－')+(s.dist&&s.distUnit?' <span style="font-size:11px;color:var(--text2)">'+s.distUnit+'</span>':'')+'</div>'+
+          '<div style="font-weight:600">'+(s.time||'－')+'</div>'+
+          '<div></div>';
+        row.insertBefore(numEl,row.firstChild);
+      } else {
+        row.appendChild(numEl);
+        row.innerHTML+=
+          '<div style="font-weight:600">'+ww+' <span style="font-size:11px;color:var(--text2)">Kg</span></div>'+
+          '<div style="font-weight:600">'+r+' <span style="font-size:11px;color:var(--text2)">回</span></div>'+
+          '<div style="color:'+(isTop?'var(--accent)':'var(--text2)')+';font-weight:'+(isTop?'600':'400')+'">'+(rm?rm+'Kg':'－')+'</div>';
+        row.insertBefore(numEl,row.firstChild);
+      }
+
+      // セットコメント
+      if(s.comment&&s.comment.trim()){
+        var cmt=document.createElement('div');
+        cmt.style.cssText='grid-column:1/-1;font-size:11px;color:var(--text2);font-style:italic;padding:0 0 4px 38px';
+        cmt.textContent='💬 '+s.comment;
+        card.appendChild(row);
+        card.appendChild(cmt);
+      } else {
+        card.appendChild(row);
+      }
+    });
+
+    // ワークアウトメモ
+    if(w.memo&&w.memo.trim()){
+      var memo=document.createElement('div');
+      memo.style.cssText='padding:8px 14px;font-size:12px;color:var(--text2);font-style:italic;border-top:1px solid #f0ede8';
+      memo.textContent='📝 '+w.memo;
+      card.appendChild(memo);
+    }
+
+    list.appendChild(card);
+  });
+}
+
+// ===================== 体重タブ描画 =====================
+function renderBody(){
+  var bm=document.getElementById('body-metrics');
+  var bl=document.getElementById('body-list');
+  if(!DB.bodyLogs.length){
+    bm.innerHTML='<div class="empty" style="grid-column:1/-1">記録がありません</div>';
+    bl.innerHTML='';
+    if(bodyChart){bodyChart.destroy();bodyChart=null;}return;
+  }
+  var latest=DB.bodyLogs[DB.bodyLogs.length-1];
+  var prev=DB.bodyLogs.length>7?DB.bodyLogs[DB.bodyLogs.length-8]:null;
+  var diff=prev&&latest.weight&&prev.weight?(parseFloat(latest.weight)-parseFloat(prev.weight)).toFixed(1):null;
+  var diffStr=diff?'<span style="color:'+(parseFloat(diff)>0?'#E24B4A':'#1D9E75')+'">'+(parseFloat(diff)>0?'+':'')+diff+'kg</span>':'-';
+  var avgKcal=0,kcalCnt=0;
+  DB.bodyLogs.slice(-7).forEach(function(l){if(l.kcal){avgKcal+=parseInt(l.kcal);kcalCnt++;}});
+  bm.innerHTML='<div class="metric"><div class="metric-val">'+(latest.weight||'-')+'kg</div><div class="metric-lbl">現在体重</div></div>'+
+    '<div class="metric"><div class="metric-val">'+diffStr+'</div><div class="metric-lbl">先週比</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(latest.fat||'-')+'%</div><div class="metric-lbl">体脂肪率</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(kcalCnt?Math.round(avgKcal/kcalCnt):'-')+'</div><div class="metric-lbl">平均kcal(7日)</div></div>';
+  var chartLogs=DB.bodyLogs.slice(-14);
+  var ctx=document.getElementById('body-chart').getContext('2d');
+  if(bodyChart)bodyChart.destroy();
+  bodyChart=new Chart(ctx,{type:'line',data:{
+    labels:chartLogs.map(function(l){return l.date.slice(5);}),
+    datasets:[
+      {label:'体重(kg)',data:chartLogs.map(function(l){return l.weight||null;}),borderColor:'#E24B4A',backgroundColor:'#E24B4A22',tension:.3,yAxisID:'y'},
+      {label:'体脂肪(%)',data:chartLogs.map(function(l){return l.fat||null;}),borderColor:'#378ADD',backgroundColor:'#378ADD22',tension:.3,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales:{y:{position:'left',ticks:{font:{size:10}}},y2:{position:'right',ticks:{font:{size:10}},grid:{drawOnChartArea:false}}}}});
+  bl.innerHTML='';
+  DB.bodyLogs.slice().reverse().slice(0,14).forEach(function(l){
+    var d=document.createElement('div');d.className='bw-row';
+    d.innerHTML='<span class="bw-date">'+l.date+'</span>'+
+      '<span style="font-weight:500;min-width:60px">'+(l.weight?l.weight+'kg':'')+'</span>'+
+      '<span style="color:#999;min-width:50px;font-size:12px">'+(l.fat?l.fat+'%':'')+'</span>'+
+      '<span style="color:#999;font-size:12px">'+(l.kcal?l.kcal+'kcal':'')+'</span>';
+    bl.appendChild(d);
+  });
+}
+
+// ===================== ランキングタブ =====================
+function genShare(){
+  DB.user.nick=document.getElementById('u-nick').value||'あなた';
+  DB.user.weight=document.getElementById('u-weight').value;
+  DB.user.goal=document.getElementById('u-goal').value;
+  var records={};
+  getExercises().forEach(function(ex){
+    var best=[];
+    DB.workouts.filter(function(w){return w.exercise===ex;}).forEach(function(w){
+      w.sets.forEach(function(s){best.push({w:parseFloat(s.w)||0,r:parseInt(s.r)||0});});
+    });
+    if(best.length)records[ex]=best.slice(-5);
+  });
+  var obj={nick:DB.user.nick,weight:DB.user.weight,goal:DB.user.goal,records:records,v:1};
+  var code=btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  document.getElementById('share-code').textContent=code;
+  document.getElementById('share-area').style.display='block';
+  save();
+}
+function copyShare(){
+  navigator.clipboard.writeText(document.getElementById('share-code').textContent).catch(function(){});
+  alert('コピーしました！');
+}
+function addRival(){
+  var code=document.getElementById('rival-code').value.trim();
+  try{
+    var obj=JSON.parse(decodeURIComponent(escape(atob(code))));
+    if(!obj.nick)throw new Error();
+    var colors=['#AA82D9','#F0802A','#5DCAA5','#BA7517'];
+    var bgs=['#EEEDFE','#FAECE7','#E1F5EE','#FAEEDA'];
+    var idx=DB.rivals.length%4;
+    obj.color=colors[idx];obj.bg=bgs[idx];
+    DB.rivals.push(obj);save();
+    document.getElementById('rival-code').value='';
+    flash('al-rival');renderRanking();
+  }catch(e){flash('al-rival-err');}
+}
+function getRivalBestRM(rival,ex){
+  var recs=(rival.records||{})[ex]||[];
+  var best=0;
+  recs.forEach(function(s){var rm=(s.w||0)*(1+(s.r||0)/30);if(rm>best)best=rm;});
+  return Math.round(best);
+}
+function renderRanking(){
+  var ex=document.getElementById('rank-ex').value;
+  var myRM=myBestRM(ex);
+  var myNick=document.getElementById('u-nick').value||DB.user.nick||'あなた';
+  var entries=[{nick:myNick,color:'#E24B4A',bg:'#FCEBEB',best:myRM,isMe:true}];
+  DB.rivals.forEach(function(r){entries.push({nick:r.nick,color:r.color||'#888780',bg:r.bg||'#F1EFE8',best:getRivalBestRM(r,ex),isMe:false,isFriend:true});});
+  entries.sort(function(a,b){return b.best-a.best;});
+  var maxBest=entries[0].best||1;
+  var medals=['🥇','🥈','🥉'];
+  var c=document.getElementById('rank-list');c.innerHTML='';
+  entries.forEach(function(e,i){
+    var pct=Math.round((e.best/maxBest)*100);
+    var d=document.createElement('div');d.className='rank-row';
+    if(e.isMe)d.style.background='#fff8f8';
+    d.innerHTML='<div style="font-size:16px;width:26px;text-align:center;flex-shrink:0">'+(i<3?medals[i]:i+1)+'</div>'+
+      '<div class="rank-avatar" style="background:'+e.bg+';color:'+e.color+'">'+e.nick.slice(0,1)+'</div>'+
+      '<div style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+        (e.isMe?'<span class="badge badge-red" style="margin-right:4px">あなた</span>':'')+
+        (e.isFriend?'<span class="badge badge-blue" style="margin-right:4px">友達</span>':'')+
+        e.nick+'</div>'+
+      '<div style="text-align:right;margin-right:8px;flex-shrink:0"><div style="font-size:14px;font-weight:600">'+(e.best?e.best+'kg':'-')+'</div>'+
+        '<div style="font-size:11px;color:#999">推定1RM</div></div>'+
+      '<div class="rank-bar-bg" style="flex-shrink:0"><div class="rank-bar" style="width:'+pct+'%;background:'+e.color+'"></div></div>';
+    c.appendChild(d);
+  });
+  if(myRM===0){
+    c.insertAdjacentHTML('afterbegin','<div style="font-size:12px;color:#999;padding:6px 0">※記録を追加するとランキングに反映されます</div>');
+  }
+}
+
+// ===================== FitNotes CSVインポート =====================
+function parseCSVLine(line){
+  var result=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){result.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur);
+  return result;
+}
+
+// FitNotes JSON データをインポート
+// （実装は fitnotes_embed.js から読み込まれます）
+// importFitNotesJSON() は fitnotes_embed.js で定義されます
+
+function importFitNotes(csvText){
+  var lines=csvText.split(/\r?\n/);
+  var startLine=0;
+  if(lines[0]&&(lines[0].toLowerCase().indexOf('date')>=0||lines[0].toLowerCase().indexOf('exercise')>=0)){startLine=1;}
+
+  var groups={},order=[];
+  for(var i=startLine;i<lines.length;i++){
+    var line=lines[i].trim();
+    if(!line)continue;
+    var cols=parseCSVLine(line);
+    if(cols.length<6)continue;
+    var date=cols[0].trim();
+    if(!date.match(/^\d{4}-\d{2}-\d{2}$/))continue;
+    var exercise=cols[1].trim().replace(/^[\s★]+/,'').trim();
+    if(!exercise)continue;
+    var category=(cols[2]||'').trim();
+    var weight=parseFloat(cols[3])||0;
+    var weightUnit=(cols[4]||'').trim().toLowerCase();
+    var reps=parseInt(cols[5])||0;
+    var dist=(cols[6]||'').trim();
+    var distUnit=(cols[7]||'').trim();
+    var time=(cols[8]||'').trim();
+    var comment=(cols[9]||'').trim().replace(/^"|"$/g,'');
+    if(weightUnit==='lbs'){weight=Math.round(weight*0.453592*10)/10;}
+    if(category&&!DB.exCategories[exercise])DB.exCategories[exercise]=category;
+    var key=date+'|'+exercise;
+    if(!groups[key]){groups[key]={date:date,exercise:exercise,sets:[],memo:''};order.push(key);}
+    groups[key].sets.push({w:String(weight),r:String(reps),dist:dist,distUnit:distUnit,time:time,comment:comment});
+    // コメントを全部集約（重複除去）
+    if(comment&&groups[key].memo.indexOf(comment)===-1){
+      groups[key].memo=groups[key].memo?groups[key].memo+' / '+comment:comment;
+    }
+  }
+
+  var imported=0,skipped=0;
+  order.forEach(function(key){
+    var w=groups[key];
+    var exists=DB.workouts.some(function(e){return e.date===w.date&&e.exercise===w.exercise;});
+    if(!exists){DB.workouts.push(w);imported++;}
+    else{skipped++;}
+  });
+  DB.workouts.sort(function(a,b){return a.date>b.date?1:-1;});
+  save();
+  updateExerciseLists();
+  showPrevSession();
+  return{imported:imported,skipped:skipped,total:order.length};
+}
+
+// FitNotes JSON インポート（fitnotes_embed.js のバージョンをオーバーライド）
+function importFitNotesJSON(){
+  var data = FITNOTES_DATA;
+  if(!data.workouts){
+    alert('Invalid FitNotes data');
+    return;
+  }
+
+  // dailyNotes 形式を修正
+  var notesList={};
+  if(typeof data.dailyNotes==='object'){
+    Object.keys(data.dailyNotes).forEach(function(date){
+      notesList[date]={memo: data.dailyNotes[date]};
+    });
+  }
+
+  // exCategories を新しいカテゴリに自動マッピング
+  var exCat = data.exCategories || {};
+  Object.keys(exCat).forEach(function(exercise){
+    var oldCat = exCat[exercise];
+    // 古いカテゴリを新しいカテゴリに変換
+    var mappedCat = catEn(oldCat);
+    // Weightliftingのみの場合は、種目名から自動判定を試みる
+    if(!oldCat || mappedCat === 'Weightlifting'){
+      exCat[exercise] = categorizeExerciseByName(exercise);
+    } else {
+      exCat[exercise] = mappedCat;
+    }
+  });
+
+  // DB をリセット
+  DB={
+    workouts: data.workouts || [],
+    bodyLogs: [],
+    user: {nick:'あなた',weight:'',goal:'筋肥大'},
+    rivals: [],
+    exCategories: exCat,
+    recentExercises: [],
+    customExercises: [],
+    dailyNotes: notesList,
+    favorites: data.favorites || {}
+  };
+
+  save();
+  updateExerciseLists();
+  renderBody();
+  alert('FitNotes data imported!\n'+
+    'Workouts: '+DB.workouts.length+'\n'+
+    'Exercises: '+Object.keys(DB.exCategories).length+'\n'+
+    'Favorites: '+Object.keys(DB.favorites).length+'\n'+
+    'Daily notes: '+Object.keys(DB.dailyNotes).length);
+}
+
+function handleFile(file){
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var al=document.getElementById('al-import');
+      var content=e.target.result;
+
+      // ファイル拡張子で JSON か CSV か判定
+      if(file.name.endsWith('.json')){
+        // JSON ファイル（FitNotes JSON エクスポート）
+        var data=JSON.parse(content);
+        if(!data.workouts){
+          throw new Error('Invalid JSON format. "workouts" key not found.');
+        }
+
+        // FitNotes JSON データをセット
+        window.FITNOTES_DATA=data;
+        importFitNotesJSON();
+
+        al.className='alert alert-ok';
+        al.textContent='FitNotes JSON をインポートしました。（'+data.workouts.length+'件のワークアウト）';
+        al.style.display='block';
+      } else {
+        // CSV ファイル
+        var result=importFitNotes(content);
+        if(result.total===0){
+          al.className='alert alert-err';
+          al.textContent='データが見つかりません。FitNotesのCSVファイルか確認してください。';
+        } else {
+          al.className='alert alert-ok';
+          al.textContent=result.imported+'件インポートしました。'+(result.skipped?' (重複'+result.skipped+'件はスキップ)':'');
+        }
+        al.style.display='block';
+      }
+
+      refreshImportStats();
+    }catch(err){
+      var al=document.getElementById('al-import');
+      al.className='alert alert-err';
+      al.textContent='読み込みに失敗しました: '+err.message;
+      al.style.display='block';
+    }
+    document.getElementById('csv-file').value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// カテゴリを種目名から再分類
+function recategorizeExercises(){
+  if(!DB.workouts.length){
+    alert('ワークアウトデータがありません');
+    return;
+  }
+
+  var changed=0;
+  var uniqueEx={};
+
+  // すべての種目を走査
+  DB.workouts.forEach(function(w){
+    if(uniqueEx[w.exercise])return;
+    uniqueEx[w.exercise]=true;
+
+    var oldCat=DB.exCategories[w.exercise];
+    var newCat=categorizeExerciseByName(w.exercise);
+
+    if(oldCat!==newCat){
+      DB.exCategories[w.exercise]=newCat;
+      changed++;
+    }
+  });
+
+  save();
+  updateExerciseLists();
+  renderTodayLog();
+  alert('✅ カテゴリを再分類しました\n\n更新: '+changed+'種目\n全種目: '+Object.keys(uniqueEx).length);
+}
+
+function refreshImportStats(){
+  if(!DB.workouts.length){document.getElementById('import-stats').style.display='none';return;}
+  var uniqueEx={};
+  DB.workouts.forEach(function(w){uniqueEx[w.exercise]=true;});
+  var totalSets=DB.workouts.reduce(function(a,w){return a+w.sets.length;},0);
+  var first=DB.workouts[0].date;
+  var last=DB.workouts[DB.workouts.length-1].date;
+  document.getElementById('import-stat-body').innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<div class="metric"><div class="metric-val">'+DB.workouts.length+'</div><div class="metric-lbl">ワークアウト数</div></div>'+
+    '<div class="metric"><div class="metric-val">'+Object.keys(uniqueEx).length+'</div><div class="metric-lbl">種目数</div></div>'+
+    '<div class="metric"><div class="metric-val">'+totalSets+'</div><div class="metric-lbl">総セット数</div></div>'+
+    '<div class="metric"><div class="metric-val" style="font-size:13px">'+first+'〜</div><div class="metric-lbl">記録期間</div></div>'+
+    '</div>';
+  document.getElementById('import-stats').style.display='block';
+}
+
+document.getElementById('csv-file').addEventListener('change',function(){handleFile(this.files[0]);});
+var dropEl=document.getElementById('import-drop');
+dropEl.addEventListener('dragover',function(e){e.preventDefault();dropEl.classList.add('drag');});
+dropEl.addEventListener('dragleave',function(){dropEl.classList.remove('drag');});
+dropEl.addEventListener('drop',function(e){
+  e.preventDefault();dropEl.classList.remove('drag');
+  var file=e.dataTransfer.files[0];
+  if(file)handleFile(file);
+});
+
+// ===================== バックアップ / 削除 =====================
+function exportData(){
+  var blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  var d=new Date();
+  a.href=URL.createObjectURL(blob);
+  a.download='workout_backup_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+}
+function importBackup(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data.workouts)throw new Error('形式が違います');
+      if(!confirm('現在のデータに上書きしますか？'))return;
+      DB.workouts=data.workouts||[];
+      DB.bodyLogs=data.bodyLogs||[];
+      DB.user=data.user||DB.user;
+      DB.rivals=data.rivals||[];
+      DB.exCategories=data.exCategories||{};
+      save();updateExerciseLists();showPrevSession();refreshImportStats();renderBody();
+      alert('復元しました（'+DB.workouts.length+'件）');
+    }catch(err){alert('読み込み失敗: '+err.message);}
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+function clearData(){
+  if(!confirm('全トレーニング記録を削除しますか？\nこの操作は取り消せません。'))return;
+  DB.workouts=[];
+  save();
+  updateExerciseLists();
+  refreshImportStats();
+  showPrevSession();
+  document.getElementById('al-import').style.display='none';
+  alert('削除しました。');
+}
+
+// ===================== Service Worker 登録 =====================
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
+
+// ===================== 起動 =====================
+load();
+addSet();addSet();addSet();
+renderBody();
+</script>
+
+<!-- FitNotes データ埋め込み （一時無効化） -->
+<!-- <script src="fitnotes_embed.js"></script> -->
+<script>
+// FitNotes データのダミー定義（fitnotes_embed.js の読み込み失敗対策）
+var FITNOTES_DATA = { workouts: [], dailyNotes: {}, exCategories: {}, favorites: {} };
+
+// importFitNotesJSON をオーバーライド: 種目を正しくカテゴリに割り振る
+function importFitNotesJSON(){
+  var data = FITNOTES_DATA;
+  if(!data.workouts){
+    alert('Invalid FitNotes data');
+    return;
+  }
+
+  // dailyNotes 形式を修正
+  var notesList={};
+  if(typeof data.dailyNotes==='object'){
+    Object.keys(data.dailyNotes).forEach(function(date){
+      notesList[date]={memo: data.dailyNotes[date]};
+    });
+  }
+
+  // exCategories を自動生成: 種目名から正しいカテゴリを判定
+  var exCategories={};
+  if(data.exCategories){
+    Object.keys(data.exCategories).forEach(function(ex){
+      exCategories[ex]=categorizeExerciseByName(ex);
+    });
+  }
+
+  // DB をリセット
+  DB={
+    workouts: data.workouts || [],
+    bodyLogs: [],
+    user: {nick:'あなた',weight:'',goal:'筋肥大'},
+    rivals: [],
+    exCategories: exCategories,
+    recentExercises: [],
+    customExercises: [],
+    dailyNotes: notesList,
+    favorites: data.favorites || {}
+  };
+
+  save();
+
+  // Google Sheets にも一括インポート（ログイン済みの場合）
+  if(googleAuthState.isLoggedIn && SHEETS_SPREADSHEET_ID){
+    importFitNotesToSheets(data);
+  }
+
+  alert('FitNotes data imported!\n'+
+    'Workouts: '+DB.workouts.length+'\n'+
+    'Exercises: '+Object.keys(DB.exCategories).length+'\n'+
+    'Favorites: '+Object.keys(DB.favorites).length+'\n'+
+    'Daily notes: '+Object.keys(DB.dailyNotes).length);
+
+  location.reload();
+}
+
+// FitNotes データを Google Sheets に一括インポート
+async function importFitNotesToSheets(data){
+  if(!googleAuthState.isLoggedIn || !SHEETS_SPREADSHEET_ID){
+    console.warn('Sheets not configured or not logged in');
+    return;
+  }
+
+  try{
+    var now = new Date().toISOString();
+    var updates = [];
+
+    // 1. Workouts シート用のデータ準備
+    var workoutRows = [['id','date','exercise','setIndex','weight','reps','dist','distUnit','time','comment','memo','createdAt','updatedAt']];
+    var workoutId = 1;
+
+    data.workouts.forEach(function(wo){
+      wo.sets.forEach(function(set,setIdx){
+        workoutRows.push([
+          workoutId++,
+          wo.date || '',
+          wo.exercise || '',
+          setIdx + 1,
+          set.w || '',
+          set.r || '',
+          set.dist || '',
+          set.distUnit || '',
+          set.time || '',
+          set.comment || '',
+          wo.memo || '',
+          now,
+          now
+        ]);
+      });
+    });
+
+    updates.push({
+      range: 'Workouts!A1:M' + workoutRows.length,
+      values: workoutRows
+    });
+
+    // 2. Exercises シート用のデータ準備
+    var exerciseRows = [['exercise','category','isFavorite','isCustom','createdAt','updatedAt']];
+    var favorites = data.favorites || {};
+
+    Object.keys(data.exCategories || {}).forEach(function(ex){
+      var isFav = favorites[ex] ? 'TRUE' : 'FALSE';
+      exerciseRows.push([
+        ex,
+        data.exCategories[ex] || 'Weightlifting',
+        isFav,
+        'FALSE',  // FitNotes import は custom ではない
+        now,
+        now
+      ]);
+    });
+
+    updates.push({
+      range: 'Exercises!A1:F' + exerciseRows.length,
+      values: exerciseRows
+    });
+
+    // 3. DailyNotes シート用のデータ準備
+    var dailyNoteRows = [['id','date','memo','createdAt','updatedAt']];
+    var noteId = 1;
+
+    Object.keys(data.dailyNotes || {}).forEach(function(date){
+      dailyNoteRows.push([
+        noteId++,
+        date,
+        data.dailyNotes[date] || '',
+        now,
+        now
+      ]);
+    });
+
+    if(dailyNoteRows.length > 1){
+      updates.push({
+        range: 'DailyNotes!A1:E' + dailyNoteRows.length,
+        values: dailyNoteRows
+      });
+    }
+
+    // 4. Users シート に初期ユーザー追加（存在しない場合のみ）
+    var usersRows = [['userId','nick','goal','createdAt','updatedAt']];
+    usersRows.push([
+      1,
+      'あなた',
+      '筋肥大',
+      now,
+      now
+    ]);
+
+    updates.push({
+      range: 'Users!A1:E' + usersRows.length,
+      values: usersRows
+    });
+
+    // バッチ更新
+    await gapi.client.sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: SHEETS_SPREADSHEET_ID,
+      resource: {
+        data: updates,
+        valueInputOption: 'RAW'
+      }
+    });
+
+    console.log('FitNotes imported to Sheets: ' + (workoutId - 1) + ' workouts, ' + (exerciseRows.length - 1) + ' exercises');
+    return true;
+  } catch(e){
+    console.error('Sheets import error:', e);
+    return false;
+  }
+}
+</script>
+
+</body>
+</html>
