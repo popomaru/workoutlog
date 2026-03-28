@@ -637,6 +637,15 @@ textarea{min-height:56px;resize:vertical}
 </div>
 
 <script>
+// ===================== ユーティリティ関数 =====================
+function escHtml(str) {
+  if(!str) return '';
+  return str.replace(/[&<>"']/g, function(match) {
+    var escapeMap = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+    return escapeMap[match];
+  });
+}
+
 // ===================== データ =====================
 var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{},syncTime:0};
 var currentSets=[];
