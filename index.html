@@ -1663,31 +1663,34 @@ function startEditWorkout(idx,w,date){
   document.getElementById('ex-picker-label').textContent=w.exercise;
   document.getElementById('r-memo').value=w.memo||'';
 
-  // セット情報を設定
+  // セット情報を設定（ディープコピー）
   currentSets=JSON.parse(JSON.stringify(w.sets));
   renderSets();
 
   // フォームを開く
   document.getElementById('rec-input-form').style.display='';
-  document.getElementById('add-ex-btn').textContent='✏️ 種目を追加';
 
   // 保存ボタンの処理を変更
   var saveBtn=document.querySelector('#rec-input-form .btn-primary');
-  saveBtn.onclick=function(){updateW();};
-  saveBtn.textContent='更新する';
+  if(saveBtn){
+    saveBtn.setAttribute('data-edit-mode','true');
+    saveBtn.textContent='更新する';
+    saveBtn.onclick=function(e){e.preventDefault();updateW();};
+  }
 
   // キャンセルボタンを表示
-  if(!document.getElementById('cancel-edit-btn')){
-    var cancelBtn=document.createElement('button');
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(!cancelBtn){
+    cancelBtn=document.createElement('button');
     cancelBtn.id='cancel-edit-btn';
     cancelBtn.className='btn';
-    cancelBtn.style.cssText='';
     cancelBtn.textContent='キャンセル';
     cancelBtn.onclick=function(){cancelEditWorkout();};
-    saveBtn.parentNode.insertBefore(cancelBtn,saveBtn);
-  } else {
-    document.getElementById('cancel-edit-btn').style.display='';
+    if(saveBtn&&saveBtn.parentNode){
+      saveBtn.parentNode.insertBefore(cancelBtn,saveBtn);
+    }
   }
+  cancelBtn.style.display='';
 
   // ページトップにスクロール
   document.getElementById('rec-input-form').scrollIntoView({behavior:'smooth'});
@@ -1733,11 +1736,22 @@ function cancelEditWorkout(){
   document.getElementById('r-ex').value='';
   document.getElementById('ex-picker-label').textContent='種目を選ぶ';
   resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
+  // フォームを閉じる
   document.getElementById('rec-input-form').style.display='none';
   document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
-  if(document.getElementById('cancel-edit-btn')){
-    document.getElementById('cancel-edit-btn').style.display='none';
-  }
   renderSets();
 }
 
@@ -2041,7 +2055,22 @@ function saveW(){
 
   currentSets=[];addSet();addSet();addSet();
   document.getElementById('r-memo').value='';
+  document.getElementById('r-ex').value='';
+  document.getElementById('ex-picker-label').textContent='種目を選ぶ';
   resetTimer();
+
+  // ボタン状態をリセット
+  var saveBtn=document.querySelector('#rec-input-form .btn-primary');
+  if(saveBtn){
+    saveBtn.removeAttribute('data-edit-mode');
+    saveBtn.textContent='保存する';
+    saveBtn.onclick=function(){saveW();};
+  }
+  var cancelBtn=document.getElementById('cancel-edit-btn');
+  if(cancelBtn){
+    cancelBtn.style.display='none';
+  }
+
   // 入力フォームを閉じてログ一覧に戻る
   document.getElementById('rec-input-form').style.display='none';
   document.getElementById('add-ex-btn').textContent='＋ 種目を追加';
