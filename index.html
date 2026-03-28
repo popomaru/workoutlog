@@ -194,14 +194,13 @@ textarea{min-height:56px;resize:vertical}
 <div class="app">
 <div class="header">
   <h1>💪 筋トレトラッカー</h1>
-  <p>記録・進捗・ランキング</p>
+  <p>記録・進捗</p>
 </div>
 
 <div class="tabs">
   <button class="tab active" onclick="ST('record')">記録</button>
   <button class="tab" onclick="ST('history')">履歴</button>
   <button class="tab" onclick="ST('progress')">進捗</button>
-  <button class="tab" onclick="ST('ranking')">ランキング</button>
   <button class="tab" onclick="ST('import')">取込</button>
 </div>
 
@@ -483,46 +482,6 @@ textarea{min-height:56px;resize:vertical}
   <div id="ex-session-history" style="display:none">
     <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.06em;margin-bottom:8px" id="ex-session-title"></div>
     <div id="ex-session-list"></div>
-  </div>
-</div>
-
-<!-- ========== ランキング ========== -->
-<div id="tab-ranking" class="panel">
-  <div class="card">
-    <div class="flex-between">
-      <div class="sec" style="margin:0">あなたのプロフィール</div>
-      <button class="btn btn-blue btn-sm" onclick="genShare()">共有コード生成</button>
-    </div>
-    <div class="g3">
-      <div><label>ニックネーム</label><input type="text" id="u-nick" placeholder="例: 鉄人タロウ"></div>
-      <div><label>体重 (kg)</label><input type="number" id="u-weight" placeholder="75"></div>
-      <div><label>目標</label>
-        <select id="u-goal">
-          <option>筋肥大</option><option>筋力向上</option><option>ダイエット</option><option>維持</option>
-        </select>
-      </div>
-    </div>
-    <div id="share-area" style="display:none">
-      <div class="sec" style="margin-top:8px">共有コード（友達に送ってください）</div>
-      <div class="share-box" id="share-code"></div>
-      <button class="btn btn-sm" onclick="copyShare()">コピー</button>
-    </div>
-    <div style="margin-top:10px">
-      <div class="sec">友達コードを追加</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="rival-code" placeholder="共有コードを貼り付け" style="font-family:monospace;font-size:12px">
-        <button class="btn btn-primary btn-sm" onclick="addRival()" style="white-space:nowrap">追加</button>
-      </div>
-      <div id="al-rival" class="alert alert-ok" style="margin-top:6px">追加しました！</div>
-      <div id="al-rival-err" class="alert alert-err" style="margin-top:6px">コードが正しくありません</div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="flex-between">
-      <div class="sec" style="margin:0">ランキング</div>
-      <select id="rank-ex" onchange="renderRanking()" style="width:auto;font-size:13px;padding:5px 8px"></select>
-    </div>
-    <div id="rank-list" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -2872,78 +2831,6 @@ function renderBody(){
 }
 
 // ===================== ランキングタブ =====================
-function genShare(){
-  DB.user.nick=document.getElementById('u-nick').value||'あなた';
-  DB.user.weight=document.getElementById('u-weight').value;
-  DB.user.goal=document.getElementById('u-goal').value;
-  var records={};
-  getExercises().forEach(function(ex){
-    var best=[];
-    DB.workouts.filter(function(w){return w.exercise===ex;}).forEach(function(w){
-      w.sets.forEach(function(s){best.push({w:parseFloat(s.w)||0,r:parseInt(s.r)||0});});
-    });
-    if(best.length)records[ex]=best.slice(-5);
-  });
-  var obj={nick:DB.user.nick,weight:DB.user.weight,goal:DB.user.goal,records:records,v:1};
-  var code=btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
-  document.getElementById('share-code').textContent=code;
-  document.getElementById('share-area').style.display='block';
-  save();
-}
-function copyShare(){
-  navigator.clipboard.writeText(document.getElementById('share-code').textContent).catch(function(){});
-  alert('コピーしました！');
-}
-function addRival(){
-  var code=document.getElementById('rival-code').value.trim();
-  try{
-    var obj=JSON.parse(decodeURIComponent(escape(atob(code))));
-    if(!obj.nick)throw new Error();
-    var colors=['#AA82D9','#F0802A','#5DCAA5','#BA7517'];
-    var bgs=['#EEEDFE','#FAECE7','#E1F5EE','#FAEEDA'];
-    var idx=DB.rivals.length%4;
-    obj.color=colors[idx];obj.bg=bgs[idx];
-    DB.rivals.push(obj);save();
-    document.getElementById('rival-code').value='';
-    flash('al-rival');renderRanking();
-  }catch(e){flash('al-rival-err');}
-}
-function getRivalBestRM(rival,ex){
-  var recs=(rival.records||{})[ex]||[];
-  var best=0;
-  recs.forEach(function(s){var rm=(s.w||0)*(1+(s.r||0)/30);if(rm>best)best=rm;});
-  return Math.round(best);
-}
-function renderRanking(){
-  var ex=document.getElementById('rank-ex').value;
-  var myRM=myBestRM(ex);
-  var myNick=document.getElementById('u-nick').value||DB.user.nick||'あなた';
-  var entries=[{nick:myNick,color:'#E24B4A',bg:'#FCEBEB',best:myRM,isMe:true}];
-  DB.rivals.forEach(function(r){entries.push({nick:r.nick,color:r.color||'#888780',bg:r.bg||'#F1EFE8',best:getRivalBestRM(r,ex),isMe:false,isFriend:true});});
-  entries.sort(function(a,b){return b.best-a.best;});
-  var maxBest=entries[0].best||1;
-  var medals=['🥇','🥈','🥉'];
-  var c=document.getElementById('rank-list');c.innerHTML='';
-  entries.forEach(function(e,i){
-    var pct=Math.round((e.best/maxBest)*100);
-    var d=document.createElement('div');d.className='rank-row';
-    if(e.isMe)d.style.background='#fff8f8';
-    d.innerHTML='<div style="font-size:16px;width:26px;text-align:center;flex-shrink:0">'+(i<3?medals[i]:i+1)+'</div>'+
-      '<div class="rank-avatar" style="background:'+e.bg+';color:'+e.color+'">'+e.nick.slice(0,1)+'</div>'+
-      '<div style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
-        (e.isMe?'<span class="badge badge-red" style="margin-right:4px">あなた</span>':'')+
-        (e.isFriend?'<span class="badge badge-blue" style="margin-right:4px">友達</span>':'')+
-        e.nick+'</div>'+
-      '<div style="text-align:right;margin-right:8px;flex-shrink:0"><div style="font-size:14px;font-weight:600">'+(e.best?e.best+'kg':'-')+'</div>'+
-        '<div style="font-size:11px;color:#999">推定1RM</div></div>'+
-      '<div class="rank-bar-bg" style="flex-shrink:0"><div class="rank-bar" style="width:'+pct+'%;background:'+e.color+'"></div></div>';
-    c.appendChild(d);
-  });
-  if(myRM===0){
-    c.insertAdjacentHTML('afterbegin','<div style="font-size:12px;color:#999;padding:6px 0">※記録を追加するとランキングに反映されます</div>');
-  }
-}
-
 // ===================== FitNotes CSVインポート =====================
 function parseCSVLine(line){
   var result=[],cur='',inQ=false;
