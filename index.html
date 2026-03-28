@@ -638,7 +638,7 @@ textarea{min-height:56px;resize:vertical}
 
 <script>
 // ===================== データ =====================
-var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{}};
+var DB={workouts:[],bodyLogs:[],user:{nick:'あなた',weight:'',goal:'筋肥大'},rivals:[],exCategories:{},recentExercises:[],customExercises:[],dailyNotes:{},favorites:{},syncTime:0};
 var currentSets=[];
 var progChart=null,bodyChart=null,catChart=null,dailyVolChart=null;
 var pNRM=5;
@@ -663,7 +663,7 @@ var googleAuthState={
 
 // ===== Google Sheets API 統合設定 =====
 const SHEETS_SPREADSHEET_ID='1jOcvKW1RRrB_jwbUIXfDFa1GdCPBBJmVu0QUTXHx2pI'; // workoutlog Sheets
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycby8mIhsXKgAmqZ6Dn7vcexAZuTJwtfzUBVVSmaVx1hAzoJU0HS9OajSbUR0evhjOr7IpQ/exec'; // Google Apps Script Web App URL
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbzTLrIK5BfKtdj8kAo7KbH57HCl5C0STDrr41vlDq-gYUCWGVFAbp80_-CcZ8QTjDZd8Q/exec'; // Google Apps Script Web App URL
 const APPS_SCRIPT_TOKEN='workout-sync-secret-key-2025'; // Apps Script のトークン
 const SHEETS_API_SCOPES=['https://www.googleapis.com/auth/spreadsheets'];
 
@@ -3685,19 +3685,137 @@ function autoRestoreIfEmpty(){
 setTimeout(() => {
   initGoogleAuth();
   initSheetsAPI();  // Google Sheets API も初期化
-  // 認証完了後、初回復元をチェック
-  setTimeout(() => autoRestoreIfEmpty(), 2000);
+  // 認証完了後、Sheets から最新データを自動ロード
+  setTimeout(() => {
+    autoLoadFromSheets();
+    autoRestoreIfEmpty();
+  }, 2000);
 }, 1000);
 
-// 保存時に自動 Drive 同期（一時無効化：大量データ同期時のハング問題対応）
-// TODO: 差分同期を実装してから有効化
+// ===================== Google Sheets 自動同期（新実装） =====================
+// 同期状態管理
+var sheetsAutoSyncState = {
+  lastSyncTime: 0,
+  isSyncing: false,
+  syncInterval: 2 * 60 * 1000  // 2分ごと
+};
+
+// Sheets にデータを送信（差分のみ）
+function syncToSheets() {
+  if(!navigator.onLine || !googleAuthState.isLoggedIn || sheetsAutoSyncState.isSyncing) {
+    return Promise.resolve();
+  }
+
+  sheetsAutoSyncState.isSyncing = true;
+  var payload = {
+    action: 'syncWorkouts',
+    data: {
+      workouts: DB.workouts,
+      dailyNotes: DB.dailyNotes,
+      favorites: DB.favorites,
+      updatedAt: new Date().toISOString()
+    }
+  };
+
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(res => res.json())
+  .then(data => {
+    sheetsAutoSyncState.lastSyncTime = Date.now();
+    console.log('Sheets sync success:', data);
+    return data;
+  })
+  .catch(err => {
+    console.warn('Sheets sync error:', err);
+    return null;
+  })
+  .finally(() => {
+    sheetsAutoSyncState.isSyncing = false;
+  });
+}
+
+// Sheets からデータを取得（タイムスタンプベースのマージ）
+function loadFromSheets() {
+  if(!navigator.onLine || !googleAuthState.isLoggedIn) {
+    return Promise.resolve(null);
+  }
+
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({action: 'getLatestData'}),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(!data || !data.data) return null;
+
+    var sheetData = data.data;
+    console.log('Loaded from Sheets:', sheetData);
+
+    // タイムスタンプベースのマージ：新しい方を優先
+    if(sheetData.updatedAt && DB.syncTime) {
+      var sheetTime = new Date(sheetData.updatedAt).getTime();
+      var localTime = DB.syncTime;
+
+      if(sheetTime > localTime) {
+        // Sheets の方が新しい → 上書き
+        DB.workouts = sheetData.workouts || DB.workouts;
+        DB.dailyNotes = sheetData.dailyNotes || DB.dailyNotes;
+        DB.favorites = sheetData.favorites || DB.favorites;
+        DB.syncTime = sheetTime;
+        save();
+        return {merged: true, source: 'sheets'};
+      }
+    }
+    return {merged: false};
+  })
+  .catch(err => {
+    console.warn('Load from Sheets error:', err);
+    return null;
+  });
+}
+
+// 保存時に自動 Sheets 同期
 var originalSave = save;
 save = function(){
   originalSave();
-  // if(googleAuthState.isLoggedIn && navigator.onLine){
-  //   saveToDrive();
-  // }
+  // ローカル更新時刻を記録
+  if(!DB.syncTime) DB.syncTime = Date.now();
+
+  // 次の同期タイミングまで待つ（2分ごと）
+  if(navigator.onLine && googleAuthState.isLoggedIn) {
+    var timeSinceLastSync = Date.now() - sheetsAutoSyncState.lastSyncTime;
+    if(timeSinceLastSync > sheetsAutoSyncState.syncInterval) {
+      syncToSheets();
+    }
+  }
 };
+
+// 起動時に Sheets から最新データをロード
+function autoLoadFromSheets() {
+  if(!googleAuthState.isLoggedIn || !navigator.onLine) {
+    return;
+  }
+
+  loadFromSheets().then(result => {
+    if(result && result.merged) {
+      console.log('Auto-loaded latest data from Sheets');
+      updateExerciseLists();
+      renderTodayLog();
+      renderBody();
+    }
+  });
+}
+
+// 定期同期（2分ごと）
+setInterval(function() {
+  if(googleAuthState.isLoggedIn && navigator.onLine) {
+    syncToSheets();
+  }
+}, sheetsAutoSyncState.syncInterval);
 </script>
 
 <!-- FitNotes データ埋め込み -->
