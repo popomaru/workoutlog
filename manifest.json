@@ -1,15 +1,49 @@
 {
   "name": "筋トレトラッカー",
   "short_name": "筋トレ",
+  "description": "シンプルで使いやすいワークアウト記録アプリ。トレーニング履歴を自動で保存し、進捗を追跡できます。",
   "start_url": "./index.html",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f5f5f0",
   "theme_color": "#E24B4A",
+  "categories": ["productivity", "health"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23E24B4A'/%3E%3Ctext x='96' y='130' font-size='100' text-anchor='middle'%3E%F0%9F%92%AA%3C/text%3E%3C/svg%3E",
+      "src": "./icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新規記録",
+      "short_name": "記録",
+      "description": "新しいワークアウトを記録する",
+      "url": "./index.html#record",
+      "icons": [
+        {
+          "src": "./icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
